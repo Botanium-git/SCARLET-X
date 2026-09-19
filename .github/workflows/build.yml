@@ -42,14 +42,16 @@ jobs:
           cp -R "$APP_PATH" Payload/ScarletX.app
 
           /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" Payload/ScarletX.app/Info.plist
-          ditto -c -k --sequesterRsrc --keepParent Payload ScarletX-v0.1.0.ipa
+          VERSION="$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" Payload/ScarletX.app/Info.plist)"
+          echo "App version: $VERSION"
+          ditto -c -k --sequesterRsrc --keepParent Payload "ScarletX-v$VERSION.ipa"
 
           echo "Created:"
-          ls -lh ScarletX-v0.1.0.ipa
+          ls -lh "ScarletX-v$VERSION.ipa"
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: ScarletX-v0.1.0
-          path: ScarletX-v0.1.0.ipa
+          name: ScarletX-IPA
+          path: ScarletX-v*.ipa
           if-no-files-found: error
