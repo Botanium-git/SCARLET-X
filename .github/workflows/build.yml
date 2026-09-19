@@ -56,9 +56,16 @@ jobs:
           echo "Created:"
           ls -lh "ScarletX-v$VERSION.ipa"
 
+      - name: Read app version
+        id: app_version
+        shell: bash
+        run: |
+          VERSION="$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" Resources/Info.plist)"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: ScarletX-IPA
+          name: ScarletX-v${{ steps.app_version.outputs.version }}
           path: ScarletX-v*.ipa
           if-no-files-found: error
