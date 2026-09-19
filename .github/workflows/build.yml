@@ -14,18 +14,20 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Theos
-        uses: waruhachi/theos-action@v2
+        uses: waruhachi/theos-action@v2.4.6
         with:
-          theos-src: https://github.com/theos/theos.git
+          theos-src: theos/theos
+          theos-branch: master
+          sdks-src: theos/sdks
+          sdks-branch: master
+          libgcuniversal: false
+          altlist: false
 
       - name: Build
-        run: |
-          export THEOS=${{ github.workspace }}/theos
-          make clean package FINALPACKAGE=1
+        run: make clean package FINALPACKAGE=1
 
-      - name: Locate IPA
-        run: |
-          find . -type f \( -name "*.ipa" -o -name "*.deb" \) -print
+      - name: Locate build output
+        run: find . -type f \( -name "*.ipa" -o -name "*.deb" \) -print
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
