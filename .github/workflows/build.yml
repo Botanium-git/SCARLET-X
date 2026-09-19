@@ -6,6 +6,12 @@ on:
   push:
     branches: [ "main" ]
 
+# When several repository edits land in quick succession, keep only the
+# newest build. This prevents one IPA build per intermediate commit.
+concurrency:
+  group: scarletx-main-build
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: macos-latest
