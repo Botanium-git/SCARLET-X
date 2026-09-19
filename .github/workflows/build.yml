@@ -1,4 +1,5 @@
-name: Build ScarletX IPA
+name: ScarletX
+run-name: ScarletX Build
 
 on:
   workflow_dispatch:
