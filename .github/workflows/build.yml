@@ -1,0 +1,37 @@
+name: Build ScarletX IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Theos
+        uses: waruhachi/theos-action@v2
+        with:
+          theos-src: https://github.com/theos/theos.git
+
+      - name: Build
+        run: |
+          export THEOS=${{ github.workspace }}/theos
+          make clean package FINALPACKAGE=1
+
+      - name: Locate IPA
+        run: |
+          find . -type f \( -name "*.ipa" -o -name "*.deb" \) -print
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScarletX-v0.1.0
+          path: |
+            packages/*.ipa
+            packages/*.deb
+          if-no-files-found: error
