@@ -98,26 +98,10 @@
     NSURL *url=a.request.URL; NSString *s=url.scheme.lowercaseString;
     if([self isWebURL:url]||[s isEqual:@"about"]||[s isEqual:@"blob"]||[s isEqual:@"data"]) { decisionHandler(WKNavigationActionPolicyAllow); return; }
     if ([s isEqual:@"x-safari-https"]) {
-        [[DiagnosticsStore shared] addEvent:@"Intercepted x-safari-https" detail:@"Keeping X navigation inside ScarletX" url:url];
-
-        NSString *path = url.path.length ? url.path : @"/";
-        NSString *query = url.query.length ? [@"?" stringByAppendingString:url.query] : @"";
-        NSURL *target = nil;
-
-        if ([url.host.lowercaseString isEqual:@"redirect.x.com"]) {
-            target = [NSURL URLWithString:[NSString stringWithFormat:@"https://x.com%@%@", path, query]];
-        } else {
-            NSString *absolute = url.absoluteString;
-            NSString *converted = [absolute stringByReplacingOccurrencesOfString:@"x-safari-https://" withString:@"https://"];
-            target = [NSURL URLWithString:converted];
-        }
-
+        [[DiagnosticsStore shared] addEvent:@"Intercepted x-safari-https"
+                                    detail:@"Navigation cancelled to prevent redirect loop"
+                                       url:url];
         decisionHandler(WKNavigationActionPolicyCancel);
-        if (target) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [self loadURL:target reason:@"x-safari-https intercepted"];
-            });
-        }
         return;
     }
 
