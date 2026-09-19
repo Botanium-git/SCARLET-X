@@ -1,0 +1,8 @@
+Package: com.scarletx.app
+Name: ScarletX
+Version: 0.1.0
+Architecture: iphoneos-arm
+Description: Minimal X web wrapper for LiveContainer.
+Maintainer: ScarletX
+Author: ScarletX
+Section: Applications
