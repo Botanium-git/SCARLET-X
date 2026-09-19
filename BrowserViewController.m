@@ -21,6 +21,9 @@
     config.mediaTypesRequiringUserActionForPlayback = WKAudiovisualMediaTypeNone;
 
     self.webView = [[WKWebView alloc] initWithFrame:CGRectZero configuration:config];
+    // A/B test: identify as Chrome on iOS while keeping the WebKit engine and
+    // all other ScarletX settings unchanged.
+    self.webView.customUserAgent = @"Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/140.0.7339.122 Mobile/15E148 Safari/604.1";
     self.webView.navigationDelegate = self;
     self.webView.UIDelegate = self;
     self.webView.allowsBackForwardNavigationGestures = YES;
