@@ -20,7 +20,8 @@
         cell.imageView.image = [UIImage systemImageNamed:@"exclamationmark.bubble"];
         cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
     } else {
-        cell.textLabel.text = @"ScarletX 0.1.1";
+        NSString *version = [NSBundle.mainBundle objectForInfoDictionaryKey:@"CFBundleShortVersionString"] ?: @"?";
+        cell.textLabel.text = [NSString stringWithFormat:@"ScarletX %@", version];
         cell.imageView.image = [UIImage systemImageNamed:@"info.circle"];
     }
     return cell;
