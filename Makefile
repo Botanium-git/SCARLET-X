@@ -2,14 +2,11 @@ ARCHS = arm64 arm64e
 TARGET = iphone:clang:latest:15.0
 
 include $(THEOS)/makefiles/common.mk
-
 APPLICATION_NAME = ScarletX
-
-ScarletX_FILES = main.m AppDelegate.m BrowserViewController.m
+ScarletX_FILES = main.m AppDelegate.m BrowserViewController.m DiagnosticsStore.m SettingsViewController.m LogViewController.m
 ScarletX_FRAMEWORKS = UIKit WebKit
 ScarletX_CFLAGS = -fobjc-arc
 ScarletX_RESOURCE_DIRS = Resources
-
 include $(THEOS_MAKE_PATH)/application.mk
 
 after-stage::
