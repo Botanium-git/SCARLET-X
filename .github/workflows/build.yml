@@ -23,17 +23,33 @@ jobs:
           libgcuniversal: false
           altlist: false
 
-      - name: Build
-        run: make clean package FINALPACKAGE=1
+      - name: Build app
+        run: make clean all FINALPACKAGE=1
 
-      - name: Locate build output
-        run: find . -type f \( -name "*.ipa" -o -name "*.deb" \) -print
+      - name: Create IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP_PATH="$(find .theos/obj -type d -name 'ScarletX.app' -print -quit)"
+          if [ -z "$APP_PATH" ]; then
+            echo "ScarletX.app was not found"
+            find .theos -maxdepth 5 -type d -print || true
+            exit 1
+          fi
 
-      - name: Upload build artifacts
+          rm -rf Payload
+          mkdir -p Payload
+          cp -R "$APP_PATH" Payload/ScarletX.app
+
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" Payload/ScarletX.app/Info.plist
+          ditto -c -k --sequesterRsrc --keepParent Payload ScarletX-v0.1.0.ipa
+
+          echo "Created:"
+          ls -lh ScarletX-v0.1.0.ipa
+
+      - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
           name: ScarletX-v0.1.0
-          path: |
-            packages/*.ipa
-            packages/*.deb
+          path: ScarletX-v0.1.0.ipa
           if-no-files-found: error
