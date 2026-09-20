@@ -20,33 +20,24 @@
     NSString *settingsScript = @"(function(){"
         "if(window.__scarletXSettingsInstalled)return;"
         "window.__scarletXSettingsInstalled=true;"
-        "function add(){"
-          "if(document.getElementById('scarletx-settings-item'))return;"
+        "function rect(e){var r=e.getBoundingClientRect();return {x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height)};}"
+        "function desc(e,i){if(!e)return null;return {level:i,tag:e.tagName,role:e.getAttribute&&e.getAttribute('role'),href:e.getAttribute&&e.getAttribute('href'),id:e.id||'',className:(typeof e.className==='string'?e.className:''),rect:rect(e),childCount:e.children?e.children.length:0,text:(e.innerText||'').trim().slice(0,120)};}"
+        "function send(anchor){"
+          "if(window.__scarletXDomDiagnosticSent)return;"
+          "window.__scarletXDomDiagnosticSent=true;"
+          "var chain=[],e=anchor;"
+          "for(var i=0;e&&i<7;i++,e=e.parentElement)chain.push(desc(e,i));"
+          "var payload={type:'dom-diagnostic',viewport:{w:window.innerWidth,h:window.innerHeight},anchor:desc(anchor,-1),ancestors:chain};"
+          "window.webkit.messageHandlers.scarletx.postMessage(payload);"
+        "}"
+        "function inspect(){"
           "var candidates=[].slice.call(document.querySelectorAll('a[href=\"/settings\"],a[href=\"/settings/account\"]'));"
           "var anchor=candidates.find(function(a){return (a.innerText||'').indexOf('設定とプライバシー')!==-1;})||candidates[0];"
           "if(!anchor)return;"
-          "var row=anchor.closest('[role=\"menuitem\"]')||anchor;"
-          "var parent=row.parentNode;"
-          "if(!parent)return;"
-          "var item=document.createElement('div');"
-          "item.id='scarletx-settings-item';"
-          "item.setAttribute('role','menuitem');"
-          "item.setAttribute('tabindex','0');"
-          "item.style.cssText='display:flex;align-items:center;box-sizing:border-box;width:100%;min-width:0;padding:12px 16px;gap:20px;cursor:pointer;color:inherit;font:inherit;';"
-          "var icon=document.createElement('div');"
-          "icon.setAttribute('aria-hidden','true');"
-          "icon.style.cssText='width:28px;min-width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:25px;line-height:28px;';"
-          "icon.textContent='⚙';"
-          "var label=document.createElement('div');"
-          "label.textContent='Scarlet X 設定';"
-          "label.style.cssText='min-width:0;white-space:nowrap;font-size:20px;font-weight:700;line-height:24px;';"
-          "item.appendChild(icon);item.appendChild(label);"
-          "item.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();window.webkit.messageHandlers.scarletx.postMessage('settings');},true);"
-          "item.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();window.webkit.messageHandlers.scarletx.postMessage('settings');}});"
-          "parent.insertBefore(item,row.nextSibling);"
+          "send(anchor);"
         "}"
-        "new MutationObserver(add).observe(document.documentElement,{childList:true,subtree:true});"
-        "add();"
+        "new MutationObserver(inspect).observe(document.documentElement,{childList:true,subtree:true});"
+        "inspect();"
       "})();";
     WKUserScript *script = [[WKUserScript alloc] initWithSource:settingsScript injectionTime:WKUserScriptInjectionTimeAtDocumentEnd forMainFrameOnly:YES];
     [contentController addUserScript:script];
@@ -105,8 +96,17 @@
 }
 - (void)goHome { [self loadURL:[NSURL URLWithString:@"https://x.com/home"] reason:@"Home"]; }
 - (void)userContentController:(WKUserContentController *)userContentController didReceiveScriptMessage:(WKScriptMessage *)message {
-    if ([message.name isEqualToString:@"scarletx"] && [message.body isEqual:@"settings"]) {
+    if (![message.name isEqualToString:@"scarletx"]) return;
+    if ([message.body isEqual:@"settings"]) {
         [self openSettings];
+        return;
+    }
+    if ([message.body isKindOfClass:NSDictionary.class] && [message.body[@"type"] isEqual:@"dom-diagnostic"]) {
+        NSError *error = nil;
+        NSData *data = [NSJSONSerialization dataWithJSONObject:message.body options:NSJSONWritingPrettyPrinted error:&error];
+        NSString *detail = data ? [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] : [message.body description];
+        if (error) detail = [NSString stringWithFormat:@"Serialization error: %@\n%@", error.localizedDescription, [message.body description]];
+        [[DiagnosticsStore shared] addEvent:@"X menu DOM diagnostic" detail:detail ?: @"" url:self.webView.URL];
     }
 }
 - (void)openSettings {
