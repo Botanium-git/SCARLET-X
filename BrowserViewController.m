@@ -6,6 +6,8 @@
 @interface BrowserViewController () <WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler>
 @property(nonatomic,strong) WKWebView *webView;
 @property(nonatomic,strong) NSURL *pendingURL;
+@property(nonatomic,assign) CFTimeInterval navigationStartTime;
+@property(nonatomic,copy) NSString *navigationReason;
 @end
 
 @implementation BrowserViewController
@@ -43,6 +45,19 @@
       "})();";
     WKUserScript *script = [[WKUserScript alloc] initWithSource:settingsScript injectionTime:WKUserScriptInjectionTimeAtDocumentEnd forMainFrameOnly:YES];
     [contentController addUserScript:script];
+
+    NSString *performanceScript = @"(function(){"
+      "if(window.__scarletXPerformanceInstalled)return;"
+      "window.__scarletXPerformanceInstalled=true;"
+      "function send(stage,extra){try{window.webkit.messageHandlers.scarletx.postMessage({type:'performance',stage:stage,now:Math.round(performance.now()),extra:extra||{}});}catch(e){}}"
+      "if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',function(){send('dom-content-loaded');},{once:true});}else{send('dom-content-loaded-already');}"
+      "if(document.readyState==='complete'){send('window-load-already');}else{window.addEventListener('load',function(){send('window-load');},{once:true});}"
+      "var first=false;"
+      "function visible(){if(first)return;var main=document.querySelector('main,[role=\"main\"],[data-testid=\"primaryColumn\"]');if(main&&main.getBoundingClientRect().height>40){first=true;send('x-main-visible',{tag:main.tagName,testid:main.getAttribute('data-testid')||''});observer.disconnect();}}"
+      "var observer=new MutationObserver(visible);observer.observe(document.documentElement,{childList:true,subtree:true});visible();"
+    "})();";
+    WKUserScript *performanceUserScript = [[WKUserScript alloc] initWithSource:performanceScript injectionTime:WKUserScriptInjectionTimeAtDocumentStart forMainFrameOnly:YES];
+    [contentController addUserScript:performanceUserScript];
     config.userContentController = contentController;
     config.websiteDataStore = WKWebsiteDataStore.defaultDataStore;
     config.allowsInlineMediaPlayback = YES;
@@ -96,12 +111,23 @@
 - (void)loadURL:(NSURL *)url reason:(NSString *)reason {
     if(![self isWebURL:url]) { [[DiagnosticsStore shared] addEvent:@"Unsupported URL" detail:url.scheme ?: @"" url:url]; return; }
     [[DiagnosticsStore shared] addEvent:@"Loading URL" detail:reason ?: @"" url:url];
+    self.navigationStartTime = CACurrentMediaTime();
+    self.navigationReason = reason ?: @"";
     [self.webView loadRequest:[NSURLRequest requestWithURL:url cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:30]];
 }
 - (void)goHome { [self loadURL:[NSURL URLWithString:@"https://x.com/home"] reason:@"Home"]; }
 - (void)userContentController:(WKUserContentController *)userContentController didReceiveScriptMessage:(WKScriptMessage *)message {
-    if ([message.name isEqualToString:@"scarletx"] && [message.body isEqual:@"settings"]) {
+    if (![message.name isEqualToString:@"scarletx"]) return;
+    if ([message.body isEqual:@"settings"]) {
         [self openSettings];
+        return;
+    }
+    if ([message.body isKindOfClass:NSDictionary.class] && [message.body[@"type"] isEqual:@"performance"]) {
+        NSDictionary *body = message.body;
+        CFTimeInterval elapsed = self.navigationStartTime > 0 ? (CACurrentMediaTime() - self.navigationStartTime) * 1000.0 : 0;
+        NSString *detail = [NSString stringWithFormat:@"Stage: %@\nNative elapsed: %.0f ms\nPage performance.now: %@ ms\nReason: %@",
+                            body[@"stage"] ?: @"", elapsed, body[@"now"] ?: @0, self.navigationReason ?: @""];
+        [[DiagnosticsStore shared] addEvent:@"Page performance" detail:detail url:self.webView.URL];
     }
 }
 - (void)openSettings {
@@ -109,8 +135,8 @@
     nav.modalPresentationStyle=UIModalPresentationPageSheet;
     [self presentViewController:nav animated:YES completion:nil];
 }
-- (void)webView:(WKWebView *)webView didStartProvisionalNavigation:(WKNavigation *)navigation { [[DiagnosticsStore shared] addEvent:@"Navigation started" detail:@"" url:webView.URL]; }
-- (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation { [[DiagnosticsStore shared] addEvent:@"Navigation finished" detail:@"" url:webView.URL]; }
+- (void)webView:(WKWebView *)webView didStartProvisionalNavigation:(WKNavigation *)navigation { if (self.navigationStartTime <= 0) self.navigationStartTime = CACurrentMediaTime(); [[DiagnosticsStore shared] addEvent:@"Navigation started" detail:self.navigationReason ?: @"" url:webView.URL]; }
+- (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation { CFTimeInterval elapsed = self.navigationStartTime > 0 ? (CACurrentMediaTime() - self.navigationStartTime) * 1000.0 : 0; NSString *detail=[NSString stringWithFormat:@"%.0f ms | %@", elapsed, self.navigationReason ?: @""]; [[DiagnosticsStore shared] addEvent:@"Navigation finished" detail:detail url:webView.URL]; }
 - (void)webView:(WKWebView *)webView didFailProvisionalNavigation:(WKNavigation *)navigation withError:(NSError *)error { [[DiagnosticsStore shared] addError:@"Provisional navigation failed" error:error url:webView.URL]; }
 - (void)webView:(WKWebView *)webView didFailNavigation:(WKNavigation *)navigation withError:(NSError *)error { [[DiagnosticsStore shared] addError:@"Navigation failed" error:error url:webView.URL]; }
 - (void)webViewWebContentProcessDidTerminate:(WKWebView *)webView { [[DiagnosticsStore shared] addEvent:@"Web content process terminated" detail:@"" url:webView.URL]; }
