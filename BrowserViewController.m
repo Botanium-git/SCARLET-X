@@ -67,7 +67,7 @@
 
     [self.view addSubview:self.webView];
     [NSLayoutConstraint activateConstraints:@[
-      [self.webView.topAnchor constraintEqualToAnchor:self.view.topAnchor],
+      [self.webView.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor],
       [self.webView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
       [self.webView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
       [self.webView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor]
