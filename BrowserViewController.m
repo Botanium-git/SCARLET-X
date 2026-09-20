@@ -3,9 +3,8 @@
 #import "DiagnosticsStore.h"
 #import <WebKit/WebKit.h>
 
-@interface BrowserViewController () <WKNavigationDelegate, WKUIDelegate>
+@interface BrowserViewController () <WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler>
 @property(nonatomic,strong) WKWebView *webView;
-@property(nonatomic,strong) UIToolbar *toolbar;
 @property(nonatomic,strong) NSURL *pendingURL;
 @end
 
@@ -16,6 +15,32 @@
     [[DiagnosticsStore shared] addEvent:@"App launched" detail:@"Browser view created" url:nil];
 
     WKWebViewConfiguration *config = [WKWebViewConfiguration new];
+    WKUserContentController *contentController = [WKUserContentController new];
+    [contentController addScriptMessageHandler:self name:@"scarletx"];
+    NSString *settingsScript = @"(function(){"
+        "if(window.__scarletXSettingsInstalled)return;"
+        "window.__scarletXSettingsInstalled=true;"
+        "function add(){"
+          "if(document.getElementById('scarletx-settings-item'))return;"
+          "var anchors=[].slice.call(document.querySelectorAll('a[href]'));"
+          "var anchor=anchors.find(function(a){return a.getAttribute('href')==='/settings'||a.getAttribute('href')==='/settings/account';});"
+          "if(!anchor)return;"
+          "var row=anchor.closest('[role=\"menuitem\"]')||anchor;"
+          "var item=row.cloneNode(true);"
+          "item.id='scarletx-settings-item';"
+          "item.removeAttribute('href');"
+          "item.querySelectorAll('[href]').forEach(function(e){e.removeAttribute('href');});"
+          "var label=item.querySelector('span');"
+          "if(label)label.textContent='Scarlet X 設定';else item.textContent='Scarlet X 設定';"
+          "item.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();window.webkit.messageHandlers.scarletx.postMessage('settings');});"
+          "row.parentNode.insertBefore(item,row.nextSibling);"
+        "}"
+        "new MutationObserver(add).observe(document.documentElement,{childList:true,subtree:true});"
+        "add();"
+      "})();";
+    WKUserScript *script = [[WKUserScript alloc] initWithSource:settingsScript injectionTime:WKUserScriptInjectionTimeAtDocumentEnd forMainFrameOnly:YES];
+    [contentController addUserScript:script];
+    config.userContentController = contentController;
     config.websiteDataStore = WKWebsiteDataStore.defaultDataStore;
     config.allowsInlineMediaPlayback = YES;
     config.mediaTypesRequiringUserActionForPlayback = WKAudiovisualMediaTypeNone;
@@ -40,27 +65,12 @@
         [[DiagnosticsStore shared] addEvent:@"Browser identity" detail:[result description] ?: @"" url:nil];
     }];
 
-    UIBarButtonItem *back = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"chevron.backward"] style:UIBarButtonItemStylePlain target:self action:@selector(goBack)];
-    UIBarButtonItem *forward = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"chevron.forward"] style:UIBarButtonItemStylePlain target:self action:@selector(goForward)];
-    UIBarButtonItem *home = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"house"] style:UIBarButtonItemStylePlain target:self action:@selector(goHome)];
-    UIBarButtonItem *reload = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemRefresh target:self action:@selector(reloadPage)];
-    UIBarButtonItem *settings = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"gearshape"] style:UIBarButtonItemStylePlain target:self action:@selector(openSettings)];
-    UIBarButtonItem *flex = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil];
-
-    self.toolbar = [UIToolbar new];
-    self.toolbar.translatesAutoresizingMaskIntoConstraints = NO;
-    self.toolbar.items = @[back,flex,forward,flex,home,flex,reload,flex,settings];
-
-    [self.view addSubview:self.webView]; [self.view addSubview:self.toolbar];
-    UILayoutGuide *safe = self.view.safeAreaLayoutGuide;
+    [self.view addSubview:self.webView];
     [NSLayoutConstraint activateConstraints:@[
-      [self.webView.topAnchor constraintEqualToAnchor:safe.topAnchor],
+      [self.webView.topAnchor constraintEqualToAnchor:self.view.topAnchor],
       [self.webView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
       [self.webView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
-      [self.webView.bottomAnchor constraintEqualToAnchor:self.toolbar.topAnchor],
-      [self.toolbar.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
-      [self.toolbar.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
-      [self.toolbar.bottomAnchor constraintEqualToAnchor:safe.bottomAnchor]
+      [self.webView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor]
     ]];
 
     if (self.pendingURL) { NSURL *u=self.pendingURL; self.pendingURL=nil; [self loadURL:u reason:@"pending"]; }
@@ -84,9 +94,11 @@
     [self.webView loadRequest:[NSURLRequest requestWithURL:url cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:30]];
 }
 - (void)goHome { [self loadURL:[NSURL URLWithString:@"https://x.com/home"] reason:@"Home"]; }
-- (void)goBack { if(self.webView.canGoBack)[self.webView goBack]; }
-- (void)goForward { if(self.webView.canGoForward)[self.webView goForward]; }
-- (void)reloadPage { [[DiagnosticsStore shared] addEvent:@"Reload" detail:@"" url:self.webView.URL]; [self.webView reload]; }
+- (void)userContentController:(WKUserContentController *)userContentController didReceiveScriptMessage:(WKScriptMessage *)message {
+    if ([message.name isEqualToString:@"scarletx"] && [message.body isEqual:@"settings"]) {
+        [self openSettings];
+    }
+}
 - (void)openSettings {
     UINavigationController *nav=[[UINavigationController alloc] initWithRootViewController:[SettingsViewController new]];
     nav.modalPresentationStyle=UIModalPresentationPageSheet;
