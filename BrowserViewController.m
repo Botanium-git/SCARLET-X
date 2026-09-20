@@ -59,7 +59,7 @@
         "if(mainSent&&postSent)observer.disconnect();"
       "}"
       "function findHomeHeader(){var tabs=[].slice.call(document.querySelectorAll('[role=\"tab\"]'));var t=tabs.find(function(e){var s=(e.innerText||'').trim();return s==='おすすめ'||s==='フォロー中'||s==='For you'||s==='Following';});return t?t.parentElement:null;}"
-      "function sampleScroll(){var y=window.scrollY,dy=y-lastY;if(Math.abs(dy)>=2)lastDirection=dy<0?'toward-top':'toward-bottom';lastY=y;var now=performance.now();if(now-lastSample<180)return;lastSample=now;var h=findHomeHeader();if(!h)return;var r=h.getBoundingClientRect();var visible=r.bottom>0&&r.top<window.innerHeight;var state=visible?'visible':'hidden';if(state!==headerState||Math.abs(dy)>=18){headerState=state;send('home-header-scroll',{scrollY:Math.round(y),deltaY:Math.round(dy),direction:lastDirection,headerVisible:visible,headerY:Math.round(r.y),headerH:Math.round(r.height)});}}"
+      "function sampleScroll(){var y=window.scrollY,dy=y-lastY;if(Math.abs(dy)>=2)lastDirection=dy<0?'toward-top':'toward-bottom';lastY=y;var now=performance.now();if(now-lastSample<300)return;lastSample=now;var h=findHomeHeader();if(!h)return;var r=h.getBoundingClientRect();var visible=r.bottom>0&&r.top<window.innerHeight;var state=visible?'visible':'hidden';if(state!==headerState||Math.abs(dy)>=40){headerState=state;send('home-header-scroll',{scrollY:Math.round(y),deltaY:Math.round(dy),direction:lastDirection,headerVisible:visible,headerY:Math.round(r.y),headerH:Math.round(r.height)});}}"
       "var observer=new MutationObserver(inspect);observer.observe(document.documentElement,{childList:true,subtree:true});inspect();"
       "window.addEventListener('scroll',sampleScroll,{passive:true});"
     "})();";
@@ -132,8 +132,11 @@
     if ([message.body isKindOfClass:NSDictionary.class] && [message.body[@"type"] isEqual:@"performance"]) {
         NSDictionary *body = message.body;
         CFTimeInterval elapsed = self.navigationStartTime > 0 ? (CACurrentMediaTime() - self.navigationStartTime) * 1000.0 : 0;
-        NSString *detail = [NSString stringWithFormat:@"Stage: %@\nNative elapsed: %.0f ms\nPage performance.now: %@ ms\nReason: %@",
-                            body[@"stage"] ?: @"", elapsed, body[@"now"] ?: @0, self.navigationReason ?: @""];
+        NSDictionary *extra = [body[@"extra"] isKindOfClass:NSDictionary.class] ? body[@"extra"] : @{};
+        NSData *extraData = [NSJSONSerialization dataWithJSONObject:extra options:0 error:nil];
+        NSString *extraJSON = extraData ? [[NSString alloc] initWithData:extraData encoding:NSUTF8StringEncoding] : @"{}";
+        NSString *detail = [NSString stringWithFormat:@"Stage: %@\nNative elapsed: %.0f ms\nPage performance.now: %@ ms\nReason: %@\nExtra: %@",
+                            body[@"stage"] ?: @"", elapsed, body[@"now"] ?: @0, self.navigationReason ?: @"", extraJSON ?: @"{}"];
         [[DiagnosticsStore shared] addEvent:@"Page performance" detail:detail url:self.webView.URL];
     }
 }
