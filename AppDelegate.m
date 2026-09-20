@@ -2,17 +2,16 @@
 #import "BrowserViewController.h"
 #import "DiagnosticsStore.h"
 
-@implementation AppDelegate
+@implementation AppDelegate {
+    NSString *_lastIncomingURL;
+    NSTimeInterval _lastIncomingURLTime;
+}
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
     self.browserViewController = [[BrowserViewController alloc] init];
     self.window.rootViewController = self.browserViewController;
     [self.window makeKeyAndVisible];
-
-    [[DiagnosticsStore shared] addEvent:@"Launch options dump"
-                                  detail:[self diagnosticDescriptionForObject:launchOptions ?: @{}]
-                                     url:nil];
 
     NSURL *url = launchOptions[UIApplicationLaunchOptionsURLKey];
     if (url) {
@@ -31,12 +30,6 @@
 }
 
 - (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
-    NSString *detail = [NSString stringWithFormat:@"URL: %@\nscheme: %@\nhost: %@\noptions: %@",
-                        url.absoluteString ?: @"<nil>",
-                        url.scheme ?: @"<nil>",
-                        url.host ?: @"<nil>",
-                        [self diagnosticDescriptionForObject:options ?: @{}]];
-    [[DiagnosticsStore shared] addEvent:@"openURL raw dump" detail:detail url:url];
     [self handleIncomingURL:url source:@"openURL:options:"];
     return YES;
 }
@@ -50,11 +43,6 @@
 continueUserActivity:(NSUserActivity *)userActivity
  restorationHandler:(void (^)(NSArray<id<UIUserActivityRestoring>> * _Nullable restorableObjects))restorationHandler {
     NSURL *url = userActivity.webpageURL;
-    NSString *detail = [NSString stringWithFormat:@"activityType: %@\nwebpageURL: %@\nuserInfo: %@",
-                        userActivity.activityType ?: @"<nil>",
-                        url.absoluteString ?: @"<nil>",
-                        [self diagnosticDescriptionForObject:userActivity.userInfo ?: @{}]];
-    [[DiagnosticsStore shared] addEvent:@"User activity dump" detail:detail url:url];
     if ([userActivity.activityType isEqualToString:NSUserActivityTypeBrowsingWeb] && url) {
         [self handleIncomingURL:url source:@"continueUserActivity"];
         return YES;
@@ -62,17 +50,13 @@ continueUserActivity:(NSUserActivity *)userActivity
     return NO;
 }
 
-- (NSString *)diagnosticDescriptionForObject:(id)object {
-    if (!object) return @"<nil>";
-    @try {
-        return [object descriptionWithLocale:nil indent:1] ?: [object description] ?: @"<no description>";
-    } @catch (__unused NSException *exception) {
-        return [object description] ?: @"<description failed>";
-    }
-}
-
 - (void)handleIncomingURL:(NSURL *)url source:(NSString *)source {
     if (!url) return;
+    NSString *absolute = url.absoluteString ?: @"";
+    NSTimeInterval now = NSDate.date.timeIntervalSince1970;
+    if (_lastIncomingURL && [_lastIncomingURL isEqualToString:absolute] && (now - _lastIncomingURLTime) < 1.0) return;
+    _lastIncomingURL = [absolute copy];
+    _lastIncomingURLTime = now;
     dispatch_async(dispatch_get_main_queue(), ^{
         [self.browserViewController openExternalURL:url source:source];
     });
