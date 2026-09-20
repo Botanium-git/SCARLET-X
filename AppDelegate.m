@@ -14,6 +14,14 @@
         [self handleIncomingURL:url source:@"launchOptions"];
     }
 
+    NSDictionary *activityDictionary = launchOptions[UIApplicationLaunchOptionsUserActivityDictionaryKey];
+    for (NSUserActivity *activity in activityDictionary.allValues) {
+        if ([activity.activityType isEqualToString:NSUserActivityTypeBrowsingWeb] && activity.webpageURL) {
+            [self handleIncomingURL:activity.webpageURL source:@"launchOptions userActivity"];
+            break;
+        }
+    }
+
     return YES;
 }
 
@@ -25,6 +33,17 @@
 - (BOOL)application:(UIApplication *)application handleOpenURL:(NSURL *)url {
     [self handleIncomingURL:url source:@"handleOpenURL:"];
     return YES;
+}
+
+- (BOOL)application:(UIApplication *)application
+continueUserActivity:(NSUserActivity *)userActivity
+ restorationHandler:(void (^)(NSArray<id<UIUserActivityRestoring>> * _Nullable restorableObjects))restorationHandler {
+    NSURL *url = userActivity.webpageURL;
+    if ([userActivity.activityType isEqualToString:NSUserActivityTypeBrowsingWeb] && url) {
+        [self handleIncomingURL:url source:@"continueUserActivity"];
+        return YES;
+    }
+    return NO;
 }
 
 - (void)handleIncomingURL:(NSURL *)url source:(NSString *)source {
