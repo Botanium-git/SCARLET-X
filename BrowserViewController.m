@@ -52,9 +52,16 @@
       "function send(stage,extra){try{window.webkit.messageHandlers.scarletx.postMessage({type:'performance',stage:stage,now:Math.round(performance.now()),extra:extra||{}});}catch(e){}}"
       "if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',function(){send('dom-content-loaded');},{once:true});}else{send('dom-content-loaded-already');}"
       "if(document.readyState==='complete'){send('window-load-already');}else{window.addEventListener('load',function(){send('window-load');},{once:true});}"
-      "var first=false;"
-      "function visible(){if(first)return;var main=document.querySelector('main,[role=\"main\"],[data-testid=\"primaryColumn\"]');if(main&&main.getBoundingClientRect().height>40){first=true;send('x-main-visible',{tag:main.tagName,testid:main.getAttribute('data-testid')||''});observer.disconnect();}}"
-      "var observer=new MutationObserver(visible);observer.observe(document.documentElement,{childList:true,subtree:true});visible();"
+      "var mainSent=false,postSent=false,lastY=window.scrollY,lastSample=0,lastDirection='none',headerState='unknown';"
+      "function inspect(){"
+        "if(!mainSent){var main=document.querySelector('main,[role=\"main\"],[data-testid=\"primaryColumn\"]');if(main&&main.getBoundingClientRect().height>40){mainSent=true;send('x-main-visible',{tag:main.tagName,testid:main.getAttribute('data-testid')||''});}}"
+        "if(!postSent){var post=document.querySelector('article[data-testid=\"tweet\"],article');if(post){var r=post.getBoundingClientRect();var text=(post.innerText||'').trim();if(r.height>40&&text.length>0){postSent=true;send('first-post-visible',{y:Math.round(r.y),h:Math.round(r.height),textLength:text.length});}}}"
+        "if(mainSent&&postSent)observer.disconnect();"
+      "}"
+      "function findHomeHeader(){var tabs=[].slice.call(document.querySelectorAll('[role=\"tab\"]'));var t=tabs.find(function(e){var s=(e.innerText||'').trim();return s==='おすすめ'||s==='フォロー中'||s==='For you'||s==='Following';});return t?t.parentElement:null;}"
+      "function sampleScroll(){var y=window.scrollY,dy=y-lastY;if(Math.abs(dy)>=2)lastDirection=dy<0?'toward-top':'toward-bottom';lastY=y;var now=performance.now();if(now-lastSample<180)return;lastSample=now;var h=findHomeHeader();if(!h)return;var r=h.getBoundingClientRect();var visible=r.bottom>0&&r.top<window.innerHeight;var state=visible?'visible':'hidden';if(state!==headerState||Math.abs(dy)>=18){headerState=state;send('home-header-scroll',{scrollY:Math.round(y),deltaY:Math.round(dy),direction:lastDirection,headerVisible:visible,headerY:Math.round(r.y),headerH:Math.round(r.height)});}}"
+      "var observer=new MutationObserver(inspect);observer.observe(document.documentElement,{childList:true,subtree:true});inspect();"
+      "window.addEventListener('scroll',sampleScroll,{passive:true});"
     "})();";
     WKUserScript *performanceUserScript = [[WKUserScript alloc] initWithSource:performanceScript injectionTime:WKUserScriptInjectionTimeAtDocumentStart forMainFrameOnly:YES];
     [contentController addUserScript:performanceUserScript];
@@ -138,7 +145,7 @@
 - (void)webView:(WKWebView *)webView didStartProvisionalNavigation:(WKNavigation *)navigation { if (self.navigationStartTime <= 0) self.navigationStartTime = CACurrentMediaTime(); [[DiagnosticsStore shared] addEvent:@"Navigation started" detail:self.navigationReason ?: @"" url:webView.URL]; }
 - (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation { CFTimeInterval elapsed = self.navigationStartTime > 0 ? (CACurrentMediaTime() - self.navigationStartTime) * 1000.0 : 0; NSString *detail=[NSString stringWithFormat:@"%.0f ms | %@", elapsed, self.navigationReason ?: @""]; [[DiagnosticsStore shared] addEvent:@"Navigation finished" detail:detail url:webView.URL]; }
 - (void)webView:(WKWebView *)webView didFailProvisionalNavigation:(WKNavigation *)navigation withError:(NSError *)error { [[DiagnosticsStore shared] addError:@"Provisional navigation failed" error:error url:webView.URL]; }
-- (void)webView:(WKWebView *)webView didFailNavigation:(WKNavigation *)navigation withError:(NSError *)error { [[DiagnosticsStore shared] addError:@"Navigation failed" error:error url:webView.URL]; }
+- (void)webView:(WKWebView *)webView didFailNavigation:(WKNavigation *)navigation withError:(NSError *)error { if ([error.domain isEqualToString:NSURLErrorDomain] && error.code == NSURLErrorCancelled) { [[DiagnosticsStore shared] addEvent:@"Navigation cancelled" detail:@"Superseded or cancelled navigation (-999)" url:webView.URL]; return; } [[DiagnosticsStore shared] addError:@"Navigation failed" error:error url:webView.URL]; }
 - (void)webViewWebContentProcessDidTerminate:(WKWebView *)webView { [[DiagnosticsStore shared] addEvent:@"Web content process terminated" detail:@"" url:webView.URL]; }
 - (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)a decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
     NSURL *url=a.request.URL; NSString *s=url.scheme.lowercaseString;
