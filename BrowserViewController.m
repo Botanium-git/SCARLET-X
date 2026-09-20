@@ -67,6 +67,13 @@
     }];
 
     [self.view addSubview:self.webView];
+
+    // Temporary diagnostic escape hatch: long-press the top-left corner to open Scarlet X settings.
+    UILongPressGestureRecognizer *diagnosticSettingsGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleDiagnosticSettingsGesture:)];
+    diagnosticSettingsGesture.minimumPressDuration = 0.8;
+    diagnosticSettingsGesture.cancelsTouchesInView = NO;
+    [self.view addGestureRecognizer:diagnosticSettingsGesture];
+
     [NSLayoutConstraint activateConstraints:@[
       [self.webView.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor],
       [self.webView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
@@ -108,6 +115,12 @@
         if (error) detail = [NSString stringWithFormat:@"Serialization error: %@\n%@", error.localizedDescription, [message.body description]];
         [[DiagnosticsStore shared] addEvent:@"X menu DOM diagnostic" detail:detail ?: @"" url:self.webView.URL];
     }
+}
+- (void)handleDiagnosticSettingsGesture:(UILongPressGestureRecognizer *)gesture {
+    if (gesture.state != UIGestureRecognizerStateBegan) return;
+    CGPoint point = [gesture locationInView:self.view];
+    if (point.x > 80.0 || point.y > 140.0) return;
+    [self openSettings];
 }
 - (void)openSettings {
     UINavigationController *nav=[[UINavigationController alloc] initWithRootViewController:[SettingsViewController new]];
