@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleDisplayName</key>
-    <string>ScarletX</string>
+    <string>Scarlet X</string>
     <key>CFBundleExecutable</key>
     <string>ScarletX</string>
     <key>CFBundleIdentifier</key>
-    <string>com.scarletx.app</string>
+    <string>com.scarletx</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
@@ -15,14 +15,14 @@
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.1.9</string>
+    <string>0.2.0</string>
     <key>CFBundleVersion</key>
-    <string>10</string>
+    <string>11</string>
     <key>CFBundleURLTypes</key>
     <array>
         <dict>
             <key>CFBundleURLName</key>
-            <string>com.scarletx.app</string>
+            <string>com.scarletx</string>
             <key>CFBundleURLSchemes</key>
             <array>
                 <string>scarletx</string>
