@@ -89,6 +89,10 @@
     self.webView.navigationDelegate = self;
     self.webView.UIDelegate = self;
     self.webView.allowsBackForwardNavigationGestures = YES;
+    // A/B test: prevent vertical rubber-band overscroll so window.scrollY does not go negative at the top boundary.
+    // Keep ordinary scrolling enabled; only the bounce behavior is disabled.
+    self.webView.scrollView.bounces = NO;
+    self.webView.scrollView.alwaysBounceVertical = NO;
     self.webView.translatesAutoresizingMaskIntoConstraints = NO;
 
     // Record the actual browser identity exposed by this WKWebView before changing it.
