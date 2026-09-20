@@ -21,7 +21,7 @@
         cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
     } else {
         NSString *version = [NSBundle.mainBundle objectForInfoDictionaryKey:@"CFBundleShortVersionString"] ?: @"?";
-        cell.textLabel.text = [NSString stringWithFormat:@"ScarletX %@", version];
+        cell.textLabel.text = [NSString stringWithFormat:@"Scarlet X %@", version];
         cell.imageView.image = [UIImage systemImageNamed:@"info.circle"];
     }
     return cell;
