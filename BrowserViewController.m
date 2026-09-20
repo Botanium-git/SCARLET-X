@@ -126,18 +126,25 @@
 }
 - (void)forceNativeWebViewRedraw {
     if (!self.webView) return;
-    // A/B test: keep the DOM untouched and ask UIKit/WebKit to redraw the existing layers.
-    [self.webView setNeedsLayout];
-    [self.webView layoutIfNeeded];
-    [self.webView.scrollView setNeedsLayout];
-    [self.webView.scrollView layoutIfNeeded];
-    [self.webView setNeedsDisplay];
-    [self.webView.scrollView setNeedsDisplay];
-    [self.webView.layer setNeedsDisplay];
-    [self.webView.scrollView.layer setNeedsDisplay];
-    [[DiagnosticsStore shared] addEvent:@"Native redraw applied"
-                                 detail:@"WKWebView/UIScrollView layout + display invalidated"
-                                    url:self.webView.URL];
+    // A/B test: v1.0.18's setNeedsDisplay/layout invalidation did not clear the
+    // visual-only header displacement. Pulse the WKWebView's native compositing
+    // state without touching the page DOM/CSS or scroll position.
+    CGFloat originalAlpha = self.webView.alpha;
+    [UIView performWithoutAnimation:^{
+        self.webView.alpha = 0.999;
+        [self.webView setNeedsLayout];
+        [self.webView layoutIfNeeded];
+    }];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [UIView performWithoutAnimation:^{
+            self.webView.alpha = originalAlpha;
+            [self.webView setNeedsLayout];
+            [self.webView layoutIfNeeded];
+        }];
+        [[DiagnosticsStore shared] addEvent:@"Native compositor pulse applied"
+                                     detail:@"WKWebView alpha 0.999 -> restored; DOM/CSS/scroll untouched"
+                                        url:self.webView.URL];
+    });
 }
 - (BOOL)isWebURL:(NSURL *)url { NSString *s=url.scheme.lowercaseString; return [s isEqual:@"https"]||[s isEqual:@"http"]; }
 - (NSURL *)unwrapScarletURL:(NSURL *)url {
