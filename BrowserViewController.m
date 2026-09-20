@@ -20,24 +20,26 @@
     NSString *settingsScript = @"(function(){"
         "if(window.__scarletXSettingsInstalled)return;"
         "window.__scarletXSettingsInstalled=true;"
-        "function rect(e){var r=e.getBoundingClientRect();return {x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height)};}"
-        "function desc(e,i){if(!e)return null;return {level:i,tag:e.tagName,role:e.getAttribute&&e.getAttribute('role'),href:e.getAttribute&&e.getAttribute('href'),id:e.id||'',className:(typeof e.className==='string'?e.className:''),rect:rect(e),childCount:e.children?e.children.length:0,text:(e.innerText||'').trim().slice(0,120)};}"
-        "function send(anchor){"
-          "if(window.__scarletXDomDiagnosticSent)return;"
-          "window.__scarletXDomDiagnosticSent=true;"
-          "var chain=[],e=anchor;"
-          "for(var i=0;e&&i<7;i++,e=e.parentElement)chain.push(desc(e,i));"
-          "var payload={type:'dom-diagnostic',viewport:{w:window.innerWidth,h:window.innerHeight},anchor:desc(anchor,-1),ancestors:chain};"
-          "window.webkit.messageHandlers.scarletx.postMessage(payload);"
-        "}"
-        "function inspect(){"
+        "function add(){"
+          "if(document.getElementById('scarletx-settings-item'))return;"
           "var candidates=[].slice.call(document.querySelectorAll('a[href=\"/settings\"],a[href=\"/settings/account\"]'));"
           "var anchor=candidates.find(function(a){return (a.innerText||'').indexOf('設定とプライバシー')!==-1;})||candidates[0];"
           "if(!anchor)return;"
-          "send(anchor);"
+          "var row=anchor.parentElement;"
+          "var list=row&&row.parentElement;"
+          "if(!row||!list)return;"
+          "var item=row.cloneNode(true);"
+          "item.id='scarletx-settings-item';"
+          "var link=item.querySelector('a[href=\"/settings\"],a[href=\"/settings/account\"]')||(item.matches&&item.matches('a')?item:null);"
+          "if(link){link.removeAttribute('href');link.setAttribute('role','button');}"
+          "var walker=document.createTreeWalker(item,NodeFilter.SHOW_TEXT);"
+          "var node;"
+          "while((node=walker.nextNode())){if(node.nodeValue&&node.nodeValue.indexOf('設定とプライバシー')!==-1){node.nodeValue=node.nodeValue.replace('設定とプライバシー','Scarlet X 設定');break;}}"
+          "item.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();window.webkit.messageHandlers.scarletx.postMessage('settings');},true);"
+          "list.insertBefore(item,row.nextSibling);"
         "}"
-        "new MutationObserver(inspect).observe(document.documentElement,{childList:true,subtree:true});"
-        "inspect();"
+        "new MutationObserver(add).observe(document.documentElement,{childList:true,subtree:true});"
+        "add();"
       "})();";
     WKUserScript *script = [[WKUserScript alloc] initWithSource:settingsScript injectionTime:WKUserScriptInjectionTimeAtDocumentEnd forMainFrameOnly:YES];
     [contentController addUserScript:script];
@@ -68,11 +70,6 @@
 
     [self.view addSubview:self.webView];
 
-    // Temporary diagnostic escape hatch: long-press the top-left corner to open Scarlet X settings.
-    UILongPressGestureRecognizer *diagnosticSettingsGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(handleDiagnosticSettingsGesture:)];
-    diagnosticSettingsGesture.minimumPressDuration = 0.8;
-    diagnosticSettingsGesture.cancelsTouchesInView = NO;
-    [self.view addGestureRecognizer:diagnosticSettingsGesture];
 
     [NSLayoutConstraint activateConstraints:@[
       [self.webView.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor],
@@ -103,24 +100,9 @@
 }
 - (void)goHome { [self loadURL:[NSURL URLWithString:@"https://x.com/home"] reason:@"Home"]; }
 - (void)userContentController:(WKUserContentController *)userContentController didReceiveScriptMessage:(WKScriptMessage *)message {
-    if (![message.name isEqualToString:@"scarletx"]) return;
-    if ([message.body isEqual:@"settings"]) {
+    if ([message.name isEqualToString:@"scarletx"] && [message.body isEqual:@"settings"]) {
         [self openSettings];
-        return;
     }
-    if ([message.body isKindOfClass:NSDictionary.class] && [message.body[@"type"] isEqual:@"dom-diagnostic"]) {
-        NSError *error = nil;
-        NSData *data = [NSJSONSerialization dataWithJSONObject:message.body options:NSJSONWritingPrettyPrinted error:&error];
-        NSString *detail = data ? [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] : [message.body description];
-        if (error) detail = [NSString stringWithFormat:@"Serialization error: %@\n%@", error.localizedDescription, [message.body description]];
-        [[DiagnosticsStore shared] addEvent:@"X menu DOM diagnostic" detail:detail ?: @"" url:self.webView.URL];
-    }
-}
-- (void)handleDiagnosticSettingsGesture:(UILongPressGestureRecognizer *)gesture {
-    if (gesture.state != UIGestureRecognizerStateBegan) return;
-    CGPoint point = [gesture locationInView:self.view];
-    if (point.x > 80.0 || point.y > 140.0) return;
-    [self openSettings];
 }
 - (void)openSettings {
     UINavigationController *nav=[[UINavigationController alloc] initWithRootViewController:[SettingsViewController new]];
