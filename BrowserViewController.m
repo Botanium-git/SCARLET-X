@@ -124,6 +124,21 @@
     if (self.pendingURL) { NSURL *u=self.pendingURL; self.pendingURL=nil; [self loadURL:u reason:@"pending"]; }
     else [self goHome];
 }
+- (void)forceNativeWebViewRedraw {
+    if (!self.webView) return;
+    // A/B test: keep the DOM untouched and ask UIKit/WebKit to redraw the existing layers.
+    [self.webView setNeedsLayout];
+    [self.webView layoutIfNeeded];
+    [self.webView.scrollView setNeedsLayout];
+    [self.webView.scrollView layoutIfNeeded];
+    [self.webView setNeedsDisplay];
+    [self.webView.scrollView setNeedsDisplay];
+    [self.webView.layer setNeedsDisplay];
+    [self.webView.scrollView.layer setNeedsDisplay];
+    [[DiagnosticsStore shared] addEvent:@"Native redraw applied"
+                                 detail:@"WKWebView/UIScrollView layout + display invalidated"
+                                    url:self.webView.URL];
+}
 - (BOOL)isWebURL:(NSURL *)url { NSString *s=url.scheme.lowercaseString; return [s isEqual:@"https"]||[s isEqual:@"http"]; }
 - (NSURL *)unwrapScarletURL:(NSURL *)url {
     if (![[url.scheme lowercaseString] isEqual:@"scarletx"]) return url;
@@ -159,6 +174,12 @@
         NSString *detail = [NSString stringWithFormat:@"Stage: %@\nNative elapsed: %.0f ms\nPage performance.now: %@ ms\nReason: %@\nExtra: %@",
                             body[@"stage"] ?: @"", elapsed, body[@"now"] ?: @0, self.navigationReason ?: @"", extraJSON ?: @"{}"];
         [[DiagnosticsStore shared] addEvent:@"Page performance" detail:detail url:self.webView.URL];
+        NSString *stage = [body[@"stage"] isKindOfClass:NSString.class] ? body[@"stage"] : @"";
+        if ([stage isEqualToString:@"pull-refresh-touchend"]) {
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.12 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [self forceNativeWebViewRedraw];
+            });
+        }
     }
 }
 - (void)openSettings {
