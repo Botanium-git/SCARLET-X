@@ -9,6 +9,7 @@
 @property(nonatomic,assign) CFTimeInterval navigationStartTime;
 @property(nonatomic,assign) CFTimeInterval requestStartTime;
 @property(nonatomic,assign) NSInteger navigationSession;
+@property(nonatomic,assign) BOOL requestPending;
 @property(nonatomic,copy) NSString *navigationReason;
 @end
 
@@ -134,6 +135,7 @@
     if(![self isWebURL:url]) { [[DiagnosticsStore shared] addEvent:@"Unsupported URL" detail:url.scheme ?: @"" url:url]; return; }
     [[DiagnosticsStore shared] addEvent:@"Loading URL" detail:reason ?: @"" url:url];
     self.requestStartTime = CACurrentMediaTime();
+    self.requestPending = YES;
     self.navigationStartTime = 0;
     self.navigationReason = reason ?: @"";
     [self.webView loadRequest:[NSURLRequest requestWithURL:url cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:30]];
@@ -162,8 +164,8 @@
     nav.modalPresentationStyle=UIModalPresentationPageSheet;
     [self presentViewController:nav animated:YES completion:nil];
 }
-- (void)webView:(WKWebView *)webView didStartProvisionalNavigation:(WKNavigation *)navigation { self.navigationStartTime = CACurrentMediaTime(); self.navigationSession += 1; if (self.requestStartTime <= 0) self.navigationReason = @"Web"; NSString *detail=[NSString stringWithFormat:@"Session %ld | %@", (long)self.navigationSession, self.navigationReason ?: @""]; [[DiagnosticsStore shared] addEvent:@"Navigation started" detail:detail url:webView.URL]; }
-- (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation { CFTimeInterval elapsed = self.navigationStartTime > 0 ? (CACurrentMediaTime() - self.navigationStartTime) * 1000.0 : 0; CFTimeInterval requestElapsed = self.requestStartTime > 0 ? (CACurrentMediaTime() - self.requestStartTime) * 1000.0 : 0; NSString *detail=[NSString stringWithFormat:@"Session %ld | Navigation %.0f ms | Request %.0f ms | %@", (long)self.navigationSession, elapsed, requestElapsed, self.navigationReason ?: @""]; [[DiagnosticsStore shared] addEvent:@"Navigation finished" detail:detail url:webView.URL]; self.requestStartTime = 0; }
+- (void)webView:(WKWebView *)webView didStartProvisionalNavigation:(WKNavigation *)navigation { self.navigationStartTime = CACurrentMediaTime(); self.navigationSession += 1; if (!self.requestPending) { self.requestStartTime = 0; self.navigationReason = @"Web"; } self.requestPending = NO; NSString *detail=[NSString stringWithFormat:@"Session %ld | %@", (long)self.navigationSession, self.navigationReason ?: @""]; [[DiagnosticsStore shared] addEvent:@"Navigation started" detail:detail url:webView.URL]; }
+- (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation { CFTimeInterval elapsed = self.navigationStartTime > 0 ? (CACurrentMediaTime() - self.navigationStartTime) * 1000.0 : 0; CFTimeInterval requestElapsed = self.requestStartTime > 0 ? (CACurrentMediaTime() - self.requestStartTime) * 1000.0 : 0; NSString *detail=[NSString stringWithFormat:@"Session %ld | Navigation %.0f ms | Request %.0f ms | %@", (long)self.navigationSession, elapsed, requestElapsed, self.navigationReason ?: @""]; [[DiagnosticsStore shared] addEvent:@"Navigation finished" detail:detail url:webView.URL]; }
 - (void)webView:(WKWebView *)webView didFailProvisionalNavigation:(WKNavigation *)navigation withError:(NSError *)error { [[DiagnosticsStore shared] addError:@"Provisional navigation failed" error:error url:webView.URL]; }
 - (void)webView:(WKWebView *)webView didFailNavigation:(WKNavigation *)navigation withError:(NSError *)error { if ([error.domain isEqualToString:NSURLErrorDomain] && error.code == NSURLErrorCancelled) { [[DiagnosticsStore shared] addEvent:@"Navigation cancelled" detail:@"Superseded or cancelled navigation (-999)" url:webView.URL]; return; } [[DiagnosticsStore shared] addError:@"Navigation failed" error:error url:webView.URL]; }
 - (void)webViewWebContentProcessDidTerminate:(WKWebView *)webView { [[DiagnosticsStore shared] addEvent:@"Web content process terminated" detail:@"" url:webView.URL]; }
