@@ -7,6 +7,8 @@
 @property(nonatomic,strong) WKWebView *webView;
 @property(nonatomic,strong) NSURL *pendingURL;
 @property(nonatomic,assign) CFTimeInterval navigationStartTime;
+@property(nonatomic,assign) CFTimeInterval requestStartTime;
+@property(nonatomic,assign) NSInteger navigationSession;
 @property(nonatomic,copy) NSString *navigationReason;
 @end
 
@@ -53,6 +55,9 @@
       "if(window.__scarletXPerformanceInstalled)return;"
       "window.__scarletXPerformanceInstalled=true;"
       "function send(stage,extra){try{window.webkit.messageHandlers.scarletx.postMessage({type:'performance',stage:stage,now:Math.round(performance.now()),extra:extra||{}});}catch(e){}}"
+      "var interactionBaseline=null;"
+      "function compactSummary(){var types={};Object.keys(resourceSummary.byType).forEach(function(k){var b=resourceSummary.byType[k];types[k]={count:b.count,totalDuration:b.totalDuration,maxDuration:b.maxDuration};});return {count:resourceSummary.count,totalDuration:resourceSummary.totalDuration,maxDuration:resourceSummary.maxDuration,byType:types};}"
+      "document.addEventListener('touchend',function(){interactionBaseline={at:Math.round(performance.now()),summary:compactSummary()};setTimeout(function(){if(!interactionBaseline)return;var now=compactSummary(),before=interactionBaseline.summary,deltaTypes={};Object.keys(now.byType).forEach(function(k){var n=now.byType[k],b=before.byType[k]||{count:0,totalDuration:0,maxDuration:0};var dc=n.count-b.count,dd=n.totalDuration-b.totalDuration;if(dc>0||dd>0)deltaTypes[k]={count:dc,totalDuration:dd,maxDuration:n.maxDuration};});var dc=now.count-before.count,dd=now.totalDuration-before.totalDuration;if(dc>0)send('post-interaction-resources',{interactionAt:interactionBaseline.at,windowMs:1000,resourceCount:dc,totalResourceDuration:dd,byType:deltaTypes});interactionBaseline=null;},1000);},{passive:true,capture:true});"
       "if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',function(){send('dom-content-loaded');},{once:true});}else{send('dom-content-loaded-already');}"
       "if(document.readyState==='complete'){send('window-load-already');}else{window.addEventListener('load',function(){send('window-load');},{once:true});}"
       "var resourceSummary={count:0,totalDuration:0,maxDuration:0,byType:{}},xhrTimeline=[];"
@@ -128,7 +133,8 @@
 - (void)loadURL:(NSURL *)url reason:(NSString *)reason {
     if(![self isWebURL:url]) { [[DiagnosticsStore shared] addEvent:@"Unsupported URL" detail:url.scheme ?: @"" url:url]; return; }
     [[DiagnosticsStore shared] addEvent:@"Loading URL" detail:reason ?: @"" url:url];
-    self.navigationStartTime = CACurrentMediaTime();
+    self.requestStartTime = CACurrentMediaTime();
+    self.navigationStartTime = 0;
     self.navigationReason = reason ?: @"";
     [self.webView loadRequest:[NSURLRequest requestWithURL:url cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:30]];
 }
@@ -142,11 +148,12 @@
     if ([message.body isKindOfClass:NSDictionary.class] && [message.body[@"type"] isEqual:@"performance"]) {
         NSDictionary *body = message.body;
         CFTimeInterval elapsed = self.navigationStartTime > 0 ? (CACurrentMediaTime() - self.navigationStartTime) * 1000.0 : 0;
+        CFTimeInterval requestElapsed = self.requestStartTime > 0 ? (CACurrentMediaTime() - self.requestStartTime) * 1000.0 : 0;
         NSDictionary *extra = [body[@"extra"] isKindOfClass:NSDictionary.class] ? body[@"extra"] : @{};
         NSData *extraData = [NSJSONSerialization dataWithJSONObject:extra options:0 error:nil];
         NSString *extraJSON = extraData ? [[NSString alloc] initWithData:extraData encoding:NSUTF8StringEncoding] : @"{}";
-        NSString *detail = [NSString stringWithFormat:@"Stage: %@\nNative elapsed: %.0f ms\nPage performance.now: %@ ms\nReason: %@\nExtra: %@",
-                            body[@"stage"] ?: @"", elapsed, body[@"now"] ?: @0, self.navigationReason ?: @"", extraJSON ?: @"{}"];
+        NSString *detail = [NSString stringWithFormat:@"Stage: %@\nSession: %ld\nNavigation elapsed: %.0f ms\nRequest elapsed: %.0f ms\nPage performance.now: %@ ms\nReason: %@\nExtra: %@",
+                            body[@"stage"] ?: @"", (long)self.navigationSession, elapsed, requestElapsed, body[@"now"] ?: @0, self.navigationReason ?: @"", extraJSON ?: @"{}"];
         [[DiagnosticsStore shared] addEvent:@"Page performance" detail:detail url:self.webView.URL];
     }
 }
@@ -155,8 +162,8 @@
     nav.modalPresentationStyle=UIModalPresentationPageSheet;
     [self presentViewController:nav animated:YES completion:nil];
 }
-- (void)webView:(WKWebView *)webView didStartProvisionalNavigation:(WKNavigation *)navigation { if (self.navigationStartTime <= 0) self.navigationStartTime = CACurrentMediaTime(); [[DiagnosticsStore shared] addEvent:@"Navigation started" detail:self.navigationReason ?: @"" url:webView.URL]; }
-- (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation { CFTimeInterval elapsed = self.navigationStartTime > 0 ? (CACurrentMediaTime() - self.navigationStartTime) * 1000.0 : 0; NSString *detail=[NSString stringWithFormat:@"%.0f ms | %@", elapsed, self.navigationReason ?: @""]; [[DiagnosticsStore shared] addEvent:@"Navigation finished" detail:detail url:webView.URL]; }
+- (void)webView:(WKWebView *)webView didStartProvisionalNavigation:(WKNavigation *)navigation { self.navigationStartTime = CACurrentMediaTime(); self.navigationSession += 1; if (self.requestStartTime <= 0) self.navigationReason = @"Web"; NSString *detail=[NSString stringWithFormat:@"Session %ld | %@", (long)self.navigationSession, self.navigationReason ?: @""]; [[DiagnosticsStore shared] addEvent:@"Navigation started" detail:detail url:webView.URL]; }
+- (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation { CFTimeInterval elapsed = self.navigationStartTime > 0 ? (CACurrentMediaTime() - self.navigationStartTime) * 1000.0 : 0; CFTimeInterval requestElapsed = self.requestStartTime > 0 ? (CACurrentMediaTime() - self.requestStartTime) * 1000.0 : 0; NSString *detail=[NSString stringWithFormat:@"Session %ld | Navigation %.0f ms | Request %.0f ms | %@", (long)self.navigationSession, elapsed, requestElapsed, self.navigationReason ?: @""]; [[DiagnosticsStore shared] addEvent:@"Navigation finished" detail:detail url:webView.URL]; self.requestStartTime = 0; }
 - (void)webView:(WKWebView *)webView didFailProvisionalNavigation:(WKNavigation *)navigation withError:(NSError *)error { [[DiagnosticsStore shared] addError:@"Provisional navigation failed" error:error url:webView.URL]; }
 - (void)webView:(WKWebView *)webView didFailNavigation:(WKNavigation *)navigation withError:(NSError *)error { if ([error.domain isEqualToString:NSURLErrorDomain] && error.code == NSURLErrorCancelled) { [[DiagnosticsStore shared] addEvent:@"Navigation cancelled" detail:@"Superseded or cancelled navigation (-999)" url:webView.URL]; return; } [[DiagnosticsStore shared] addError:@"Navigation failed" error:error url:webView.URL]; }
 - (void)webViewWebContentProcessDidTerminate:(WKWebView *)webView { [[DiagnosticsStore shared] addEvent:@"Web content process terminated" detail:@"" url:webView.URL]; }
