@@ -21,11 +21,6 @@
     for (NSURLQueryItem *i in c.queryItems) if ([i.name isEqual:@"url"]&&i.value.length) { NSURL *u=[NSURL URLWithString:i.value]; if(u)return u; }
     return [NSURL URLWithString:@"https://x.com/"];
 }
-- (void)openExternalURL:(NSURL *)url source:(NSString *)source {
-    if(!url)return; NSURL *target=[self unwrapScarletURL:url];
-    [[DiagnosticsStore shared] addEvent:@"Received external URL" detail:source ?: @"" url:target];
-    dispatch_async(dispatch_get_main_queue(), ^{ if(!self.isViewLoaded)self.pendingURL=target; else [self loadURL:target reason:source]; });
-}
 - (void)loadURL:(NSURL *)url reason:(NSString *)reason {
     if(![self isWebURL:url]) { [[DiagnosticsStore shared] addEvent:@"Unsupported URL" detail:url.scheme ?: @"" url:url]; return; }
     [[DiagnosticsStore shared] addEvent:@"Loading URL" detail:reason ?: @"" url:url];
