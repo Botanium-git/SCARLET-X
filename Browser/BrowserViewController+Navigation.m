@@ -1,5 +1,5 @@
 #import "BrowserViewController+Navigation.h"
-#import "DiagnosticsStore.h"
+#import "../Diagnostics/DiagnosticsStore.h"
 #import <QuartzCore/QuartzCore.h>
 #import <WebKit/WebKit.h>
 

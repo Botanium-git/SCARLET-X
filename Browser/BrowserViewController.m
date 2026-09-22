@@ -1,9 +1,9 @@
 #import "BrowserViewController.h"
-#import "SettingsViewController.h"
-#import "DiagnosticsStore.h"
-#import "ScarletXScripts.h"
-#import "ScarletXDiagnosticsScripts.h"
-#import "ScarletXPerformanceScripts.h"
+#import "../UI/SettingsViewController.h"
+#import "../Diagnostics/DiagnosticsStore.h"
+#import "../Scripts/ScarletXScripts.h"
+#import "../Scripts/ScarletXDiagnosticsScripts.h"
+#import "../Scripts/ScarletXPerformanceScripts.h"
 #import "BrowserViewController+Navigation.h"
 #import <WebKit/WebKit.h>
 

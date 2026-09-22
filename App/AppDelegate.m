@@ -1,6 +1,6 @@
 #import "AppDelegate.h"
-#import "BrowserViewController.h"
-#import "DiagnosticsStore.h"
+#import "../Browser/BrowserViewController.h"
+#import "../Diagnostics/DiagnosticsStore.h"
 
 @implementation AppDelegate {
     NSString *_lastIncomingURL;

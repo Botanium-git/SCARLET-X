@@ -3,7 +3,7 @@ TARGET = iphone:clang:latest:15.0
 
 include $(THEOS)/makefiles/common.mk
 APPLICATION_NAME = ScarletX
-ScarletX_FILES = main.m AppDelegate.m BrowserViewController.m BrowserViewController+Navigation.m ScarletXScripts.m ScarletXDiagnosticsScripts.m ScarletXPerformanceScripts.m ScarletXMenuScripts.m DiagnosticsStore.m SettingsViewController.m LogViewController.m
+ScarletX_FILES = App/main.m App/AppDelegate.m Browser/BrowserViewController.m Browser/BrowserViewController+Navigation.m Scripts/ScarletXScripts.m Scripts/ScarletXDiagnosticsScripts.m Scripts/ScarletXPerformanceScripts.m Scripts/ScarletXMenuScripts.m Diagnostics/DiagnosticsStore.m UI/SettingsViewController.m UI/LogViewController.m
 ScarletX_FRAMEWORKS = UIKit WebKit
 ScarletX_CFLAGS = -fobjc-arc
 ScarletX_RESOURCE_DIRS = Resources
