@@ -9,6 +9,7 @@ static NSString * const SXHideAppDownloadKey = @"ScarletXHideAppDownload";
 static NSString * const SXHidePurchaseKey = @"ScarletXHidePurchase";
 static NSString * const SXHideUnverifiedCardKey = @"ScarletXHideUnverifiedCard";
 static NSString * const SXHideGrokKey = @"ScarletXHideGrok";
+static NSString * const SXFollowingOnlyKey = @"ScarletXFollowingOnly";
 
 @interface SXDetailedDiagnosticsViewController : UITableViewController @end
 @interface SXDisplayCustomizationViewController : UITableViewController @end
@@ -31,20 +32,20 @@ static NSString * const SXHideGrokKey = @"ScarletXHideGrok";
 
 @implementation SXDisplayCustomizationViewController
 - (void)viewDidLoad { [super viewDidLoad]; self.title=@"表示カスタマイズ"; [self.tableView registerClass:UITableViewCell.class forCellReuseIdentifier:@"cell"]; }
-- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section { return 4; }
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section { return 5; }
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section { return @"X Web上の不要な表示だけを非表示にします。変更は次回起動から反映されます。"; }
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     UITableViewCell *cell=[tableView dequeueReusableCellWithIdentifier:@"cell" forIndexPath:indexPath];
-    NSArray *titles=@[@"アプリをダウンロードを非表示",@"購入するを非表示",@"未認証カードを非表示",@"Grokを非表示"];
-    NSArray *keys=@[SXHideAppDownloadKey,SXHidePurchaseKey,SXHideUnverifiedCardKey,SXHideGrokKey];
-    NSArray *icons=@[@"square.and.arrow.down",@"creditcard",@"checkmark.seal",@"sparkles"];
+    NSArray *titles=@[@"アプリをダウンロードを非表示",@"購入するを非表示",@"未認証カードを非表示",@"Grokを非表示",@"フォロー中のみ"];
+    NSArray *keys=@[SXHideAppDownloadKey,SXHidePurchaseKey,SXHideUnverifiedCardKey,SXHideGrokKey,SXFollowingOnlyKey];
+    NSArray *icons=@[@"square.and.arrow.down",@"creditcard",@"checkmark.seal",@"sparkles",@"person.2"];
     cell.textLabel.text=titles[indexPath.row]; cell.imageView.image=[UIImage systemImageNamed:icons[indexPath.row]];
     UISwitch *toggle=[UISwitch new]; toggle.tag=indexPath.row;
     NSUserDefaults *d=[NSUserDefaults standardUserDefaults];
     toggle.on=[d objectForKey:keys[indexPath.row]] ? [d boolForKey:keys[indexPath.row]] : YES;
     [toggle addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged]; cell.accessoryView=toggle; return cell;
 }
-- (void)optionChanged:(UISwitch *)sender { NSArray *keys=@[SXHideAppDownloadKey,SXHidePurchaseKey,SXHideUnverifiedCardKey,SXHideGrokKey]; [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:keys[sender.tag]]; }
+- (void)optionChanged:(UISwitch *)sender { NSArray *keys=@[SXHideAppDownloadKey,SXHidePurchaseKey,SXHideUnverifiedCardKey,SXHideGrokKey,SXFollowingOnlyKey]; [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:keys[sender.tag]]; }
 @end
 
 @implementation SettingsViewController
