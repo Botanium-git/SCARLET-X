@@ -49,6 +49,31 @@
     WKUserScript *script = [[WKUserScript alloc] initWithSource:settingsScript injectionTime:WKUserScriptInjectionTimeAtDocumentEnd forMainFrameOnly:YES];
     [contentController addUserScript:script];
 
+    NSUserDefaults *displayDefaults = [NSUserDefaults standardUserDefaults];
+    BOOL (^displayOption)(NSString *) = ^BOOL(NSString *key) {
+        return [displayDefaults objectForKey:key] ? [displayDefaults boolForKey:key] : YES;
+    };
+    NSString *displayFlags = [NSString stringWithFormat:
+        @"window.__scarletXDisplay={appDownload:%@,purchase:%@,unverified:%@,grok:%@};",
+        displayOption(@"ScarletXHideAppDownload") ? @"true" : @"false",
+        displayOption(@"ScarletXHidePurchase") ? @"true" : @"false",
+        displayOption(@"ScarletXHideUnverifiedCard") ? @"true" : @"false",
+        displayOption(@"ScarletXHideGrok") ? @"true" : @"false"];
+    [contentController addUserScript:[[WKUserScript alloc] initWithSource:displayFlags injectionTime:WKUserScriptInjectionTimeAtDocumentStart forMainFrameOnly:YES]];
+
+    NSString *displayCustomizationScript = @"(function(){"
+      "if(window.__scarletXDisplayInstalled)return;window.__scarletXDisplayInstalled=true;"
+      "function hide(el){if(el)el.style.setProperty('display','none','important');}"
+      "function apply(root){var f=window.__scarletXDisplay||{};var scope=root&&root.querySelectorAll?root:document;"
+        "if(f.appDownload){Array.from(scope.querySelectorAll('a[href*=\"apps.apple.com\"]')).forEach(function(a){if((a.href||'').indexOf('id333903271')>=0)hide(a);});}"
+        "if(f.purchase){Array.from(scope.querySelectorAll('a[href=\"/i/premium_sign_up\"]')).forEach(function(a){if((a.innerText||'').trim()==='購入する')hide(a);});}"
+        "if(f.grok){Array.from(scope.querySelectorAll('a[href=\"/i/grok\"]')).forEach(hide);}"
+        "if(f.unverified){Array.from(scope.querySelectorAll('a[href=\"/i/premium_sign_up\"]')).forEach(function(a){var t=(a.innerText||'').trim();if(t.indexOf('認証される')<0)return;var p=a;for(var i=0;i<6&&p&&p!==document.body;i++,p=p.parentElement){var pt=(p.innerText||'').replace(/\\s+/g,' ').trim();if(pt.indexOf('まだ認証されていません')>=0&&pt.indexOf('認証される')>=0&&pt.length<500){hide(p);return;}}});}"
+      "}"
+      "apply(document);new MutationObserver(function(rs){rs.forEach(function(r){Array.from(r.addedNodes||[]).forEach(function(n){if(n&&n.nodeType===1){apply(n);apply(n.parentElement);}});});}).observe(document.documentElement,{childList:true,subtree:true});"
+    "})();";
+    [contentController addUserScript:[[WKUserScript alloc] initWithSource:displayCustomizationScript injectionTime:WKUserScriptInjectionTimeAtDocumentEnd forMainFrameOnly:YES]];
+
     // Lightweight startup timing plus the proven Pull-to-Refresh header repair.
     // The large investigation probes from v1.0.8-v1.0.25 were removed after
     // the repair timing was confirmed on-device.
