@@ -4,6 +4,7 @@
 #import "ScarletXScripts.h"
 #import "ScarletXDiagnosticsScripts.h"
 #import "ScarletXPerformanceScripts.h"
+#import "BrowserViewController+Navigation.h"
 #import <WebKit/WebKit.h>
 
 @interface BrowserViewController () <WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler>
@@ -66,28 +67,6 @@
     if (self.pendingURL) { NSURL *u=self.pendingURL; self.pendingURL=nil; [self loadURL:u reason:@"pending"]; }
     else [self goHome];
 }
-- (BOOL)isWebURL:(NSURL *)url { NSString *s=url.scheme.lowercaseString; return [s isEqual:@"https"]||[s isEqual:@"http"]; }
-- (NSURL *)unwrapScarletURL:(NSURL *)url {
-    if (![[url.scheme lowercaseString] isEqual:@"scarletx"]) return url;
-    NSURLComponents *c=[NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:NO];
-    for (NSURLQueryItem *i in c.queryItems) if ([i.name isEqual:@"url"]&&i.value.length) { NSURL *u=[NSURL URLWithString:i.value]; if(u)return u; }
-    return [NSURL URLWithString:@"https://x.com/"];
-}
-- (void)openExternalURL:(NSURL *)url source:(NSString *)source {
-    if(!url)return; NSURL *target=[self unwrapScarletURL:url];
-    [[DiagnosticsStore shared] addEvent:@"Received external URL" detail:source ?: @"" url:target];
-    dispatch_async(dispatch_get_main_queue(), ^{ if(!self.isViewLoaded)self.pendingURL=target; else [self loadURL:target reason:source]; });
-}
-- (void)loadURL:(NSURL *)url reason:(NSString *)reason {
-    if(![self isWebURL:url]) { [[DiagnosticsStore shared] addEvent:@"Unsupported URL" detail:url.scheme ?: @"" url:url]; return; }
-    [[DiagnosticsStore shared] addEvent:@"Loading URL" detail:reason ?: @"" url:url];
-    self.requestStartTime = CACurrentMediaTime();
-    self.requestPending = YES;
-    self.navigationStartTime = 0;
-    self.navigationReason = reason ?: @"";
-    [self.webView loadRequest:[NSURLRequest requestWithURL:url cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:30]];
-}
-- (void)goHome { [self loadURL:[NSURL URLWithString:@"https://x.com/home"] reason:@"Home"]; }
 - (void)userContentController:(WKUserContentController *)userContentController didReceiveScriptMessage:(WKScriptMessage *)message {
     if (![message.name isEqualToString:@"scarletx"]) return;
     if ([message.body isEqual:@"settings"]) {
