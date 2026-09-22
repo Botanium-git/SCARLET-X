@@ -1,9 +1,9 @@
 #import "BrowserViewController.h"
 #import "../UI/SettingsViewController.h"
 #import "../Diagnostics/DiagnosticsStore.h"
-#import "../Scripts/ScarletXScripts.h"
-#import "../Scripts/ScarletXDiagnosticsScripts.h"
-#import "../Scripts/ScarletXPerformanceScripts.h"
+#import "../Scripts/DisplayScripts.h"
+#import "../Scripts/DiagnosticsScripts.h"
+#import "../Scripts/RuntimeScripts.h"
 #import "BrowserViewController+Navigation.h"
 #import <WebKit/WebKit.h>
 
@@ -26,11 +26,11 @@
     WKWebViewConfiguration *config = [WKWebViewConfiguration new];
     WKUserContentController *contentController = [WKUserContentController new];
     [contentController addScriptMessageHandler:self name:@"scarletx"];
-    [ScarletXScripts installSettingsScriptInto:contentController];
-    [ScarletXScripts installDisplayCustomizationInto:contentController];
+    [DisplayScripts installSettingsScriptInto:contentController];
+    [DisplayScripts installDisplayCustomizationInto:contentController];
 
-    [ScarletXDiagnosticsScripts installFlagsInto:contentController];
-    [ScarletXPerformanceScripts installInto:contentController];
+    [DiagnosticsScripts installFlagsInto:contentController];
+    [RuntimeScripts installInto:contentController];
     config.userContentController = contentController;
     config.websiteDataStore = WKWebsiteDataStore.defaultDataStore;
     config.allowsInlineMediaPlayback = YES;
