@@ -55,7 +55,7 @@
     NSString *performanceScript = @"(function(){"
       "if(window.__scarletXPerformanceInstalled)return;"
       "window.__scarletXPerformanceInstalled=true;"
-      "function send(stage,extra){try{var detail=window.__scarletXDetailedDiagnostics===true;var noisy=stage==='post-interaction-resources'||stage.indexOf('resource-summary-')===0||stage.indexOf('menu-init-probe')===0||stage.indexOf('menu-layer-lifecycle')===0||stage==='menu-tap'||stage==='menu-tap-snapshot'||stage==='menu-request';if(noisy&&!detail)return;window.webkit.messageHandlers.scarletx.postMessage({type:'performance',stage:stage,now:Math.round(performance.now()),extra:extra||{}});}catch(e){}}"
+      "function send(stage,extra){try{var flags=window.__scarletXDiagnostics||{};var group='';if(stage==='post-interaction-resources'||stage.indexOf('resource-summary-')===0)group='resources';else if(stage.indexOf('menu-init-probe')===0||stage.indexOf('menu-layer-lifecycle')===0||stage==='menu-tap'||stage==='menu-tap-snapshot')group='menu';else if(stage==='menu-request')group='requests';if(group&&!flags[group])return;window.webkit.messageHandlers.scarletx.postMessage({type:'performance',stage:stage,now:Math.round(performance.now()),extra:extra||{}});}catch(e){}}"
       "var interactionBaseline=null;"
       "function compactSummary(){var types={};Object.keys(resourceSummary.byType).forEach(function(k){var b=resourceSummary.byType[k];types[k]={count:b.count,totalDuration:b.totalDuration,maxDuration:b.maxDuration};});return {count:resourceSummary.count,totalDuration:resourceSummary.totalDuration,maxDuration:resourceSummary.maxDuration,byType:types};}"
       "document.addEventListener('touchend',function(){interactionBaseline={at:Math.round(performance.now()),summary:compactSummary()};setTimeout(function(){if(!interactionBaseline)return;var now=compactSummary(),before=interactionBaseline.summary,deltaTypes={};Object.keys(now.byType).forEach(function(k){var n=now.byType[k],b=before.byType[k]||{count:0,totalDuration:0,maxDuration:0};var dc=n.count-b.count,dd=n.totalDuration-b.totalDuration;if(dc>0||dd>0)deltaTypes[k]={count:dc,totalDuration:dd,maxDuration:n.maxDuration};});var dc=now.count-before.count,dd=now.totalDuration-before.totalDuration;if(dc>0)send('post-interaction-resources',{interactionAt:interactionBaseline.at,windowMs:1000,resourceCount:dc,totalResourceDuration:dd,byType:deltaTypes});interactionBaseline=null;},1000);},{passive:true,capture:true});"
@@ -102,8 +102,11 @@
       "document.addEventListener('touchend',function(){if(!touch)return;var wasTopPull=touch.startScrollY<=120&&touch.maxDown>=20;if(wasTopPull){pullCancelArmed=true;send('header-repair-armed',{scrollY:Math.round(window.scrollY*100)/100});}touch=null;},{passive:true,capture:true});"
       "document.addEventListener('touchcancel',function(){touch=null;},{passive:true,capture:true});"
     "})();";
-    BOOL detailedDiagnostics = [[NSUserDefaults standardUserDefaults] boolForKey:@"ScarletXDetailedDiagnostics"];
-    NSString *diagnosticFlagSource = detailedDiagnostics ? @"window.__scarletXDetailedDiagnostics=true;" : @"window.__scarletXDetailedDiagnostics=false;";
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    BOOL resourcesDiagnostics = [defaults boolForKey:@"ScarletXDiagResources"];
+    BOOL menuDiagnostics = [defaults boolForKey:@"ScarletXDiagMenu"];
+    BOOL requestDiagnostics = [defaults boolForKey:@"ScarletXDiagRequests"];
+    NSString *diagnosticFlagSource = [NSString stringWithFormat:@"window.__scarletXDiagnostics={resources:%@,menu:%@,requests:%@};", resourcesDiagnostics ? @"true" : @"false", menuDiagnostics ? @"true" : @"false", requestDiagnostics ? @"true" : @"false"];
     WKUserScript *diagnosticFlagScript = [[WKUserScript alloc] initWithSource:diagnosticFlagSource injectionTime:WKUserScriptInjectionTimeAtDocumentStart forMainFrameOnly:YES];
     [contentController addUserScript:diagnosticFlagScript];
     WKUserScript *performanceUserScript = [[WKUserScript alloc] initWithSource:performanceScript injectionTime:WKUserScriptInjectionTimeAtDocumentStart forMainFrameOnly:YES];
