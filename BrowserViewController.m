@@ -65,7 +65,7 @@
       "if(window.__scarletXDisplayInstalled)return;window.__scarletXDisplayInstalled=true;"
       "function hide(el){if(el)el.style.setProperty('display','none','important');}"
       "function apply(root){var f=window.__scarletXDisplay||{};var scope=root&&root.querySelectorAll?root:document;"
-        "if(f.appDownload){Array.from(scope.querySelectorAll('a[href*=\"apps.apple.com\"]')).forEach(function(a){if((a.href||'').indexOf('id333903271')>=0)hide(a);});}"
+        "if(f.appDownload){Array.from(scope.querySelectorAll('a[href*=\"apps.apple.com\"]')).forEach(function(a){if((a.href||'').indexOf('id333903271')>=0)hide(a.parentElement||a);});}"
         "if(f.purchase){Array.from(scope.querySelectorAll('a[href=\"/i/premium_sign_up\"]')).forEach(function(a){if((a.innerText||'').trim()==='購入する')hide(a);});}"
         "if(f.grok){Array.from(scope.querySelectorAll('a[href=\"/i/grok\"]')).forEach(hide);}"
         "if(f.unverified){Array.from(scope.querySelectorAll('a[href=\"/i/premium_sign_up\"]')).forEach(function(a){var t=(a.innerText||'').trim();if(t.indexOf('認証される')<0)return;var p=a;for(var i=0;i<6&&p&&p!==document.body;i++,p=p.parentElement){var pt=(p.innerText||'').replace(/\\s+/g,' ').trim();if(pt.indexOf('まだ認証されていません')>=0&&pt.indexOf('認証される')>=0&&pt.length<500){hide(p);return;}}});}"
