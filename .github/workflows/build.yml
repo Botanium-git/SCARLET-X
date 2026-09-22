@@ -31,7 +31,7 @@ jobs:
           altlist: false
 
       - name: Build app
-        run: make clean all FINALPACKAGE=1
+        run: make all FINALPACKAGE=1
 
       - name: Create IPA
         shell: bash
