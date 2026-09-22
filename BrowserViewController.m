@@ -2,6 +2,7 @@
 #import "SettingsViewController.h"
 #import "DiagnosticsStore.h"
 #import "ScarletXScripts.h"
+#import "ScarletXDiagnosticsScripts.h"
 #import <WebKit/WebKit.h>
 
 @interface BrowserViewController () <WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler>
@@ -93,18 +94,7 @@
       "document.addEventListener('touchend',function(){if(!touch)return;var wasTopPull=touch.startScrollY<=120&&touch.maxDown>=20;if(wasTopPull){pullCancelArmed=true;send('header-repair-armed',{scrollY:Math.round(window.scrollY*100)/100});sxHeaderRepairSnapshot('pull-end-armed');sxStartVisualWatch('pull-end');sxStartPaintProbe('pull-end');setTimeout(function(){sxHeaderRepairSnapshot('pull-end-armed-100');sxPaintProbe('pull-end-100');},100);setTimeout(function(){sxHeaderRepairSnapshot('pull-end-armed-300');},300);}touch=null;},{passive:true,capture:true});"
       "document.addEventListener('touchcancel',function(){touch=null;},{passive:true,capture:true});"
     "})();";
-    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    BOOL resourcesDiagnostics = [defaults boolForKey:@"ScarletXDiagResources"];
-    BOOL menuDiagnostics = [defaults boolForKey:@"ScarletXDiagMenu"];
-    BOOL requestDiagnostics = [defaults boolForKey:@"ScarletXDiagRequests"];
-    BOOL displayDiagnostics = [defaults boolForKey:@"ScarletXDiagDisplayDOM"];
-    BOOL headerStateDiagnostics = [defaults boolForKey:@"ScarletXDiagHeaderState"];
-    BOOL headerVisualDiagnostics = [defaults boolForKey:@"ScarletXDiagHeaderVisual"];
-    BOOL topNavTransformDiagnostics = [defaults boolForKey:@"ScarletXDiagTopNavTransform"];
-    BOOL paintProbeDiagnostics = [defaults boolForKey:@"ScarletXDiagPaintProbe"];
-    NSString *diagnosticFlagSource = [NSString stringWithFormat:@"window.__scarletXDiagnostics={resources:%@,menu:%@,requests:%@,display:%@,headerState:%@,headerVisual:%@,topNavTransform:%@,paintProbe:%@};", resourcesDiagnostics ? @"true" : @"false", menuDiagnostics ? @"true" : @"false", requestDiagnostics ? @"true" : @"false", displayDiagnostics ? @"true" : @"false", headerStateDiagnostics ? @"true" : @"false", headerVisualDiagnostics ? @"true" : @"false", topNavTransformDiagnostics ? @"true" : @"false", paintProbeDiagnostics ? @"true" : @"false"];
-    WKUserScript *diagnosticFlagScript = [[WKUserScript alloc] initWithSource:diagnosticFlagSource injectionTime:WKUserScriptInjectionTimeAtDocumentStart forMainFrameOnly:YES];
-    [contentController addUserScript:diagnosticFlagScript];
+    [ScarletXDiagnosticsScripts installFlagsInto:contentController];
     WKUserScript *performanceUserScript = [[WKUserScript alloc] initWithSource:performanceScript injectionTime:WKUserScriptInjectionTimeAtDocumentStart forMainFrameOnly:YES];
     [contentController addUserScript:performanceUserScript];
     config.userContentController = contentController;
