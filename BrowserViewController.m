@@ -67,6 +67,11 @@
     if (self.pendingURL) { NSURL *u=self.pendingURL; self.pendingURL=nil; [self loadURL:u reason:@"pending"]; }
     else [self goHome];
 }
+- (void)openExternalURL:(NSURL *)url source:(NSString *)source {
+    if(!url)return; NSURL *target=[self unwrapScarletURL:url];
+    [[DiagnosticsStore shared] addEvent:@"Received external URL" detail:source ?: @"" url:target];
+    dispatch_async(dispatch_get_main_queue(), ^{ if(!self.isViewLoaded)self.pendingURL=target; else [self loadURL:target reason:source]; });
+}
 - (void)userContentController:(WKUserContentController *)userContentController didReceiveScriptMessage:(WKScriptMessage *)message {
     if (![message.name isEqualToString:@"scarletx"]) return;
     if ([message.body isEqual:@"settings"]) {
