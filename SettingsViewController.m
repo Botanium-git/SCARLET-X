@@ -5,6 +5,7 @@ static NSString * const SXDetailedDiagnosticsKey = @"ScarletXDetailedDiagnostics
 static NSString * const SXDiagResourcesKey = @"ScarletXDiagResources";
 static NSString * const SXDiagMenuKey = @"ScarletXDiagMenu";
 static NSString * const SXDiagRequestsKey = @"ScarletXDiagRequests";
+static NSString * const SXDiagDisplayDOMKey = @"ScarletXDiagDisplayDOM";
 
 @interface SXDetailedDiagnosticsViewController : UITableViewController
 @end
@@ -15,16 +16,17 @@ static NSString * const SXDiagRequestsKey = @"ScarletXDiagRequests";
     self.title = @"詳細診断ログ";
     [self.tableView registerClass:UITableViewCell.class forCellReuseIdentifier:@"cell"];
 }
-- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section { return 3; }
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section { return 4; }
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
     return @"必要な計測だけONにできます。変更は次回起動から反映されます。";
 }
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"cell" forIndexPath:indexPath];
-    NSArray *titles = @[@"リソース・操作計測", @"メニュー状態・開閉計測", @"メニュー通信計測"];
-    NSArray *keys = @[SXDiagResourcesKey, SXDiagMenuKey, SXDiagRequestsKey];
+    NSArray *titles = @[@"リソース・操作計測", @"メニュー状態・開閉計測", @"メニュー通信計測", @"表示要素DOM計測"];
+    NSArray *keys = @[SXDiagResourcesKey, SXDiagMenuKey, SXDiagRequestsKey, SXDiagDisplayDOMKey];
     cell.textLabel.text = titles[indexPath.row];
-    cell.imageView.image = [UIImage systemImageNamed:indexPath.row == 0 ? @"speedometer" : (indexPath.row == 1 ? @"rectangle.3.group" : @"network")];
+    NSArray *icons = @[@"speedometer", @"rectangle.3.group", @"network", @"viewfinder"];
+    cell.imageView.image = [UIImage systemImageNamed:icons[indexPath.row]];
     UISwitch *toggle = [UISwitch new];
     toggle.tag = indexPath.row;
     toggle.on = [[NSUserDefaults standardUserDefaults] boolForKey:keys[indexPath.row]];
@@ -33,7 +35,7 @@ static NSString * const SXDiagRequestsKey = @"ScarletXDiagRequests";
     return cell;
 }
 - (void)optionChanged:(UISwitch *)sender {
-    NSArray *keys = @[SXDiagResourcesKey, SXDiagMenuKey, SXDiagRequestsKey];
+    NSArray *keys = @[SXDiagResourcesKey, SXDiagMenuKey, SXDiagRequestsKey, SXDiagDisplayDOMKey];
     [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:keys[sender.tag]];
 }
 @end
