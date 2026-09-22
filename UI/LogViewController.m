@@ -1,5 +1,5 @@
 #import "LogViewController.h"
-#import "DiagnosticsStore.h"
+#import "../Diagnostics/DiagnosticsStore.h"
 
 @interface LogViewController ()
 @property(nonatomic,assign) SXLogKind logKind;
