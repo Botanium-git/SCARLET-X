@@ -2,6 +2,41 @@
 #import "LogViewController.h"
 
 static NSString * const SXDetailedDiagnosticsKey = @"ScarletXDetailedDiagnostics";
+static NSString * const SXDiagResourcesKey = @"ScarletXDiagResources";
+static NSString * const SXDiagMenuKey = @"ScarletXDiagMenu";
+static NSString * const SXDiagRequestsKey = @"ScarletXDiagRequests";
+
+@interface SXDetailedDiagnosticsViewController : UITableViewController
+@end
+
+@implementation SXDetailedDiagnosticsViewController
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.title = @"詳細診断ログ";
+    [self.tableView registerClass:UITableViewCell.class forCellReuseIdentifier:@"cell"];
+}
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section { return 3; }
+- (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
+    return @"必要な計測だけONにできます。変更は次回起動から反映されます。";
+}
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"cell" forIndexPath:indexPath];
+    NSArray *titles = @[@"リソース・操作計測", @"メニュー状態・開閉計測", @"メニュー通信計測"];
+    NSArray *keys = @[SXDiagResourcesKey, SXDiagMenuKey, SXDiagRequestsKey];
+    cell.textLabel.text = titles[indexPath.row];
+    cell.imageView.image = [UIImage systemImageNamed:indexPath.row == 0 ? @"speedometer" : (indexPath.row == 1 ? @"rectangle.3.group" : @"network")];
+    UISwitch *toggle = [UISwitch new];
+    toggle.tag = indexPath.row;
+    toggle.on = [[NSUserDefaults standardUserDefaults] boolForKey:keys[indexPath.row]];
+    [toggle addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
+    cell.accessoryView = toggle;
+    return cell;
+}
+- (void)optionChanged:(UISwitch *)sender {
+    NSArray *keys = @[SXDiagResourcesKey, SXDiagMenuKey, SXDiagRequestsKey];
+    [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:keys[sender.tag]];
+}
+@end
 
 @implementation SettingsViewController
 - (void)viewDidLoad {
@@ -14,9 +49,6 @@ static NSString * const SXDetailedDiagnosticsKey = @"ScarletXDetailedDiagnostics
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView { return 2; }
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section { return section == 0 ? 3 : 1; }
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section { return section == 0 ? @"ログ" : @"About"; }
-- (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
-    return section == 0 ? @"詳細診断ログの切り替えは次回起動から反映されます。" : nil;
-}
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"cell" forIndexPath:indexPath];
     cell.accessoryType = UITableViewCellAccessoryNone;
@@ -25,19 +57,14 @@ static NSString * const SXDetailedDiagnosticsKey = @"ScarletXDetailedDiagnostics
         if (indexPath.row == 0) {
             cell.textLabel.text = @"診断ログ";
             cell.imageView.image = [UIImage systemImageNamed:@"waveform.path.ecg"];
-            cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
         } else if (indexPath.row == 1) {
             cell.textLabel.text = @"エラーログ";
             cell.imageView.image = [UIImage systemImageNamed:@"exclamationmark.triangle"];
-            cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
         } else {
             cell.textLabel.text = @"詳細診断ログ";
             cell.imageView.image = [UIImage systemImageNamed:@"ladybug"];
-            UISwitch *toggle = [UISwitch new];
-            toggle.on = [[NSUserDefaults standardUserDefaults] boolForKey:SXDetailedDiagnosticsKey];
-            [toggle addTarget:self action:@selector(detailedDiagnosticsChanged:) forControlEvents:UIControlEventValueChanged];
-            cell.accessoryView = toggle;
         }
+        cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
     } else {
         NSString *version = [NSBundle.mainBundle objectForInfoDictionaryKey:@"CFBundleShortVersionString"] ?: @"?";
         cell.textLabel.text = [NSString stringWithFormat:@"Scarlet X %@", version];
@@ -45,14 +72,14 @@ static NSString * const SXDetailedDiagnosticsKey = @"ScarletXDetailedDiagnostics
     }
     return cell;
 }
-- (void)detailedDiagnosticsChanged:(UISwitch *)sender {
-    [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:SXDetailedDiagnosticsKey];
-}
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
-    if (indexPath.section == 0 && indexPath.row < 2) {
+    if (indexPath.section != 0) return;
+    if (indexPath.row < 2) {
         SXLogKind kind = indexPath.row == 0 ? SXLogKindDiagnostics : SXLogKindErrors;
         [self.navigationController pushViewController:[[LogViewController alloc] initWithLogKind:kind] animated:YES];
+    } else {
+        [self.navigationController pushViewController:[SXDetailedDiagnosticsViewController new] animated:YES];
     }
 }
 @end
