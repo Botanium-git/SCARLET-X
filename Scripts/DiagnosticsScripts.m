@@ -1,6 +1,6 @@
-#import "ScarletXDiagnosticsScripts.h"
+#import "DiagnosticsScripts.h"
 
-@implementation ScarletXDiagnosticsScripts
+@implementation DiagnosticsScripts
 + (void)installFlagsInto:(WKUserContentController *)contentController {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     BOOL resourcesDiagnostics = [defaults boolForKey:@"ScarletXDiagResources"];

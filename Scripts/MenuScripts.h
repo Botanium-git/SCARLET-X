@@ -1,6 +1,6 @@
 #import <Foundation/Foundation.h>
 
-@interface ScarletXMenuScripts : NSObject
+@interface MenuScripts : NSObject
 + (NSString *)menuProbeScript;
 + (NSString *)menuWarmupScript;
 @end

@@ -1,6 +1,6 @@
-#import "ScarletXMenuScripts.h"
+#import "MenuScripts.h"
 
-@implementation ScarletXMenuScripts
+@implementation MenuScripts
 + (NSString *)menuProbeScript {
     return @"var menuProbeDone=false;"
       "function summarizeMenuState(){var layers=document.getElementById('layers');var profile=document.querySelector('[data-testid=DashButton_ProfileIcon_Link]');return {layersChildren:layers?layers.children.length:-1,bodyChildren:document.body?document.body.children.length:-1,profileExpanded:profile?(profile.getAttribute('aria-expanded')||''):'',dialogs:document.querySelectorAll('[role=dialog]').length,menus:document.querySelectorAll('[role=menu]').length};}"

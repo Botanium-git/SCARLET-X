@@ -1,7 +1,7 @@
-#import "ScarletXPerformanceScripts.h"
-#import "ScarletXMenuScripts.h"
+#import "RuntimeScripts.h"
+#import "MenuScripts.h"
 
-@implementation ScarletXPerformanceScripts
+@implementation RuntimeScripts
 + (void)installInto:(WKUserContentController *)contentController {
     NSString *performanceScript = @"(function(){"
       "if(window.__scarletXPerformanceInstalled)return;"
@@ -57,8 +57,8 @@
       "document.addEventListener('touchend',function(){if(!touch)return;var wasTopPull=touch.startScrollY<=120&&touch.maxDown>=20;if(wasTopPull){pullCancelArmed=true;send('header-repair-armed',{scrollY:Math.round(window.scrollY*100)/100});sxHeaderRepairSnapshot('pull-end-armed');sxStartVisualWatch('pull-end');sxStartPaintProbe('pull-end');setTimeout(function(){sxHeaderRepairSnapshot('pull-end-armed-100');sxPaintProbe('pull-end-100');},100);setTimeout(function(){sxHeaderRepairSnapshot('pull-end-armed-300');},300);}touch=null;},{passive:true,capture:true});"
       "document.addEventListener('touchcancel',function(){touch=null;},{passive:true,capture:true});"
     "})();";
-    performanceScript = [performanceScript stringByReplacingOccurrencesOfString:@"__SCARLET_MENU_PROBE__" withString:[ScarletXMenuScripts menuProbeScript]];
-    performanceScript = [performanceScript stringByReplacingOccurrencesOfString:@"__SCARLET_MENU_WARMUP__" withString:[ScarletXMenuScripts menuWarmupScript]];
+    performanceScript = [performanceScript stringByReplacingOccurrencesOfString:@"__SCARLET_MENU_PROBE__" withString:[MenuScripts menuProbeScript]];
+    performanceScript = [performanceScript stringByReplacingOccurrencesOfString:@"__SCARLET_MENU_WARMUP__" withString:[MenuScripts menuWarmupScript]];
     WKUserScript *performanceUserScript = [[WKUserScript alloc] initWithSource:performanceScript injectionTime:WKUserScriptInjectionTimeAtDocumentStart forMainFrameOnly:YES];
     [contentController addUserScript:performanceUserScript];
 }

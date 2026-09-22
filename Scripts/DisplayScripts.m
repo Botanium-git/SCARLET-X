@@ -1,6 +1,6 @@
-#import "ScarletXScripts.h"
+#import "DisplayScripts.h"
 
-@implementation ScarletXScripts
+@implementation DisplayScripts
 + (void)installSettingsScriptInto:(WKUserContentController *)contentController {
     NSString *settingsScript = @"(function(){"
         "if(window.__scarletXSettingsInstalled)return;"
