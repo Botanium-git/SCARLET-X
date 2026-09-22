@@ -2,7 +2,7 @@
 
 @implementation ScarletXMenuScripts
 + (NSString *)menuProbeScript {
-    return "var menuProbeDone=false;"
+    return @"var menuProbeDone=false;"
       "function summarizeMenuState(){var layers=document.getElementById('layers');var profile=document.querySelector('[data-testid=DashButton_ProfileIcon_Link]');return {layersChildren:layers?layers.children.length:-1,bodyChildren:document.body?document.body.children.length:-1,profileExpanded:profile?(profile.getAttribute('aria-expanded')||''):'',dialogs:document.querySelectorAll('[role=dialog]').length,menus:document.querySelectorAll('[role=menu]').length};}"
       "var menuLifecycleOpenSeen=false,menuLifecycleCloseSeen=false;"
       "function menuLayerSnapshot(label){var layers=document.getElementById('layers'),kids=layers?Array.from(layers.children):[];send('menu-layer-lifecycle',{label:label,state:summarizeMenuState(),layerChildren:kids.map(function(el,i){return {index:i,tag:el.tagName||'',childCount:el.children?el.children.length:0,hidden:!!el.hidden,ariaHidden:el.getAttribute?el.getAttribute('aria-hidden'):null,display:getComputedStyle(el).display,visibility:getComputedStyle(el).visibility,opacity:getComputedStyle(el).opacity};})});}"
@@ -12,7 +12,7 @@
 }
 
 + (NSString *)menuWarmupScript {
-    return "var hiddenMenuWarmupDone=false,hiddenMenuWarmupActive=false,hiddenMenuWarmupNode=null;"
+    return @"var hiddenMenuWarmupDone=false,hiddenMenuWarmupActive=false,hiddenMenuWarmupNode=null;"
       "function finishHiddenMenuWarmup(reason){if(!hiddenMenuWarmupActive)return;hiddenMenuWarmupActive=false;var btn=document.querySelector('[data-testid=DashButton_ProfileIcon_Link]');if(btn&&btn.getAttribute('aria-expanded')==='true'){try{btn.click();}catch(e){try{document.body.click();}catch(e2){}}}if(hiddenMenuWarmupNode){hiddenMenuWarmupNode.style.removeProperty('opacity');hiddenMenuWarmupNode.style.removeProperty('pointer-events');hiddenMenuWarmupNode.style.removeProperty('transform');hiddenMenuWarmupNode=null;}send('menu-hidden-warmup-finish',{reason:reason,state:summarizeMenuState()});}"
       "var hiddenMenuObserver=new MutationObserver(function(){if(!hiddenMenuWarmupActive)return;var layers=document.getElementById('layers');if(!layers)return;var s=summarizeMenuState();if(s.profileExpanded==='true'&&s.dialogs>0&&layers.children.length>2){var node=layers.lastElementChild;if(node&&!hiddenMenuWarmupNode){hiddenMenuWarmupNode=node;node.style.setProperty('opacity','0','important');node.style.setProperty('pointer-events','none','important');node.style.setProperty('transform','translateX(-200vw)','important');send('menu-hidden-warmup-mounted',{state:s});setTimeout(function(){finishHiddenMenuWarmup('mounted-700ms');},700);}}});hiddenMenuObserver.observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['aria-expanded']});"
       "function runHiddenMenuWarmup(){if(hiddenMenuWarmupDone||hiddenMenuWarmupActive||!postSent||location.pathname!=='/home'){if(!postSent)setTimeout(runHiddenMenuWarmup,250);return;}var btn=document.querySelector('[data-testid=DashButton_ProfileIcon_Link]');if(!btn)return;hiddenMenuWarmupDone=true;hiddenMenuWarmupActive=true;send('menu-hidden-warmup-start',{state:summarizeMenuState()});try{btn.click();}catch(e){hiddenMenuWarmupActive=false;send('menu-hidden-warmup-error',{message:String(e)});return;}setTimeout(function(){finishHiddenMenuWarmup('timeout-1500ms');},1500);}"
