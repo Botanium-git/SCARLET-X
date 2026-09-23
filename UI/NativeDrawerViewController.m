@@ -13,14 +13,23 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = UIColor.clearColor;
+
+    // Keep the first native-drawer pass aligned with the current X menu
+    // visible in the reference screenshot. Paths that are not yet verified
+    // stay non-navigating instead of guessing X routes.
     self.items = @[
         @{@"title":@"プロフィール", @"icon":@"person", @"path":@"/i/profile"},
+        @{@"title":@"フォローする", @"icon":@"person.badge.plus"},
         @{@"title":@"プレミアム", @"icon":@"checkmark.seal", @"path":@"/i/premium_sign_up"},
-        @{@"title":@"ブックマーク", @"icon":@"bookmark", @"path":@"/i/bookmarks"},
         @{@"title":@"リスト", @"icon":@"list.bullet.rectangle", @"path":@"/i/lists"},
         @{@"title":@"コミュニティ", @"icon":@"person.3", @"path":@"/i/communities"},
-        @{@"title":@"Scarlet X設定", @"icon":@"gearshape", @"action":@"settings"},
-        @{@"title":@"設定とプライバシー", @"icon":@"gear", @"path":@"/settings"}
+        @{@"title":@"履歴", @"icon":@"bookmark"},
+        @{@"title":@"クリエイタースタジオ", @"icon":@"paperplane"},
+        @{@"title":@"ビジネス", @"icon":@"bolt"},
+        @{@"title":@"広告", @"icon":@"arrow.up.right.square"},
+        @{@"title":@"Scarlet X設定", @"icon":@"slider.horizontal.3", @"action":@"settings"},
+        @{@"title":@"設定とプライバシー", @"icon":@"gearshape", @"path":@"/settings"},
+        @{@"title":@"ログアウト", @"icon":@"rectangle.portrait.and.arrow.right"}
     ];
 
     self.dimmingView = [UIView new];
@@ -106,8 +115,15 @@
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
     NSDictionary *item = self.items[indexPath.row];
     id<NativeDrawerViewControllerDelegate> delegate = self.delegate;
+    NSString *action = item[@"action"];
+    NSString *path = item[@"path"];
+
+    // Do not dismiss for placeholder rows yet. Their X destinations/actions
+    // will be wired only after the real routes are verified.
+    if (!action && !path) return;
+
     [self dismissAnimated:YES];
-    if ([item[@"action"] isEqual:@"settings"]) [delegate nativeDrawerDidSelectScarletSettings:self];
-    else if (item[@"path"]) [delegate nativeDrawer:self didSelectPath:item[@"path"]];
+    if ([action isEqual:@"settings"]) [delegate nativeDrawerDidSelectScarletSettings:self];
+    else if (path) [delegate nativeDrawer:self didSelectPath:path];
 }
 @end
