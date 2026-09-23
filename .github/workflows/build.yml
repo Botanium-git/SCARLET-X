@@ -1,5 +1,5 @@
-name: ScarletX Build
-run-name: ScarletX Build — ${{ github.ref_name }}
+name: ScarletX
+run-name: ScarletX Build
 
 on:
   workflow_dispatch:
@@ -8,6 +8,8 @@ on:
       - main
       - 'feature/**'
 
+# When several repository edits land in quick succession, keep only the
+# newest build for each branch. This prevents one IPA build per intermediate commit.
 concurrency:
   group: scarletx-build-${{ github.ref }}
   cancel-in-progress: true
@@ -111,16 +113,9 @@ jobs:
           VERSION="$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" Resources/Info.plist)"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Prepare artifact name
-        id: artifact_name
-        shell: bash
-        run: |
-          SAFE_REF="${GITHUB_REF_NAME//\//-}"
-          echo "name=ScarletX_${SAFE_REF}_v${{ steps.app_version.outputs.version }}" >> "$GITHUB_OUTPUT"
-
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.artifact_name.outputs.name }}
+          name: ScarletX_v${{ steps.app_version.outputs.version }}
           path: ScarletX_v*.ipa
           if-no-files-found: error
