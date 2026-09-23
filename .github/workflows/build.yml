@@ -111,9 +111,16 @@ jobs:
           VERSION="$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" Resources/Info.plist)"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
+      - name: Prepare artifact name
+        id: artifact_name
+        shell: bash
+        run: |
+          SAFE_REF="${GITHUB_REF_NAME//\//-}"
+          echo "name=ScarletX_${SAFE_REF}_v${{ steps.app_version.outputs.version }}" >> "$GITHUB_OUTPUT"
+
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: ScarletX_${{ github.ref_name }}_v${{ steps.app_version.outputs.version }}
+          name: ${{ steps.artifact_name.outputs.name }}
           path: ScarletX_v*.ipa
           if-no-files-found: error
