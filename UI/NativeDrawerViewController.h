@@ -11,6 +11,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface NativeDrawerViewController : UIViewController
 @property(nonatomic,weak) id<NativeDrawerViewControllerDelegate> delegate;
+@property(nonatomic,copy,nullable) NSDictionary *profileData;
 - (void)presentInParent:(UIViewController *)parent;
 - (void)dismissAnimated:(BOOL)animated;
 @end
