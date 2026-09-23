@@ -1,5 +1,5 @@
 name: ScarletX Speed Test
-run-name: ScarletX Cached Theos + Parallel Build
+run-name: ScarletX Pinned Theos + Cached Parallel Build
 
 on:
   workflow_dispatch:
@@ -10,6 +10,11 @@ concurrency:
   group: scarletx-speed-test
   cancel-in-progress: true
 
+env:
+  THEOS_COMMIT: dd5c14bb9d91311e221d51b5bfb8c9e5948156db
+  THEOS_CACHE_REV: v2
+  THEOS_SDK: iPhoneOS15.6.sdk
+
 jobs:
   build:
     runs-on: macos-latest
@@ -18,14 +23,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Restore Theos toolchain cache
+      - name: Restore pinned Theos toolchain cache
         id: theos-cache
         uses: actions/cache@v4
         with:
           path: theos
-          key: scarletx-theos-ios15.6-v1
+          key: scarletx-theos-${{ env.THEOS_COMMIT }}-${{ env.THEOS_SDK }}-${{ env.THEOS_CACHE_REV }}
 
-      - name: Setup lightweight Theos
+      - name: Setup pinned lightweight Theos
         shell: bash
         run: |
           set -euo pipefail
@@ -33,15 +38,22 @@ jobs:
           echo "THEOS=$THEOS" >> "$GITHUB_ENV"
 
           if [ "${{ steps.theos-cache.outputs.cache-hit }}" != "true" ]; then
-            git clone --depth=1 --recurse-submodules --shallow-submodules https://github.com/theos/theos.git "$THEOS"
+            git clone --filter=blob:none --recurse-submodules --shallow-submodules https://github.com/theos/theos.git "$THEOS"
+            git -C "$THEOS" checkout "$THEOS_COMMIT"
+            git -C "$THEOS" submodule update --init --recursive --depth=1
 
             mkdir -p "$THEOS/sdks"
             git clone --depth=1 --filter=blob:none --sparse https://github.com/theos/sdks.git "$RUNNER_TEMP/theos-sdks"
-            git -C "$RUNNER_TEMP/theos-sdks" sparse-checkout set iPhoneOS15.6.sdk
-            cp -R "$RUNNER_TEMP/theos-sdks/iPhoneOS15.6.sdk" "$THEOS/sdks/"
+            git -C "$RUNNER_TEMP/theos-sdks" sparse-checkout set "$THEOS_SDK"
+            cp -R "$RUNNER_TEMP/theos-sdks/$THEOS_SDK" "$THEOS/sdks/"
           fi
 
-          # Modern GNU Make enables parallel Theos builds.
+          ACTUAL_THEOS_COMMIT="$(git -C "$THEOS" rev-parse HEAD)"
+          echo "Expected Theos: $THEOS_COMMIT"
+          echo "Actual Theos:   $ACTUAL_THEOS_COMMIT"
+          test "$ACTUAL_THEOS_COMMIT" = "$THEOS_COMMIT"
+          test -d "$THEOS/sdks/$THEOS_SDK"
+
           if ! brew list make >/dev/null 2>&1; then
             brew install make
           fi
@@ -100,6 +112,6 @@ jobs:
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: ScarletX_speedtest_cached_v${{ steps.app_version.outputs.version }}
+          name: ScarletX_speedtest_pinned_v${{ steps.app_version.outputs.version }}
           path: ScarletX_v*.ipa
           if-no-files-found: error
