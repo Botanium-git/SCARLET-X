@@ -15,17 +15,15 @@
     self.view.backgroundColor = UIColor.clearColor;
     self.items = @[
         @{@"title":@"プロフィール", @"icon":@"person", @"path":@"/i/profile"},
-        @{@"title":@"フォローする", @"icon":@"person.badge.plus"},
         @{@"title":@"プレミアム", @"icon":@"checkmark.seal", @"path":@"/i/premium_sign_up"},
-        @{@"title":@"リスト", @"icon":@"list.bullet.rectangle", @"path":@"/i/lists"},
-        @{@"title":@"コミュニティ", @"icon":@"person.3", @"path":@"/i/communities"},
         @{@"title":@"履歴", @"icon":@"bookmark"},
+        @{@"title":@"コミュニティ", @"icon":@"person.3", @"path":@"/i/communities"},
+        @{@"title":@"リスト", @"icon":@"list.bullet.rectangle", @"path":@"/i/lists"},
+        @{@"title":@"スペース", @"icon":@"waveform.circle"},
+        @{@"title":@"フォローリクエスト", @"icon":@"person.badge.clock"},
         @{@"title":@"クリエイタースタジオ", @"icon":@"paperplane"},
-        @{@"title":@"ビジネス", @"icon":@"bolt"},
-        @{@"title":@"広告", @"icon":@"arrow.up.right.square"},
-        @{@"title":@"Scarlet X設定", @"icon":@"slider.horizontal.3", @"action":@"settings"},
         @{@"title":@"設定とプライバシー", @"icon":@"gearshape", @"path":@"/settings"},
-        @{@"title":@"ログアウト", @"icon":@"rectangle.portrait.and.arrow.right"}
+        @{@"title":@"Scarlet X", @"icon":@"slider.horizontal.3", @"action":@"settings"}
     ];
 
     self.dimmingView=[UIView new]; self.dimmingView.backgroundColor=[UIColor colorWithWhite:0 alpha:.35]; self.dimmingView.alpha=0; self.dimmingView.translatesAutoresizingMaskIntoConstraints=NO; [self.view addSubview:self.dimmingView]; [self.dimmingView addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(backgroundTapped:)]];
@@ -45,25 +43,14 @@
 }
 
 - (UIView *)buildProfileHeader {
-    UIView *header=[[UIView alloc] initWithFrame:CGRectMake(0,0,340,154)];
+    UIView *header=[[UIView alloc] initWithFrame:CGRectMake(0,0,340,150)];
+    UIImageView *avatar=[[UIImageView alloc] initWithFrame:CGRectMake(18,12,48,48)]; avatar.layer.cornerRadius=24; avatar.clipsToBounds=YES; avatar.contentMode=UIViewContentModeScaleAspectFill; avatar.backgroundColor=UIColor.secondarySystemBackgroundColor; avatar.image=[UIImage systemImageNamed:@"person.crop.circle.fill"]; [header addSubview:avatar]; [self loadImageURLString:self.profileData[@"avatarURL"] into:avatar];
 
-    UIImageView *avatar=[[UIImageView alloc] initWithFrame:CGRectMake(16,10,44,44)];
-    avatar.layer.cornerRadius=22; avatar.clipsToBounds=YES; avatar.contentMode=UIViewContentModeScaleAspectFill; avatar.backgroundColor=UIColor.secondarySystemBackgroundColor; avatar.image=[UIImage systemImageNamed:@"person.crop.circle.fill"]; [header addSubview:avatar];
-    [self loadImageURLString:self.profileData[@"avatarURL"] into:avatar];
+    UIButton *accountButton=[UIButton buttonWithType:UIButtonTypeSystem]; accountButton.frame=CGRectMake(278,15,42,42); [accountButton setImage:[UIImage systemImageNamed:@"person.crop.circle.badge.plus"] forState:UIControlStateNormal]; accountButton.tintColor=UIColor.labelColor; accountButton.userInteractionEnabled=NO; [header addSubview:accountButton];
 
-    NSArray *accounts=[self.profileData[@"accounts"] isKindOfClass:NSArray.class]?self.profileData[@"accounts"]:@[];
-    CGFloat x=284.0;
-    for(NSDictionary *account in [accounts reverseObjectEnumerator]){
-        NSString *url=[account[@"avatarURL"] isKindOfClass:NSString.class]?account[@"avatarURL"]:@"";
-        if(url.length==0||[url isEqual:self.profileData[@"avatarURL"]])continue;
-        UIImageView *other=[[UIImageView alloc] initWithFrame:CGRectMake(x,14,36,36)]; other.layer.cornerRadius=18; other.clipsToBounds=YES; other.contentMode=UIViewContentModeScaleAspectFill; other.backgroundColor=UIColor.secondarySystemBackgroundColor; other.image=[UIImage systemImageNamed:@"person.crop.circle.fill"]; [header addSubview:other]; [self loadImageURLString:url into:other]; x-=44; if(x<152)break;
-    }
-
-    UILabel *handle=[[UILabel alloc] initWithFrame:CGRectMake(16,60,308,21)]; handle.font=[UIFont systemFontOfSize:15]; handle.textColor=UIColor.secondaryLabelColor; handle.text=[self.profileData[@"handle"] isKindOfClass:NSString.class]?self.profileData[@"handle"]:@""; [header addSubview:handle];
-
-    UILabel *name=[[UILabel alloc] initWithFrame:CGRectMake(16,84,308,24)]; name.font=[UIFont systemFontOfSize:17 weight:UIFontWeightBold]; name.text=[self.profileData[@"name"] isKindOfClass:NSString.class]?self.profileData[@"name"]:@""; [header addSubview:name];
-
-    UILabel *counts=[[UILabel alloc] initWithFrame:CGRectMake(16,116,310,22)]; counts.font=[UIFont systemFontOfSize:14]; counts.textColor=UIColor.secondaryLabelColor; NSString *following=[self.profileData[@"following"] isKindOfClass:NSString.class]?self.profileData[@"following"]:@""; NSString *followers=[self.profileData[@"followers"] isKindOfClass:NSString.class]?self.profileData[@"followers"]:@""; counts.text=[NSString stringWithFormat:@"%@ フォロー中    %@ フォロワー",following,followers]; [header addSubview:counts];
+    UILabel *name=[[UILabel alloc] initWithFrame:CGRectMake(18,68,304,24)]; name.font=[UIFont systemFontOfSize:18 weight:UIFontWeightBold]; name.text=[self.profileData[@"name"] isKindOfClass:NSString.class]?self.profileData[@"name"]:@""; [header addSubview:name];
+    UILabel *handle=[[UILabel alloc] initWithFrame:CGRectMake(18,92,304,21)]; handle.font=[UIFont systemFontOfSize:15]; handle.textColor=UIColor.secondaryLabelColor; handle.text=[self.profileData[@"handle"] isKindOfClass:NSString.class]?self.profileData[@"handle"]:@""; [header addSubview:handle];
+    UILabel *counts=[[UILabel alloc] initWithFrame:CGRectMake(18,120,310,22)]; counts.font=[UIFont systemFontOfSize:14]; counts.textColor=UIColor.secondaryLabelColor; NSString *following=[self.profileData[@"following"] isKindOfClass:NSString.class]?self.profileData[@"following"]:@""; NSString *followers=[self.profileData[@"followers"] isKindOfClass:NSString.class]?self.profileData[@"followers"]:@""; counts.text=[NSString stringWithFormat:@"%@ フォロー中    %@ フォロワー",following,followers]; [header addSubview:counts];
     return header;
 }
 
