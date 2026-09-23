@@ -1,5 +1,5 @@
 name: ScarletX Speed Test
-run-name: ScarletX Lightweight Theos + Parallel Build
+run-name: ScarletX Cached Theos + Parallel Build
 
 on:
   workflow_dispatch:
@@ -18,6 +18,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Restore Theos toolchain cache
+        id: theos-cache
+        uses: actions/cache@v4
+        with:
+          path: theos
+          key: scarletx-theos-ios15.6-v1
+
       - name: Setup lightweight Theos
         shell: bash
         run: |
@@ -25,15 +32,19 @@ jobs:
           export THEOS="$GITHUB_WORKSPACE/theos"
           echo "THEOS=$THEOS" >> "$GITHUB_ENV"
 
-          git clone --depth=1 --recurse-submodules --shallow-submodules https://github.com/theos/theos.git "$THEOS"
+          if [ "${{ steps.theos-cache.outputs.cache-hit }}" != "true" ]; then
+            git clone --depth=1 --recurse-submodules --shallow-submodules https://github.com/theos/theos.git "$THEOS"
 
-          mkdir -p "$THEOS/sdks"
-          git clone --depth=1 --filter=blob:none --sparse https://github.com/theos/sdks.git "$RUNNER_TEMP/theos-sdks"
-          git -C "$RUNNER_TEMP/theos-sdks" sparse-checkout set iPhoneOS15.6.sdk
-          cp -R "$RUNNER_TEMP/theos-sdks/iPhoneOS15.6.sdk" "$THEOS/sdks/"
+            mkdir -p "$THEOS/sdks"
+            git clone --depth=1 --filter=blob:none --sparse https://github.com/theos/sdks.git "$RUNNER_TEMP/theos-sdks"
+            git -C "$RUNNER_TEMP/theos-sdks" sparse-checkout set iPhoneOS15.6.sdk
+            cp -R "$RUNNER_TEMP/theos-sdks/iPhoneOS15.6.sdk" "$THEOS/sdks/"
+          fi
 
-          # Theos parallel builds require modern GNU Make. macOS ships an older make.
-          brew install make
+          # Modern GNU Make enables parallel Theos builds.
+          if ! brew list make >/dev/null 2>&1; then
+            brew install make
+          fi
           echo "$(brew --prefix make)/libexec/gnubin" >> "$GITHUB_PATH"
 
           if ! command -v ldid >/dev/null 2>&1; then
@@ -89,6 +100,6 @@ jobs:
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: ScarletX_speedtest_parallel_v${{ steps.app_version.outputs.version }}
+          name: ScarletX_speedtest_cached_v${{ steps.app_version.outputs.version }}
           path: ScarletX_v*.ipa
           if-no-files-found: error
