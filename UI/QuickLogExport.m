@@ -7,17 +7,7 @@ static const void *SXQuickLogButtonKey = &SXQuickLogButtonKey;
 
 @implementation BrowserViewController (QuickLogExport)
 
-+ (void)load {
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        Method original = class_getInstanceMethod(self, @selector(viewDidAppear:));
-        Method replacement = class_getInstanceMethod(self, @selector(sx_quickLog_viewDidAppear:));
-        if (original && replacement) method_exchangeImplementations(original, replacement);
-    });
-}
-
-- (void)sx_quickLog_viewDidAppear:(BOOL)animated {
-    [self sx_quickLog_viewDidAppear:animated];
+- (void)sx_installQuickLogButton {
     if (objc_getAssociatedObject(self, SXQuickLogButtonKey)) return;
     UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
     [button setImage:[UIImage systemImageNamed:@"square.and.arrow.up"] forState:UIControlStateNormal];
