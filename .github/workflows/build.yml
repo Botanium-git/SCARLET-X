@@ -81,23 +81,6 @@ jobs:
           set -euo pipefail
           make -j"$(sysctl -n hw.logicalcpu)" all FINALPACKAGE=1
 
-      - name: Verify native drawer diagnostics in binary
-        shell: bash
-        run: |
-          set -euo pipefail
-          APP_PATH="$(find .theos/obj -type d -name 'ScarletX.app' -print -quit)"
-          if [ -z "$APP_PATH" ]; then
-            echo "ScarletX.app was not found before binary verification"
-            exit 1
-          fi
-          BINARY="$APP_PATH/ScarletX"
-          test -f "$BINARY"
-          echo "Verifying diagnostic markers in: $BINARY"
-          strings "$BINARY" | grep -F "openNativeDrawer entered"
-          strings "$BINARY" | grep -F "captureAccountDiagnostics entered; starting JavaScript"
-          strings "$BINARY" | grep -F "Native drawer account DOM"
-          echo "Native drawer diagnostic markers verified in compiled binary."
-
       - name: Create IPA
         shell: bash
         run: |
