@@ -11,7 +11,8 @@
     BOOL headerVisualDiagnostics = [defaults boolForKey:@"ScarletXDiagHeaderVisual"];
     BOOL topNavTransformDiagnostics = [defaults boolForKey:@"ScarletXDiagTopNavTransform"];
     BOOL paintProbeDiagnostics = [defaults boolForKey:@"ScarletXDiagPaintProbe"];
-    NSString *diagnosticFlagSource = [NSString stringWithFormat:@"window.__scarletXDiagnostics={resources:%@,menu:%@,requests:%@,display:%@,headerState:%@,headerVisual:%@,topNavTransform:%@,paintProbe:%@};", resourcesDiagnostics ? @"true" : @"false", menuDiagnostics ? @"true" : @"false", requestDiagnostics ? @"true" : @"false", displayDiagnostics ? @"true" : @"false", headerStateDiagnostics ? @"true" : @"false", headerVisualDiagnostics ? @"true" : @"false", topNavTransformDiagnostics ? @"true" : @"false", paintProbeDiagnostics ? @"true" : @"false"];
+    BOOL accountInternalsDiagnostics = [defaults boolForKey:@"ScarletXDiagAccountInternals"];
+    NSString *diagnosticFlagSource = [NSString stringWithFormat:@"window.__scarletXDiagnostics={resources:%@,menu:%@,requests:%@,display:%@,headerState:%@,headerVisual:%@,topNavTransform:%@,paintProbe:%@,accountInternals:%@};", resourcesDiagnostics ? @"true" : @"false", menuDiagnostics ? @"true" : @"false", requestDiagnostics ? @"true" : @"false", displayDiagnostics ? @"true" : @"false", headerStateDiagnostics ? @"true" : @"false", headerVisualDiagnostics ? @"true" : @"false", topNavTransformDiagnostics ? @"true" : @"false", paintProbeDiagnostics ? @"true" : @"false", accountInternalsDiagnostics ? @"true" : @"false"];
     WKUserScript *diagnosticFlagScript = [[WKUserScript alloc] initWithSource:diagnosticFlagSource injectionTime:WKUserScriptInjectionTimeAtDocumentStart forMainFrameOnly:YES];
     [contentController addUserScript:diagnosticFlagScript];
 }
