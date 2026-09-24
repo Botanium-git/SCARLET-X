@@ -49,21 +49,32 @@
 
 - (UIView *)buildProfileHeader {
     NSArray *accounts=[self.profileData[@"accounts"] isKindOfClass:NSArray.class]?self.profileData[@"accounts"]:@[];
-    UIView *header=[[UIView alloc] initWithFrame:CGRectMake(0,0,340,166)];
+    UIView *header=[[UIView alloc] initWithFrame:CGRectMake(0,0,340,184)];
     UIImageView *avatar=[self accountAvatarAtX:18 y:12 size:48 URL:self.profileData[@"avatarURL"]]; [header addSubview:avatar];
 
-    CGFloat x=82;
+    CGFloat x=76;
     for(NSDictionary *account in accounts){
-        if(x>286)break;
+        if(x>276)break;
         if(![account isKindOfClass:NSDictionary.class])continue;
-        UIImageView *other=[self accountAvatarAtX:x y:18 size:36 URL:account[@"avatarURL"]]; [header addSubview:other];
-        x+=44;
+        NSString *handle=[account[@"handle"] isKindOfClass:NSString.class]?account[@"handle"]:@"";
+        NSString *avatarURL=[account[@"avatarURL"] isKindOfClass:NSString.class]?account[@"avatarURL"]:@"";
+        UIImageView *other=[self accountAvatarAtX:x y:12 size:36 URL:avatarURL]; [header addSubview:other];
+        UILabel *accountHandle=[[UILabel alloc] initWithFrame:CGRectMake(x-10,51,56,30)];
+        accountHandle.font=[UIFont systemFontOfSize:9 weight:UIFontWeightMedium];
+        accountHandle.textColor=UIColor.secondaryLabelColor;
+        accountHandle.textAlignment=NSTextAlignmentCenter;
+        accountHandle.numberOfLines=2;
+        accountHandle.adjustsFontSizeToFitWidth=YES;
+        accountHandle.minimumScaleFactor=.7;
+        accountHandle.text=handle;
+        [header addSubview:accountHandle];
+        x+=66;
     }
 
-    UILabel *name=[[UILabel alloc] initWithFrame:CGRectMake(18,68,304,24)]; name.font=[UIFont systemFontOfSize:18 weight:UIFontWeightBold]; name.text=[self.profileData[@"name"] isKindOfClass:NSString.class]?self.profileData[@"name"]:@""; [header addSubview:name];
-    UILabel *handle=[[UILabel alloc] initWithFrame:CGRectMake(18,92,304,21)]; handle.font=[UIFont systemFontOfSize:15]; handle.textColor=UIColor.secondaryLabelColor; handle.text=[self.profileData[@"handle"] isKindOfClass:NSString.class]?self.profileData[@"handle"]:@""; [header addSubview:handle];
-    UILabel *counts=[[UILabel alloc] initWithFrame:CGRectMake(18,120,310,22)]; counts.font=[UIFont systemFontOfSize:14]; counts.textColor=UIColor.secondaryLabelColor; NSString *following=[self.profileData[@"following"] isKindOfClass:NSString.class]?self.profileData[@"following"]:@""; NSString *followers=[self.profileData[@"followers"] isKindOfClass:NSString.class]?self.profileData[@"followers"]:@""; counts.text=[NSString stringWithFormat:@"%@ フォロー中    %@ フォロワー",following,followers]; [header addSubview:counts];
-    if(accounts.count){ UILabel *hint=[[UILabel alloc] initWithFrame:CGRectMake(18,144,304,18)]; hint.font=[UIFont systemFontOfSize:12]; hint.textColor=UIColor.tertiaryLabelColor; hint.text=@"ログイン中の他のアカウント"; [header addSubview:hint]; }
+    UILabel *name=[[UILabel alloc] initWithFrame:CGRectMake(18,82,304,24)]; name.font=[UIFont systemFontOfSize:18 weight:UIFontWeightBold]; name.text=[self.profileData[@"name"] isKindOfClass:NSString.class]?self.profileData[@"name"]:@""; [header addSubview:name];
+    UILabel *handle=[[UILabel alloc] initWithFrame:CGRectMake(18,106,304,21)]; handle.font=[UIFont systemFontOfSize:15]; handle.textColor=UIColor.secondaryLabelColor; handle.text=[self.profileData[@"handle"] isKindOfClass:NSString.class]?self.profileData[@"handle"]:@""; [header addSubview:handle];
+    UILabel *counts=[[UILabel alloc] initWithFrame:CGRectMake(18,134,310,22)]; counts.font=[UIFont systemFontOfSize:14]; counts.textColor=UIColor.secondaryLabelColor; NSString *following=[self.profileData[@"following"] isKindOfClass:NSString.class]?self.profileData[@"following"]:@""; NSString *followers=[self.profileData[@"followers"] isKindOfClass:NSString.class]?self.profileData[@"followers"]:@""; counts.text=[NSString stringWithFormat:@"%@ フォロー中    %@ フォロワー",following,followers]; [header addSubview:counts];
+    if(accounts.count){ UILabel *hint=[[UILabel alloc] initWithFrame:CGRectMake(18,160,304,18)]; hint.font=[UIFont systemFontOfSize:12]; hint.textColor=UIColor.tertiaryLabelColor; hint.text=@"ログイン中の他のアカウント"; [header addSubview:hint]; }
     return header;
 }
 
