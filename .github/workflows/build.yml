@@ -1,6 +1,7 @@
 name: ScarletX
 run-name: ScarletX Build
 
+# Keep source changes and version bumps in one commit so one logical update creates one build.
 on:
   workflow_dispatch:
   push:
