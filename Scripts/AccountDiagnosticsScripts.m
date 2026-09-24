@@ -1,0 +1,9 @@
+#import "AccountDiagnosticsScripts.h"
+
+@implementation AccountDiagnosticsScripts
++ (void)installInto:(WKUserContentController *)contentController {
+    NSString *source = @"(function(){if(window.__scarletXAccountDiagnosticsInstalled)return;window.__scarletXAccountDiagnosticsInstalled=true;function on(){return !!((window.__scarletXDiagnostics||{}).accountInternals);}function send(label){if(!on())return;try{var p=document.querySelector('[data-testid=\\\"DashButton_ProfileIcon_Link\\\"]');var layers=Array.from(document.querySelectorAll('[role=\\\"dialog\\\"],[role=\\\"menu\\\"]')).slice(0,8).map(function(d){return {role:d.getAttribute('role')||'',text:(d.innerText||'').replace(/\\s+/g,' ').trim().slice(0,700),images:Array.from(d.querySelectorAll('img')).map(function(x){return x.src;}).slice(0,12)};});window.webkit.messageHandlers.scarletx.postMessage({type:'performance',stage:'account-internals-snapshot',now:Math.round(performance.now()),extra:{label:label,url:location.href,profile:p?{aria:p.getAttribute('aria-label')||'',expanded:p.getAttribute('aria-expanded')||'',images:Array.from(p.querySelectorAll('img')).map(function(x){return x.src;}).slice(0,6)}:null,layers:layers}});}catch(e){}}document.addEventListener('click',function(e){if(!on())return;var p=e.target&&e.target.closest?e.target.closest('[data-testid=\\\"DashButton_ProfileIcon_Link\\\"]'):null;if(!p)return;send('profile-click-before');setTimeout(function(){send('profile-click-after-100');},100);setTimeout(function(){send('profile-click-after-500');},500);setTimeout(function(){send('profile-click-after-1500');},1500);},true);setTimeout(function(){send('initial-1500');},1500);})();";
+    WKUserScript *script=[[WKUserScript alloc] initWithSource:source injectionTime:WKUserScriptInjectionTimeAtDocumentStart forMainFrameOnly:YES];
+    [contentController addUserScript:script];
+}
+@end
