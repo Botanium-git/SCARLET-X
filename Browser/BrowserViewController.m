@@ -21,6 +21,10 @@ static NSString * const SXNativeUIKey = @"ScarletXNativeUI";
 @property(nonatomic,strong) NativeDrawerViewController *nativeDrawer;
 @end
 
+@interface BrowserViewController (QuickLogExportInternal)
+- (void)sx_installQuickLogButton;
+@end
+
 @implementation BrowserViewController
 
 - (void)viewDidLoad {
@@ -55,6 +59,7 @@ static NSString * const SXNativeUIKey = @"ScarletXNativeUI";
     self.webView.translatesAutoresizingMaskIntoConstraints=NO;
     [self.view addSubview:self.webView];
     [NSLayoutConstraint activateConstraints:@[[self.webView.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor],[self.webView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],[self.webView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],[self.webView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor]]];
+    [self sx_installQuickLogButton];
     if(self.pendingURL){NSURL*u=self.pendingURL;self.pendingURL=nil;[self loadURL:u reason:@"pending"];}else[self goHome];
 }
 
