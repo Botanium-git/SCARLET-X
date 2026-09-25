@@ -73,7 +73,16 @@
 
     UILabel *name=[[UILabel alloc] initWithFrame:CGRectMake(18,82,304,24)]; name.font=[UIFont systemFontOfSize:18 weight:UIFontWeightBold]; name.text=[self.profileData[@"name"] isKindOfClass:NSString.class]?self.profileData[@"name"]:@""; [header addSubview:name];
     UILabel *handle=[[UILabel alloc] initWithFrame:CGRectMake(18,106,304,21)]; handle.font=[UIFont systemFontOfSize:15]; handle.textColor=UIColor.secondaryLabelColor; handle.text=[self.profileData[@"handle"] isKindOfClass:NSString.class]?self.profileData[@"handle"]:@""; [header addSubview:handle];
-    UILabel *counts=[[UILabel alloc] initWithFrame:CGRectMake(18,134,310,22)]; counts.font=[UIFont systemFontOfSize:14]; counts.textColor=UIColor.secondaryLabelColor; NSString *following=[self.profileData[@"following"] isKindOfClass:NSString.class]?self.profileData[@"following"]:@""; NSString *followers=[self.profileData[@"followers"] isKindOfClass:NSString.class]?self.profileData[@"followers"]:@""; counts.text=[NSString stringWithFormat:@"%@ フォロー中    %@ フォロワー",following,followers]; [header addSubview:counts];
+    UILabel *counts=[[UILabel alloc] initWithFrame:CGRectMake(18,134,310,22)]; counts.font=[UIFont systemFontOfSize:14]; counts.textColor=UIColor.secondaryLabelColor;
+    NSString *following=[self.profileData[@"following"] isKindOfClass:NSString.class]?self.profileData[@"following"]:@"";
+    NSString *followers=[self.profileData[@"followers"] isKindOfClass:NSString.class]?self.profileData[@"followers"]:@"";
+    NSDictionary *followerProbe=[self.profileData[@"followerProbe"] isKindOfClass:NSDictionary.class]?self.profileData[@"followerProbe"]:nil;
+    NSDictionary *probeCounts=[followerProbe[@"counts"] isKindOfClass:NSDictionary.class]?followerProbe[@"counts"]:nil;
+    NSNumber *friendsCount=[probeCounts[@"friends_count"] isKindOfClass:NSNumber.class]?probeCounts[@"friends_count"]:nil;
+    NSNumber *followersCount=[probeCounts[@"followers_count"] isKindOfClass:NSNumber.class]?probeCounts[@"followers_count"]:nil;
+    if(following.length==0&&friendsCount)following=friendsCount.stringValue;
+    if(followers.length==0&&followersCount)followers=followersCount.stringValue;
+    counts.text=[NSString stringWithFormat:@"%@ フォロー中    %@ フォロワー",following,followers]; [header addSubview:counts];
     if(accounts.count){ UILabel *hint=[[UILabel alloc] initWithFrame:CGRectMake(18,160,304,18)]; hint.font=[UIFont systemFontOfSize:12]; hint.textColor=UIColor.tertiaryLabelColor; hint.text=@"ログイン中の他のアカウント"; [header addSubview:hint]; }
     return header;
 }
