@@ -70,6 +70,16 @@ static NSString * const SXNativeUIKey = @"ScarletXNativeUI";
     if([m.body isEqual:@"settings"]){[self openSettings];return;}
     if([m.body isKindOfClass:NSDictionary.class]){
         NSString *type=m.body[@"type"];
+        if([type isEqual:@"performance"]){
+            NSString *stage=[m.body[@"stage"] isKindOfClass:NSString.class]?m.body[@"stage"]:@"";
+            if([stage isEqual:@"follower-count-probe"]||[stage isEqual:@"follower-count-probe-error"]){
+                id extra=m.body[@"extra"]?:@{};
+                NSData *data=[NSJSONSerialization dataWithJSONObject:extra options:0 error:nil];
+                NSString *detail=data?[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding]:[extra description];
+                [[DiagnosticsStore shared] addEvent:@"Passive follower probe" detail:detail?:@"" url:self.webView.URL];
+            }
+            return;
+        }
         if([type isEqual:@"web-menu-dom"]){ id payload=m.body[@"payload"]?:@{}; NSData *data=[NSJSONSerialization dataWithJSONObject:payload options:NSJSONWritingPrettyPrinted error:nil]; NSString *detail=data?[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding]:[payload description]; [[DiagnosticsStore shared] addEvent:@"Web account menu DOM" detail:detail?:@"" url:self.webView.URL]; return; }
         if([type isEqual:@"native-drawer-trace"]){ NSString *stage=[m.body[@"stage"] isKindOfClass:NSString.class]?m.body[@"stage"]:@"unknown"; NSString *error=[m.body[@"error"] isKindOfClass:NSString.class]?m.body[@"error"]:@""; [[DiagnosticsStore shared] addEvent:@"Native drawer bridge trace" detail:[NSString stringWithFormat:@"JS stage=%@%@",stage,error.length?[NSString stringWithFormat:@" error=%@",error]:@""] url:self.webView.URL]; return; }
         if([type isEqual:@"native-drawer"]){ BOOL enabled=[[NSUserDefaults standardUserDefaults] boolForKey:SXNativeUIKey]; [[DiagnosticsStore shared] addEvent:@"Native drawer bridge trace" detail:[NSString stringWithFormat:@"native-drawer message received; setting=%@",enabled?@"ON":@"OFF"] url:self.webView.URL]; if(enabled)[self openNativeDrawer]; return; }
