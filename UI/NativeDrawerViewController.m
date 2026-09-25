@@ -16,12 +16,12 @@
     self.items = @[
         @{@"title":@"プロフィール", @"icon":@"person", @"path":@"/i/profile"},
         @{@"title":@"プレミアム", @"icon":@"checkmark.seal", @"path":@"/i/premium_sign_up"},
-        @{@"title":@"履歴", @"icon":@"bookmark"},
+        @{@"title":@"履歴", @"icon":@"bookmark", @"path":@"/i/history"},
         @{@"title":@"コミュニティ", @"icon":@"person.3", @"path":@"/i/communities"},
         @{@"title":@"リスト", @"icon":@"list.bullet.rectangle", @"path":@"/i/lists"},
-        @{@"title":@"スペース", @"icon":@"waveform.circle"},
-        @{@"title":@"フォローリクエスト", @"icon":@"person.badge.clock"},
-        @{@"title":@"クリエイタースタジオ", @"icon":@"paperplane"},
+        @{@"title":@"スペース", @"icon":@"waveform.circle", @"path":@"/i/spaces/start"},
+        @{@"title":@"フォローリクエスト", @"icon":@"person.badge.clock", @"path":@"/follower_requests"},
+        @{@"title":@"クリエイタースタジオ", @"icon":@"paperplane", @"path":@"/i/monetization"},
         @{@"title":@"設定とプライバシー", @"icon":@"gearshape", @"path":@"/settings"},
         @{@"title":@"Scarlet X", @"icon":@"slider.horizontal.3", @"action":@"settings"}
     ];
