@@ -38,7 +38,7 @@ static char SXAttemptInFlightKey;
     objc_setAssociatedObject(self,&SXSwitchingKey,@YES,OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     objc_setAssociatedObject(self,&SXClickIssuedKey,@NO,OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     objc_setAssociatedObject(self,&SXAttemptInFlightKey,@NO,OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-    [[DiagnosticsStore shared] addEvent:@"Account switch stack probe start" detail:[NSString stringWithFormat:@"target=@%@",target] url:web.URL];
+    [[DiagnosticsStore shared] addEvent:@"Account switch bundle probe start" detail:[NSString stringWithFormat:@"target=@%@",target] url:web.URL];
 
     NSString *escaped=[target stringByReplacingOccurrencesOfString:@"'" withString:@"\\'"];
     NSString *trace=[NSString stringWithFormat:
@@ -46,24 +46,30 @@ static char SXAttemptInFlightKey;
          "window.__scarletXSwitchTraceTarget=target;window.__scarletXSwitchTraceStart=performance.now();"
          "function now(){return Math.round((performance.now()-(window.__scarletXSwitchTraceStart||performance.now()))*10)/10;}"
          "function stack(){try{return String((new Error()).stack||'').slice(0,12000);}catch(_){return '';}}"
-         "function send(kind,data){try{window.webkit.messageHandlers.scarletx.postMessage({type:'native-drawer-trace',stage:'account-switch-stack '+JSON.stringify({kind:kind,target:window.__scarletXSwitchTraceTarget||'',tMs:now(),href:location.href,data:data||{}})});}catch(_){}}"
+         "function send(kind,data){try{window.webkit.messageHandlers.scarletx.postMessage({type:'native-drawer-trace',stage:'account-switch-bundle '+JSON.stringify({kind:kind,target:window.__scarletXSwitchTraceTarget||'',tMs:now(),href:location.href,data:data||{}})});}catch(_){}}"
          "function isSwitch(u){return /account\\/multi\\/switch\\.json/i.test(String(u||''));}"
          "function sensitive(k){return /auth|token|csrf|cookie|ct0|authorization/i.test(String(k||''));}"
          "function headerValue(k,v){var s=String(v===undefined?'':v);return sensitive(k)?{present:s.length>0,length:s.length}:{value:s.slice(0,500),length:s.length};}"
          "function summarizeHeaders(h){var o={};try{new Headers(h||{}).forEach(function(v,k){o[k]=headerValue(k,v);});}catch(_){}return o;}"
-         "if(!window.__scarletXSwitchStackProbeInstalled){window.__scarletXSwitchStackProbeInstalled=true;"
-         "var of=window.fetch;if(typeof of==='function'){window.fetch=function(input,init){var u='',m='GET',hs={};try{u=typeof input==='string'?input:(input&&input.url)||String(input||'');m=(init&&init.method)||(input&&input.method)||'GET';hs=summarizeHeaders((init&&init.headers)||(input&&input.headers));}catch(_){}if(isSwitch(u))send('fetch-request',{url:u,method:m,headers:hs,stack:stack()});var p=of.apply(this,arguments);return p.then(function(resp){if(isSwitch(u))send('fetch-response',{url:u,status:resp.status,ok:resp.ok});return resp;});};}"
+         "function webpackHints(){var keys=[];try{keys=Object.keys(window).filter(function(k){return /webpack|chunk|module/i.test(k);}).slice(0,100);}catch(_){}"
+         "var vals={};keys.forEach(function(k){try{var v=window[k];vals[k]={type:typeof v,isArray:Array.isArray(v),length:(v&&typeof v.length==='number')?v.length:null};}catch(_){}});return vals;}"
+         "function resourceSnapshot(){var scripts=[];try{scripts=Array.from(document.scripts||[]).map(function(s){return s.src||'';}).filter(Boolean).slice(-120);}catch(_){}"
+         "var resources=[];try{resources=performance.getEntriesByType('resource').map(function(e){return e.name||'';}).filter(function(u){return /\\.js($|\\?)/i.test(u)||/LoggedInApiFilters|main\\./i.test(u);}).slice(-250);}catch(_){}"
+         "var focus=[];var seen={};scripts.concat(resources).forEach(function(u){if(!u||seen[u])return;seen[u]=1;if(/LoggedInApiFilters|main\\.|client-web/i.test(u))focus.push(u);});"
+         "return {scripts:scripts,focus:focus.slice(0,80),webpack:webpackHints()};}"
+         "if(!window.__scarletXSwitchBundleProbeInstalled){window.__scarletXSwitchBundleProbeInstalled=true;"
+         "var of=window.fetch;if(typeof of==='function'){window.fetch=function(input,init){var u='',m='GET',hs={};try{u=typeof input==='string'?input:(input&&input.url)||String(input||'');m=(init&&init.method)||(input&&input.method)||'GET';hs=summarizeHeaders((init&&init.headers)||(input&&input.headers));}catch(_){}if(isSwitch(u))send('fetch-request',{url:u,method:m,headers:hs,stack:stack(),resources:resourceSnapshot()});var p=of.apply(this,arguments);return p.then(function(resp){if(isSwitch(u))send('fetch-response',{url:u,status:resp.status,ok:resp.ok});return resp;});};}"
          "var xo=XMLHttpRequest.prototype.open,xs=XMLHttpRequest.prototype.send,xh=XMLHttpRequest.prototype.setRequestHeader;"
-         "XMLHttpRequest.prototype.open=function(m,u){this.__sxStackTrace={method:String(m||'GET'),url:String(u||''),headers:{},openStack:isSwitch(u)?stack():''};return xo.apply(this,arguments);};"
-         "XMLHttpRequest.prototype.setRequestHeader=function(k,v){try{if(this.__sxStackTrace&&isSwitch(this.__sxStackTrace.url))this.__sxStackTrace.headers[String(k||'').toLowerCase()]=headerValue(k,v);}catch(_){}return xh.apply(this,arguments);};"
-         "XMLHttpRequest.prototype.send=function(body){var self=this,meta=this.__sxStackTrace||{method:'GET',url:'',headers:{},openStack:''};if(isSwitch(meta.url))send('xhr-request',{url:meta.url,method:meta.method,headers:meta.headers,openStack:meta.openStack,sendStack:stack()});if(isSwitch(meta.url)){this.addEventListener('loadend',function(){send('xhr-response',{url:meta.url,status:self.status});},{once:true});}return xs.apply(this,arguments);};"
+         "XMLHttpRequest.prototype.open=function(m,u){this.__sxBundleTrace={method:String(m||'GET'),url:String(u||''),headers:{},openStack:isSwitch(u)?stack():''};return xo.apply(this,arguments);};"
+         "XMLHttpRequest.prototype.setRequestHeader=function(k,v){try{if(this.__sxBundleTrace&&isSwitch(this.__sxBundleTrace.url))this.__sxBundleTrace.headers[String(k||'').toLowerCase()]=headerValue(k,v);}catch(_){}return xh.apply(this,arguments);};"
+         "XMLHttpRequest.prototype.send=function(body){var self=this,meta=this.__sxBundleTrace||{method:'GET',url:'',headers:{},openStack:''};if(isSwitch(meta.url))send('xhr-request',{url:meta.url,method:meta.method,headers:meta.headers,openStack:meta.openStack,sendStack:stack(),resources:resourceSnapshot()});if(isSwitch(meta.url)){this.addEventListener('loadend',function(){send('xhr-response',{url:meta.url,status:self.status});},{once:true});}return xs.apply(this,arguments);};"
          "}"
-         "send('probe-installed',{version:3});return true;})()",escaped];
+         "send('probe-installed',{version:4,resources:resourceSnapshot()});return true;})()",escaped];
 
     __weak typeof(self) weakSelf=self;
     [web evaluateJavaScript:trace completionHandler:^(__unused id r,NSError *traceError){
         typeof(self) self=weakSelf;if(!self)return;
-        if(traceError){[[DiagnosticsStore shared] addError:@"Account switch stack probe failed" error:traceError url:web.URL];objc_setAssociatedObject(self,&SXSwitchingKey,@NO,OBJC_ASSOCIATION_RETAIN_NONATOMIC);return;}
+        if(traceError){[[DiagnosticsStore shared] addError:@"Account switch bundle probe failed" error:traceError url:web.URL];objc_setAssociatedObject(self,&SXSwitchingKey,@NO,OBJC_ASSOCIATION_RETAIN_NONATOMIC);return;}
 
         NSString *open=@"(function(){var p=document.querySelector('[data-testid=\"DashButton_ProfileIcon_Link\"]');if(!p)return false;window.__scarletXNativeBypass=true;p.click();return true;})()";
         [web evaluateJavaScript:open completionHandler:^(id r,NSError *e){
