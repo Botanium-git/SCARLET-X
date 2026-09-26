@@ -47,15 +47,35 @@
     return view;
 }
 
+- (void)accountProbeTapped:(UIButton *)sender {
+    NSArray *accounts=[self.profileData[@"accounts"] isKindOfClass:NSArray.class]?self.profileData[@"accounts"]:@[];
+    NSInteger index=sender.tag;
+    if(index<0||index>=accounts.count)return;
+    NSDictionary *account=[accounts[index] isKindOfClass:NSDictionary.class]?accounts[index]:nil;
+    if(!account)return;
+    NSString *handle=[account[@"handle"] isKindOfClass:NSString.class]?account[@"handle"]:@"";
+    NSString *screenName=[handle hasPrefix:@"@"]?[handle substringFromIndex:1]:handle;
+    NSString *avatarURL=[account[@"avatarURL"] isKindOfClass:NSString.class]?account[@"avatarURL"]:@"";
+    if(screenName.length==0)return;
+    NSURLComponents *components=[NSURLComponents componentsWithString:@"https://x.com/__scarletx_account_probe"];
+    components.queryItems=@[[NSURLQueryItem queryItemWithName:@"screen_name" value:screenName],[NSURLQueryItem queryItemWithName:@"avatar" value:avatarURL]];
+    NSString *path=components.URL.path ?: @"/__scarletx_account_probe";
+    if(components.URL.query.length)path=[path stringByAppendingFormat:@"?%@",components.URL.query];
+    id<NativeDrawerViewControllerDelegate> delegate=self.delegate;
+    [self dismissAnimated:YES];
+    [delegate nativeDrawer:self didSelectPath:path];
+}
+
 - (UIView *)buildProfileHeader {
     NSArray *accounts=[self.profileData[@"accounts"] isKindOfClass:NSArray.class]?self.profileData[@"accounts"]:@[];
     UIView *header=[[UIView alloc] initWithFrame:CGRectMake(0,0,340,184)];
     UIImageView *avatar=[self accountAvatarAtX:18 y:12 size:48 URL:self.profileData[@"avatarURL"]]; [header addSubview:avatar];
 
     CGFloat x=76;
+    NSInteger accountIndex=0;
     for(NSDictionary *account in accounts){
         if(x>276)break;
-        if(![account isKindOfClass:NSDictionary.class])continue;
+        if(![account isKindOfClass:NSDictionary.class]){accountIndex++;continue;}
         NSString *handle=[account[@"handle"] isKindOfClass:NSString.class]?account[@"handle"]:@"";
         NSString *avatarURL=[account[@"avatarURL"] isKindOfClass:NSString.class]?account[@"avatarURL"]:@"";
         UIImageView *other=[self accountAvatarAtX:x y:12 size:36 URL:avatarURL]; [header addSubview:other];
@@ -68,7 +88,14 @@
         accountHandle.minimumScaleFactor=.7;
         accountHandle.text=handle;
         [header addSubview:accountHandle];
+        UIButton *probe=[UIButton buttonWithType:UIButtonTypeCustom];
+        probe.frame=CGRectMake(x-10,8,56,72);
+        probe.tag=accountIndex;
+        probe.accessibilityLabel=[NSString stringWithFormat:@"%@ 切替候補を診断",handle];
+        [probe addTarget:self action:@selector(accountProbeTapped:) forControlEvents:UIControlEventTouchUpInside];
+        [header addSubview:probe];
         x+=66;
+        accountIndex++;
     }
 
     UILabel *name=[[UILabel alloc] initWithFrame:CGRectMake(18,82,304,24)]; name.font=[UIFont systemFontOfSize:18 weight:UIFontWeightBold]; name.text=[self.profileData[@"name"] isKindOfClass:NSString.class]?self.profileData[@"name"]:@""; [header addSubview:name];
@@ -83,7 +110,7 @@
     if(following.length==0&&friendsCount)following=friendsCount.stringValue;
     if(followers.length==0&&followersCount)followers=followersCount.stringValue;
     counts.text=[NSString stringWithFormat:@"%@ フォロー中    %@ フォロワー",following,followers]; [header addSubview:counts];
-    if(accounts.count){ UILabel *hint=[[UILabel alloc] initWithFrame:CGRectMake(18,160,304,18)]; hint.font=[UIFont systemFontOfSize:12]; hint.textColor=UIColor.tertiaryLabelColor; hint.text=@"ログイン中の他のアカウント"; [header addSubview:hint]; }
+    if(accounts.count){ UILabel *hint=[[UILabel alloc] initWithFrame:CGRectMake(18,160,304,18)]; hint.font=[UIFont systemFontOfSize:12]; hint.textColor=UIColor.tertiaryLabelColor; hint.text=@"ログイン中の他のアカウント（タップで診断）"; [header addSubview:hint]; }
     return header;
 }
 
