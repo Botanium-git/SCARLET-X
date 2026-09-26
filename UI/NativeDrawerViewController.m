@@ -18,11 +18,11 @@
         @{@"title":@"プレミアム", @"icon":@"checkmark.seal", @"path":@"/i/premium_sign_up"},
         @{@"title":@"履歴", @"icon":@"bookmark", @"path":@"/i/bookmarks"},
         @{@"title":@"コミュニティ", @"icon":@"person.3", @"path":@"/i/communities"},
-        @{@"title":@"リスト", @"icon":@"list.bullet.rectangle", @"path":@"/i/lists"},
+        @{@"title":@"リスト", @"icon":@"list.bullet.rectangle", @"path":@"/lists"},
         @{@"title":@"スペース", @"icon":@"waveform.circle", @"path":@"/i/spaces/start"},
         @{@"title":@"フォローリクエスト", @"icon":@"person.badge.clock", @"path":@"/follower_requests"},
         @{@"title":@"クリエイタースタジオ", @"icon":@"paperplane", @"path":@"/i/jf/creators/studio"},
-        @{@"title":@"設定とプライバシー", @"icon":@"gearshape", @"path":@"/settings"},
+        @{@"title":@"設定とプライバシー", @"icon":@"gearshape", @"path":@"/settings/account"},
         @{@"title":@"Scarlet X", @"icon":@"slider.horizontal.3", @"action":@"settings"}
     ];
     self.dimmingView=[UIView new]; self.dimmingView.backgroundColor=[UIColor colorWithWhite:0 alpha:.35]; self.dimmingView.alpha=0; self.dimmingView.translatesAutoresizingMaskIntoConstraints=NO; [self.view addSubview:self.dimmingView]; [self.dimmingView addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(backgroundTapped:)]];
