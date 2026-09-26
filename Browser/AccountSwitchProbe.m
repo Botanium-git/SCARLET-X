@@ -38,27 +38,22 @@ static char SXAttemptInFlightKey;
     objc_setAssociatedObject(self,&SXSwitchingKey,@YES,OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     objc_setAssociatedObject(self,&SXClickIssuedKey,@NO,OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     objc_setAssociatedObject(self,&SXAttemptInFlightKey,@NO,OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-    [[DiagnosticsStore shared] addEvent:@"Account switch export probe start" detail:[NSString stringWithFormat:@"target=@%@",target] url:web.URL];
+    [[DiagnosticsStore shared] addEvent:@"Account switch caller probe start" detail:[NSString stringWithFormat:@"target=@%@",target] url:web.URL];
 
     NSString *escaped=[target stringByReplacingOccurrencesOfString:@"'" withString:@"\\'"];
     NSString *trace=[NSString stringWithFormat:
         @"(function(){var target='%@';"
-         "function send(kind,data){try{window.webkit.messageHandlers.scarletx.postMessage({type:'native-drawer-trace',stage:'account-switch-export '+JSON.stringify({kind:kind,target:target,href:location.href,data:data||{}})});}catch(_){}}"
-         "function findModule(){var arr=window.webpackChunk_twitter_responsive_web;if(!Array.isArray(arr))return null;for(var i=0;i<arr.length;i++){var ch=arr[i];if(!Array.isArray(ch)||!ch[1]||typeof ch[1]!=='object')continue;var ids=Array.isArray(ch[0])?ch[0]:[ch[0]],mo=ch[1],ks=Object.keys(mo);for(var j=0;j<ks.length;j++){var id=ks[j],f=mo[id],s='';try{s=Function.prototype.toString.call(f);}catch(_){}if(s.indexOf('account/multi/switch')>=0||s.indexOf('multi/switch')>=0){return {chunkIds:ids,moduleId:String(id),factory:f,source:s};}}}return null;}"
-         "function captureRequire(){var arr=window.webpackChunk_twitter_responsive_web,req=null;if(!Array.isArray(arr))return null;try{arr.push([['sxprobe'+Date.now()+Math.random().toString(36).slice(2)],{},function(r){req=r;}]);}catch(_){}return req;}"
-         "function requireIds(src){var out=[],seen={};var re=/\\b[a-zA-Z_$][\\w$]*\\((\\d{3,})\\)/g,m;while((m=re.exec(src))&&out.length<80){if(!seen[m[1]]){seen[m[1]]=1;out.push(m[1]);}}return out;}"
-         "var hit=findModule(),req=captureRequire();if(!hit){send('module-missing',{});}else{var exp=null,keys=[],aInfo=null,xInfo=null;try{if(req)exp=req(hit.moduleId);}catch(e){send('require-error',{moduleId:hit.moduleId,error:String(e)});}try{if(exp&&((typeof exp==='object')||(typeof exp==='function')))keys=Object.keys(exp).slice(0,50);}catch(_){}"
-         "try{var a=exp&&exp.A;if(typeof a==='function')aInfo={type:'function',name:a.name||'',length:a.length,source:Function.prototype.toString.call(a).slice(0,2500)};else aInfo={type:typeof a};}catch(e){aInfo={error:String(e)};}"
-         "try{var x=exp&&exp.X;xInfo={type:typeof x,value:(typeof x==='string'?x.slice(0,500):null)};}catch(e){xInfo={error:String(e)};}"
-         "send('module-detail',{moduleId:hit.moduleId,chunkIds:hit.chunkIds,exportKeys:keys,A:aInfo,X:xInfo,requireIds:requireIds(hit.source),factorySnippet:hit.source.slice(0,3500)});}"
-         "return true;})()",escaped];
+         "function send(kind,data){try{window.webkit.messageHandlers.scarletx.postMessage({type:'native-drawer-trace',stage:'account-switch-caller '+JSON.stringify({kind:kind,target:target,href:location.href,data:data||{}})});}catch(_){}}"
+         "function findSwitchModule(){var arr=window.webpackChunk_twitter_responsive_web;if(!Array.isArray(arr))return null;for(var i=0;i<arr.length;i++){var ch=arr[i];if(!Array.isArray(ch)||!ch[1]||typeof ch[1]!=='object')continue;var ids=Array.isArray(ch[0])?ch[0]:[ch[0]],mo=ch[1],ks=Object.keys(mo);for(var j=0;j<ks.length;j++){var id=ks[j],f=mo[id],s='';try{s=Function.prototype.toString.call(f);}catch(_){}if(s.indexOf('account/multi/switch')>=0||s.indexOf('multi/switch')>=0)return {chunkIds:ids,moduleId:String(id),source:s};}}return null;}"
+         "function findCallers(targetId){var arr=window.webpackChunk_twitter_responsive_web;if(!Array.isArray(arr))return [];var out=[];var pats=[new RegExp('\\\\('+targetId+'\\\\)'),new RegExp('require\\\\('+targetId+'\\\\)'),new RegExp('[=,:]'+targetId+'(?:[^0-9]|$)')];for(var i=0;i<arr.length;i++){var ch=arr[i];if(!Array.isArray(ch)||!ch[1]||typeof ch[1]!=='object')continue;var ids=Array.isArray(ch[0])?ch[0]:[ch[0]],mo=ch[1],ks=Object.keys(mo);for(var j=0;j<ks.length;j++){var id=String(ks[j]);if(id===String(targetId))continue;var s='';try{s=Function.prototype.toString.call(mo[id]);}catch(_){}if(!s)continue;var hit=-1;for(var p=0;p<pats.length;p++){var m=s.match(pats[p]);if(m){hit=m.index;break;}}if(hit<0)continue;var start=Math.max(0,hit-1200),end=Math.min(s.length,hit+2200);var sn=s.slice(start,end);var signals={apiClient:sn.indexOf('apiClient')>=0,featureSwitches:sn.indexOf('featureSwitches')>=0,switchWord:sn.indexOf('.switch')>=0,multiAccount:sn.indexOf('multiAccount')>=0};out.push({chunkIds:ids,moduleId:id,hitOffset:hit,signals:signals,snippet:sn});if(out.length>=40)return out;}}return out;}"
+         "var sw=findSwitchModule();if(!sw){send('switch-module-missing',{});return true;}var callers=findCallers(sw.moduleId);send('caller-scan',{switchModuleId:sw.moduleId,switchChunkIds:sw.chunkIds,callerCount:callers.length,callers:callers});return true;})()",escaped];
 
     __weak typeof(self) weakSelf=self;
     [web evaluateJavaScript:trace completionHandler:^(__unused id result,NSError *error){
         typeof(self) self=weakSelf;if(!self)return;
-        if(error){[[DiagnosticsStore shared] addError:@"Account switch export probe failed" error:error url:web.URL];objc_setAssociatedObject(self,&SXSwitchingKey,@NO,OBJC_ASSOCIATION_RETAIN_NONATOMIC);return;}
+        if(error){[[DiagnosticsStore shared] addError:@"Account switch caller probe failed" error:error url:web.URL];objc_setAssociatedObject(self,&SXSwitchingKey,@NO,OBJC_ASSOCIATION_RETAIN_NONATOMIC);return;}
 
-        NSString *open=@"(function(){var p=document.querySelector('[data-testid=\\\"DashButton_ProfileIcon_Link\\\"]');if(!p)return false;window.__scarletXNativeBypass=true;p.click();return true;})()";
+        NSString *open=@"(function(){var p=document.querySelector('[data-testid=\"DashButton_ProfileIcon_Link\"]');if(!p)return false;window.__scarletXNativeBypass=true;p.click();return true;})()";
         [web evaluateJavaScript:open completionHandler:^(id r,NSError *e){
             typeof(self) self=weakSelf;if(!self)return;
             if(e||![r boolValue]){objc_setAssociatedObject(self,&SXSwitchingKey,@NO,OBJC_ASSOCIATION_RETAIN_NONATOMIC);return;}
