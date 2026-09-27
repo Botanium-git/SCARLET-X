@@ -6,6 +6,7 @@
 @property(nonatomic,strong) UITableView *tableView;
 @property(nonatomic,strong) NSArray<NSDictionary *> *items;
 @property(nonatomic,strong) NSLayoutConstraint *panelLeadingConstraint;
+@property(nonatomic,assign) BOOL accountSelectionInFlight;
 @end
 
 @implementation NativeDrawerViewController
@@ -48,6 +49,7 @@
 }
 
 - (void)accountProbeTapped:(UIButton *)sender {
+    if(self.accountSelectionInFlight)return;
     NSArray *accounts=[self.profileData[@"accounts"] isKindOfClass:NSArray.class]?self.profileData[@"accounts"]:@[];
     NSInteger index=sender.tag;
     if(index<0||index>=accounts.count)return;
@@ -57,6 +59,10 @@
     NSString *screenName=[handle hasPrefix:@"@"]?[handle substringFromIndex:1]:handle;
     NSString *avatarURL=[account[@"avatarURL"] isKindOfClass:NSString.class]?account[@"avatarURL"]:@"";
     if(screenName.length==0)return;
+
+    self.accountSelectionInFlight=YES;
+    self.view.userInteractionEnabled=NO;
+
     NSURLComponents *components=[NSURLComponents componentsWithString:@"https://x.com/__scarletx_account_probe"];
     components.queryItems=@[[NSURLQueryItem queryItemWithName:@"screen_name" value:screenName],[NSURLQueryItem queryItemWithName:@"avatar" value:avatarURL]];
     NSString *path=components.URL.path ?: @"/__scarletx_account_probe";
@@ -91,7 +97,7 @@
         UIButton *probe=[UIButton buttonWithType:UIButtonTypeCustom];
         probe.frame=CGRectMake(x-10,8,56,72);
         probe.tag=accountIndex;
-        probe.accessibilityLabel=[NSString stringWithFormat:@"%@ 切替候補を診断",handle];
+        probe.accessibilityLabel=[NSString stringWithFormat:@"%@ に切り替える",handle];
         [probe addTarget:self action:@selector(accountProbeTapped:) forControlEvents:UIControlEventTouchUpInside];
         [header addSubview:probe];
         x+=66;
@@ -110,15 +116,15 @@
     if(following.length==0&&friendsCount)following=friendsCount.stringValue;
     if(followers.length==0&&followersCount)followers=followersCount.stringValue;
     counts.text=[NSString stringWithFormat:@"%@ フォロー中    %@ フォロワー",following,followers]; [header addSubview:counts];
-    if(accounts.count){ UILabel *hint=[[UILabel alloc] initWithFrame:CGRectMake(18,160,304,18)]; hint.font=[UIFont systemFontOfSize:12]; hint.textColor=UIColor.tertiaryLabelColor; hint.text=@"ログイン中の他のアカウント（タップで診断）"; [header addSubview:hint]; }
+    if(accounts.count){ UILabel *hint=[[UILabel alloc] initWithFrame:CGRectMake(18,160,304,18)]; hint.font=[UIFont systemFontOfSize:12]; hint.textColor=UIColor.tertiaryLabelColor; hint.text=@"ログイン中の他のアカウント（タップで切り替え）"; [header addSubview:hint]; }
     return header;
 }
 
 - (void)presentInParent:(UIViewController *)parent { [parent addChildViewController:self]; self.view.frame=parent.view.bounds; self.view.autoresizingMask=UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight; [parent.view addSubview:self.view]; [self didMoveToParentViewController:parent]; [self.view layoutIfNeeded]; self.panelLeadingConstraint.constant=0; [UIView animateWithDuration:.24 delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{self.dimmingView.alpha=1;[self.view layoutIfNeeded];} completion:nil]; }
 - (void)dismissAnimated:(BOOL)animated { CGFloat width=self.panelView.bounds.size.width?:MIN(340.0,UIScreen.mainScreen.bounds.size.width*.86); self.panelLeadingConstraint.constant=-width; void(^changes)(void)=^{self.dimmingView.alpha=0;[self.view layoutIfNeeded];}; void(^completion)(BOOL)=^(BOOL finished){[self willMoveToParentViewController:nil];[self.view removeFromSuperview];[self removeFromParentViewController];}; if(animated)[UIView animateWithDuration:.2 delay:0 options:UIViewAnimationOptionCurveEaseIn animations:changes completion:completion]; else{changes();completion(YES);} }
-- (void)backgroundTapped:(id)sender{[self dismissAnimated:YES];}
-- (void)swipedClosed:(id)sender{[self dismissAnimated:YES];}
+- (void)backgroundTapped:(id)sender{if(!self.accountSelectionInFlight)[self dismissAnimated:YES];}
+- (void)swipedClosed:(id)sender{if(!self.accountSelectionInFlight)[self dismissAnimated:YES];}
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{return self.items.count;}
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath { UITableViewCell *cell=[tableView dequeueReusableCellWithIdentifier:@"drawer"]; if(!cell)cell=[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"drawer"]; NSDictionary *item=self.items[indexPath.row]; cell.textLabel.text=item[@"title"]; cell.textLabel.font=[UIFont systemFontOfSize:18 weight:UIFontWeightSemibold]; cell.imageView.image=[UIImage systemImageNamed:item[@"icon"]]; return cell; }
-- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath { [tableView deselectRowAtIndexPath:indexPath animated:YES]; NSDictionary *item=self.items[indexPath.row]; id<NativeDrawerViewControllerDelegate> delegate=self.delegate; NSString *action=item[@"action"],*path=item[@"path"]; if(!action&&!path)return; [self dismissAnimated:YES]; if([action isEqual:@"settings"])[delegate nativeDrawerDidSelectScarletSettings:self]; else if(path)[delegate nativeDrawer:self didSelectPath:path]; }
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath { if(self.accountSelectionInFlight)return; [tableView deselectRowAtIndexPath:indexPath animated:YES]; NSDictionary *item=self.items[indexPath.row]; id<NativeDrawerViewControllerDelegate> delegate=self.delegate; NSString *action=item[@"action"],*path=item[@"path"]; if(!action&&!path)return; [self dismissAnimated:YES]; if([action isEqual:@"settings"])[delegate nativeDrawerDidSelectScarletSettings:self]; else if(path)[delegate nativeDrawer:self didSelectPath:path]; }
 @end
