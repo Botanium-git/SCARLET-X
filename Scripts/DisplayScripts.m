@@ -61,9 +61,14 @@
     NSString *selectionPolicyScript = @"(function(){"
       "if(window.__scarletXSelectionPolicyInstalled)return;window.__scarletXSelectionPolicyInstalled=true;"
       "var style=document.createElement('style');style.id='scarletx-selection-policy';"
-      "style.textContent='*:not(input):not(textarea):not([contenteditable=true]){-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important;}[data-testid=\"tweetText\"],[data-testid=\"tweetText\"] *{-webkit-user-select:text!important;user-select:text!important;-webkit-touch-callout:default!important;}input,textarea,[contenteditable=true],[contenteditable=true] *{-webkit-user-select:text!important;user-select:text!important;-webkit-touch-callout:default!important;}';"
+      "style.textContent='img,svg,a,button,[role=button]{-webkit-user-drag:none!important;-webkit-touch-callout:none!important;}';"
       "(document.head||document.documentElement).appendChild(style);"
-      "document.addEventListener('contextmenu',function(e){var t=e.target;if(!t||!t.closest)return;var allowed=t.closest('[data-testid=\"tweetText\"],input,textarea,[contenteditable=true]');if(allowed)return;e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();},true);"
+      "function allowed(t){return !!(t&&t.closest&&t.closest('[data-testid=\"tweetText\"],input,textarea,[contenteditable=true]'));}"
+      "document.addEventListener('selectstart',function(e){if(allowed(e.target))return;e.preventDefault();},true);"
+      "document.addEventListener('contextmenu',function(e){if(allowed(e.target))return;e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();},true);"
+      "document.addEventListener('dragstart',function(e){if(allowed(e.target))return;e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();},true);"
+      "function disableDraggable(root){var scope=root&&root.querySelectorAll?root:document;Array.from(scope.querySelectorAll('img,a,svg')).forEach(function(el){if(allowed(el))return;try{el.draggable=false;}catch(_){ }try{el.setAttribute('draggable','false');}catch(_){ }});}"
+      "disableDraggable(document);new MutationObserver(function(rs){rs.forEach(function(r){Array.from(r.addedNodes||[]).forEach(function(n){if(n&&n.nodeType===1)disableDraggable(n);});});}).observe(document.documentElement,{childList:true,subtree:true});"
     "})();";
     [contentController addUserScript:[[WKUserScript alloc] initWithSource:selectionPolicyScript injectionTime:WKUserScriptInjectionTimeAtDocumentEnd forMainFrameOnly:YES]];
 }
