@@ -174,11 +174,10 @@ static char SXExpectedScreenNameKey;
             }
         });
 
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(10.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            typeof(self) self = weakSelf;
-            if (!self) return;
-            objc_setAssociatedObject(self, &SXSwitchingKey, @NO, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-        });
+        // The old drawer is already interaction-locked and dismissed before this callback.
+        // Release the native switch guard as soon as X accepted the thunk dispatch so the
+        // freshly loaded page can switch again immediately.
+        objc_setAssociatedObject(self, &SXSwitchingKey, @NO, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }];
 }
 @end
