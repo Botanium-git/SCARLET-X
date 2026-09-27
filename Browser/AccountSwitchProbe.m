@@ -6,10 +6,12 @@
 
 @interface BrowserViewController (AccountSwitchOriginal)
 - (void)nativeDrawer:(NativeDrawerViewController *)drawer didSelectPath:(NSString *)path;
+- (void)presentNativeDrawerWithProfileData:(NSDictionary *)profileData;
 @end
 
 @implementation BrowserViewController (AccountSwitch)
 static char SXSwitchingKey;
+static char SXExpectedScreenNameKey;
 
 + (void)load {
     static dispatch_once_t onceToken;
@@ -17,7 +19,71 @@ static char SXSwitchingKey;
         Method a = class_getInstanceMethod(self, @selector(nativeDrawer:didSelectPath:));
         Method b = class_getInstanceMethod(self, @selector(sx_switch_nativeDrawer:didSelectPath:));
         if (a && b) method_exchangeImplementations(a, b);
+
+        Method c = class_getInstanceMethod(self, @selector(presentNativeDrawerWithProfileData:));
+        Method d = class_getInstanceMethod(self, @selector(sx_switch_presentNativeDrawerWithProfileData:));
+        if (c && d) method_exchangeImplementations(c, d);
     });
+}
+
+
+- (void)sx_switch_presentNativeDrawerWithProfileData:(NSDictionary *)profileData {
+    NSString *expected = objc_getAssociatedObject(self, &SXExpectedScreenNameKey);
+    if (![expected isKindOfClass:NSString.class] || expected.length == 0 || ![profileData isKindOfClass:NSDictionary.class]) {
+        [self sx_switch_presentNativeDrawerWithProfileData:profileData];
+        return;
+    }
+
+    NSString *handle = [profileData[@"handle"] isKindOfClass:NSString.class] ? profileData[@"handle"] : @"";
+    NSString *current = [handle hasPrefix:@"@"] ? [handle substringFromIndex:1] : handle;
+    NSArray *allUsers = [profileData[@"userImageProbe"] isKindOfClass:NSArray.class] ? profileData[@"userImageProbe"] : @[];
+
+    NSDictionary *expectedUser = nil;
+    for (id item in allUsers) {
+        if (![item isKindOfClass:NSDictionary.class]) continue;
+        NSString *screenName = [item[@"screenName"] isKindOfClass:NSString.class] ? item[@"screenName"] : @"";
+        if ([screenName isEqualToString:expected]) { expectedUser = item; break; }
+    }
+
+    if (!expectedUser) {
+        [self sx_switch_presentNativeDrawerWithProfileData:profileData];
+        return;
+    }
+
+    NSMutableDictionary *normalized = [profileData mutableCopy];
+    NSString *name = [expectedUser[@"name"] isKindOfClass:NSString.class] ? expectedUser[@"name"] : @"";
+    NSString *avatarURL = [expectedUser[@"avatarURL"] isKindOfClass:NSString.class] ? expectedUser[@"avatarURL"] : @"";
+    normalized[@"handle"] = [@"@" stringByAppendingString:expected];
+    if (name.length) normalized[@"name"] = name;
+    if (avatarURL.length) normalized[@"avatarURL"] = avatarURL;
+
+    NSMutableArray *accounts = [NSMutableArray array];
+    for (id item in allUsers) {
+        if (![item isKindOfClass:NSDictionary.class]) continue;
+        NSString *screenName = [item[@"screenName"] isKindOfClass:NSString.class] ? item[@"screenName"] : @"";
+        if (screenName.length == 0 || [screenName isEqualToString:expected]) continue;
+        NSString *otherAvatar = [item[@"avatarURL"] isKindOfClass:NSString.class] ? item[@"avatarURL"] : @"";
+        [accounts addObject:@{@"handle":[@"@" stringByAppendingString:screenName], @"avatarURL":otherAvatar ?: @""}];
+    }
+    normalized[@"accounts"] = accounts;
+
+    NSDictionary *probe = [profileData[@"followerProbe"] isKindOfClass:NSDictionary.class] ? profileData[@"followerProbe"] : nil;
+    NSString *probeScreen = [probe[@"currentScreen"] isKindOfClass:NSString.class] ? probe[@"currentScreen"] : @"";
+    if (![probeScreen isEqualToString:expected]) {
+        [normalized removeObjectForKey:@"followerProbe"];
+        normalized[@"following"] = @"";
+        normalized[@"followers"] = @"";
+    }
+
+    if ([current isEqualToString:expected] || [probeScreen isEqualToString:expected]) {
+        objc_setAssociatedObject(self, &SXExpectedScreenNameKey, nil, OBJC_ASSOCIATION_COPY_NONATOMIC);
+    } else {
+        [[DiagnosticsStore shared] addEvent:@"Account switch drawer sync applied"
+                                     detail:[NSString stringWithFormat:@"expected=@%@ previous=@%@", expected, current]
+                                        url:nil];
+    }
+
+    [self sx_switch_presentNativeDrawerWithProfileData:normalized];
 }
 
 - (void)sx_switch_nativeDrawer:(NativeDrawerViewController *)drawer didSelectPath:(NSString *)path {
@@ -94,9 +160,19 @@ static char SXSwitchingKey;
             return;
         }
 
+        objc_setAssociatedObject(self, &SXExpectedScreenNameKey, target, OBJC_ASSOCIATION_COPY_NONATOMIC);
         [[DiagnosticsStore shared] addEvent:@"Account switch dispatched"
                                      detail:[NSString stringWithFormat:@"target=@%@", target]
                                         url:web.URL];
+
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(60.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            typeof(self) self = weakSelf;
+            if (!self) return;
+            NSString *pending = objc_getAssociatedObject(self, &SXExpectedScreenNameKey);
+            if ([pending isEqualToString:target]) {
+                objc_setAssociatedObject(self, &SXExpectedScreenNameKey, nil, OBJC_ASSOCIATION_COPY_NONATOMIC);
+            }
+        });
 
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(10.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             typeof(self) self = weakSelf;
