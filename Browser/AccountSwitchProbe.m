@@ -69,21 +69,82 @@ static char SXExpectedScreenNameKey;
 
     NSDictionary *probe = [profileData[@"followerProbe"] isKindOfClass:NSDictionary.class] ? profileData[@"followerProbe"] : nil;
     NSString *probeScreen = [probe[@"currentScreen"] isKindOfClass:NSString.class] ? probe[@"currentScreen"] : @"";
-    if (![probeScreen isEqualToString:expected]) {
-        [normalized removeObjectForKey:@"followerProbe"];
-        normalized[@"following"] = @"";
-        normalized[@"followers"] = @"";
-    }
+    BOOL alreadySettled = [current isEqualToString:expected] || [probeScreen isEqualToString:expected];
 
-    if ([current isEqualToString:expected] || [probeScreen isEqualToString:expected]) {
+    if (alreadySettled) {
         objc_setAssociatedObject(self, &SXExpectedScreenNameKey, nil, OBJC_ASSOCIATION_COPY_NONATOMIC);
-    } else {
-        [[DiagnosticsStore shared] addEvent:@"Account switch drawer sync applied"
-                                     detail:[NSString stringWithFormat:@"expected=@%@ previous=@%@", expected, current]
-                                        url:nil];
+        [self sx_switch_presentNativeDrawerWithProfileData:normalized];
+        return;
     }
 
-    [self sx_switch_presentNativeDrawerWithProfileData:normalized];
+    // The visible shell can update before follower/following data does.
+    // Never reuse counts from the previous account. Resolve the expected user's
+    // Redux user_id, then read only that exact entity's counts.
+    [normalized removeObjectForKey:@"followerProbe"];
+    normalized[@"following"] = @"";
+    normalized[@"followers"] = @"";
+
+    WKWebView *web = nil;
+    @try { web = [self valueForKey:@"webView"]; } @catch (__unused NSException *e) {}
+    if (![web isKindOfClass:WKWebView.class]) {
+        [[DiagnosticsStore shared] addEvent:@"Account switch drawer sync applied"
+                                     detail:[NSString stringWithFormat:@"expected=@%@ previous=@%@ counts=unavailable", expected, current]
+                                        url:nil];
+        [self sx_switch_presentNativeDrawerWithProfileData:normalized];
+        return;
+    }
+
+    NSString *escaped = [expected stringByReplacingOccurrencesOfString:@"'" withString:@"\\'"];
+    NSString *countScript = [NSString stringWithFormat:
+        @"(function(){var target='%@';"
+         "function fiberOf(n){if(!n)return null;var ks=[];try{ks=Object.keys(n);}catch(_){}for(var i=0;i<ks.length;i++)if(ks[i].indexOf('__reactFiber$')===0)return n[ks[i]];return null;}"
+         "function asStore(v){if(!v||typeof v!=='object')return null;var s=(v.store&&typeof v.store==='object')?v.store:v;return (s&&typeof s.getState==='function'&&typeof s.dispatch==='function')?s:null;}"
+         "function storeFromNode(n){var f=fiberOf(n);for(var d=0;f&&d<80;d++,f=f.return){var c=null;try{c=f.dependencies&&f.dependencies.firstContext;}catch(_){}for(var i=0;c&&i<12;i++){var vals=[];try{vals.push(c.memoizedValue);}catch(_){}try{if(c.context){vals.push(c.context._currentValue2);vals.push(c.context._currentValue);}}catch(_){}for(var j=0;j<vals.length;j++){var s=asStore(vals[j]);if(s)return s;}try{c=c.next;}catch(_){break;}}}return null;}"
+         "function firstString(root,key){var seen=new Set(),found='';function walk(v,depth){if(found||!v||typeof v!=='object'||seen.has(v)||depth>5)return;seen.add(v);try{var x=v[key];if(typeof x==='string'&&x.length){found=x;return;}}catch(_){}var ks=[];try{ks=Object.keys(v);}catch(_){return;}for(var i=0;i<Math.min(ks.length,80);i++){var x;try{x=v[ks[i]];}catch(_){continue;}if(x&&typeof x==='object')walk(x,depth+1);if(found)return;}}walk(root,0);return found;}"
+         "var p=document.querySelector('[data-testid=\"DashButton_ProfileIcon_Link\"]');"
+         "var store=storeFromNode(p)||storeFromNode(document.querySelector('[data-testid=primaryColumn]'))||storeFromNode(document.body);if(!store)return null;"
+         "var state;try{state=store.getState();}catch(_){return null;}"
+         "var users=state&&state.multiAccount&&Array.isArray(state.multiAccount.users)?state.multiAccount.users:[];"
+         "var hit=null;for(var i=0;i<users.length;i++){var sn=firstString(users[i],'screen_name');if(sn===target){hit=users[i];break;}}if(!hit)return null;"
+         "var uid=firstString(hit,'user_id')||firstString(hit,'rest_id');if(!uid)return null;"
+         "var map=state&&state.entities&&state.entities.users&&state.entities.users.entities;"
+         "var ent=map&&map[uid];if(!ent||typeof ent!=='object')return {userId:uid,screenName:target};"
+         "var legacy=(ent.legacy&&typeof ent.legacy==='object')?ent.legacy:null;"
+         "function num(obj,key){try{var v=obj&&obj[key];return typeof v==='number'?v:null;}catch(_){return null;}}"
+         "var following=num(ent,'friends_count');if(following===null)following=num(ent,'following_count');if(following===null)following=num(legacy,'friends_count');if(following===null)following=num(legacy,'following_count');"
+         "var followers=num(ent,'followers_count');if(followers===null)followers=num(legacy,'followers_count');"
+         "return {userId:uid,screenName:target,following:following,followers:followers};"
+         "})()", escaped];
+
+    __weak typeof(self) weakSelf = self;
+    [web evaluateJavaScript:countScript completionHandler:^(id result, NSError *error) {
+        typeof(self) self = weakSelf;
+        if (!self) return;
+
+        // A newer switch may have started while this lookup was running.
+        NSString *stillExpected = objc_getAssociatedObject(self, &SXExpectedScreenNameKey);
+        if (![stillExpected isEqualToString:expected]) return;
+
+        NSMutableDictionary *finalData = [normalized mutableCopy];
+        NSDictionary *exact = [result isKindOfClass:NSDictionary.class] ? result : nil;
+        NSNumber *following = [exact[@"following"] isKindOfClass:NSNumber.class] ? exact[@"following"] : nil;
+        NSNumber *followers = [exact[@"followers"] isKindOfClass:NSNumber.class] ? exact[@"followers"] : nil;
+        NSString *exactScreen = [exact[@"screenName"] isKindOfClass:NSString.class] ? exact[@"screenName"] : @"";
+
+        if ([exactScreen isEqualToString:expected]) {
+            if (following) finalData[@"following"] = following.stringValue;
+            if (followers) finalData[@"followers"] = followers.stringValue;
+        }
+
+        [[DiagnosticsStore shared] addEvent:@"Account switch drawer sync applied"
+                                     detail:[NSString stringWithFormat:@"expected=@%@ previous=@%@ counts=%@",
+                                             expected,
+                                             current,
+                                             (following || followers) ? @"exact-user-id" : @"unavailable"]
+                                        url:web.URL];
+
+        [self sx_switch_presentNativeDrawerWithProfileData:finalData];
+    }];
 }
 
 - (void)sx_switch_nativeDrawer:(NativeDrawerViewController *)drawer didSelectPath:(NSString *)path {
