@@ -57,5 +57,14 @@
       "apply(document);new MutationObserver(function(rs){rs.forEach(function(r){Array.from(r.addedNodes||[]).forEach(function(n){if(n&&n.nodeType===1){apply(n);apply(n.parentElement);}});});}).observe(document.documentElement,{childList:true,subtree:true});"
     "})();";
     [contentController addUserScript:[[WKUserScript alloc] initWithSource:displayCustomizationScript injectionTime:WKUserScriptInjectionTimeAtDocumentEnd forMainFrameOnly:YES]];
+
+    NSString *selectionPolicyScript = @"(function(){"
+      "if(window.__scarletXSelectionPolicyInstalled)return;window.__scarletXSelectionPolicyInstalled=true;"
+      "var style=document.createElement('style');style.id='scarletx-selection-policy';"
+      "style.textContent='*:not(input):not(textarea):not([contenteditable=true]){-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important;}[data-testid=\"tweetText\"],[data-testid=\"tweetText\"] *{-webkit-user-select:text!important;user-select:text!important;-webkit-touch-callout:default!important;}input,textarea,[contenteditable=true],[contenteditable=true] *{-webkit-user-select:text!important;user-select:text!important;-webkit-touch-callout:default!important;}';"
+      "(document.head||document.documentElement).appendChild(style);"
+      "document.addEventListener('contextmenu',function(e){var t=e.target;if(!t||!t.closest)return;var allowed=t.closest('[data-testid=\"tweetText\"],input,textarea,[contenteditable=true]');if(allowed)return;e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();},true);"
+    "})();";
+    [contentController addUserScript:[[WKUserScript alloc] initWithSource:selectionPolicyScript injectionTime:WKUserScriptInjectionTimeAtDocumentEnd forMainFrameOnly:YES]];
 }
 @end
