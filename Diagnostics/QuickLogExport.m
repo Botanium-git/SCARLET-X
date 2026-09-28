@@ -102,7 +102,15 @@
     @try { webView = [self valueForKey:@"webView"]; } @catch (__unused NSException *e) {}
     if (!webView) { [self sx_shareDiagnostics:sender]; return; }
 
-    NSString *script = @"(function(){var p=document.querySelector('[data-testid=\"DashButton_ProfileIcon_Link\"]');var img=p&&p.querySelector('img');var dialogs=document.querySelectorAll('[role=dialog],[role=menu]');var buttons=document.querySelectorAll('button[aria-label$=\"に切り替える\"]');return {probe:'closed-dom',profileExists:!!p,profileExpanded:p?(p.getAttribute('aria-expanded')||''):'',profileLabel:p?(p.getAttribute('aria-label')||''):'',profileImage:img?(img.currentSrc||img.src||''):'',dialogCount:dialogs.length,switchButtonCount:buttons.length,switchLabels:Array.from(buttons).map(function(b){return b.getAttribute('aria-label')||'';})};})()";
+    NSString *script = @"(function(){"
+        "function info(el){if(!el)return null;var s=getComputedStyle(el),r=el.getBoundingClientRect(),a=el.closest&&el.closest('a');return {tag:el.tagName||'',text:(el.innerText||el.textContent||'').replace(/\\s+/g,' ').trim().slice(0,60),fontSize:s.fontSize||'',lineHeight:s.lineHeight||'',fontWeight:s.fontWeight||'',fontFamily:s.fontFamily||'',display:s.display||'',href:a?(a.getAttribute('href')||''):'',aria:el.getAttribute?el.getAttribute('aria-label')||'':'',rect:{x:Math.round(r.x),y:Math.round(r.y),width:Math.round(r.width),height:Math.round(r.height)}};}"
+        "var p=document.querySelector('[data-testid=\"DashButton_ProfileIcon_Link\"]');var img=p&&p.querySelector('img');var dialogs=document.querySelectorAll('[role=dialog],[role=menu]');var buttons=document.querySelectorAll('button[aria-label$=\"に切り替える\"]');"
+        "var articles=Array.from(document.querySelectorAll('article[data-testid=\"tweet\"]'));var main=articles.find(function(a){return !!a.querySelector('[data-testid=\"tweetText\"]');})||articles[0]||null;"
+        "var un=main&&main.querySelector('[data-testid=\"User-Name\"]');var tw=main&&main.querySelector('[data-testid=\"tweetText\"]');var grp=main&&main.querySelector('[role=\"group\"]');"
+        "var children=un?Array.from(un.querySelectorAll('*')).filter(function(e){return (e.innerText||e.textContent||'').trim()||e.tagName==='TIME'||e.tagName==='A';}).slice(0,30).map(info):[];"
+        "var heads=Array.from(document.querySelectorAll('h1,h2,[role=\"heading\"]')).slice(0,12).map(info);"
+        "return {probe:'closed-dom',profileExists:!!p,profileExpanded:p?(p.getAttribute('aria-expanded')||''):'',profileLabel:p?(p.getAttribute('aria-label')||''):'',profileImage:img?(img.currentSrc||img.src||''):'',dialogCount:dialogs.length,switchButtonCount:buttons.length,switchLabels:Array.from(buttons).map(function(b){return b.getAttribute('aria-label')||'';}),typography:{route:location.pathname,userName:info(un),userNameChildren:children,tweetText:info(tw),actionGroup:info(grp),headings:heads,viewport:{innerWidth:innerWidth,innerHeight:innerHeight,dpr:devicePixelRatio,visualScale:window.visualViewport?window.visualViewport.scale:null}}};"
+    "})()";
     __weak typeof(self) weakSelf = self;
     [webView evaluateJavaScript:script completionHandler:^(id result, NSError *error) {
         typeof(self) self = weakSelf;
