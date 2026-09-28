@@ -34,12 +34,12 @@
     NSString *script = @"(function(){"
         "if(window.__scarletXLongPressLogInstalled)return;"
         "window.__scarletXLongPressLogInstalled=true;"
-        "var timer=null,target=null,fired=false;"
+        "var timer=null,target=null,fired=false,suppressHomeClickUntil=0;"
         "function homeFromEvent(e){var n=e&&e.target;return n&&n.closest?n.closest('a[href=\"/home\"]'):null;}"
         "function clear(){if(timer){clearTimeout(timer);timer=null;}target=null;}"
         "document.addEventListener('touchstart',function(e){"
             "var p=homeFromEvent(e);if(!p)return;clear();target=p;fired=false;"
-            "timer=setTimeout(function(){timer=null;if(!target)return;fired=true;"
+            "timer=setTimeout(function(){timer=null;if(!target)return;fired=true;suppressHomeClickUntil=Date.now()+1200;"
                 "try{window.webkit.messageHandlers.scarletx.postMessage({type:'quick-log-export'});}catch(_){}"
             "},600);"
         "},{capture:true,passive:false});"
@@ -47,9 +47,11 @@
         "document.addEventListener('touchcancel',function(){clear();fired=false;},{capture:true,passive:false});"
         "document.addEventListener('touchend',function(e){"
             "if(!target)return;var consumed=fired;clear();"
-            "if(consumed){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();setTimeout(function(){fired=false;},0);}"
+            "if(consumed){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();}"
+            "fired=false;"
         "},{capture:true,passive:false});"
-        "document.addEventListener('contextmenu',function(e){if(homeFromEvent(e)&&fired){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();}},true);"
+        "document.addEventListener('click',function(e){var p=homeFromEvent(e);if(!p||Date.now()>=suppressHomeClickUntil)return;suppressHomeClickUntil=0;e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();},true);"
+        "document.addEventListener('contextmenu',function(e){if(homeFromEvent(e)&&Date.now()<suppressHomeClickUntil){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();}},true);"
     "})();";
     [webView evaluateJavaScript:script completionHandler:^(id result, NSError *error) {
         if (error) {
