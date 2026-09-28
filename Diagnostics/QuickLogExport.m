@@ -25,7 +25,7 @@
 }
 
 - (void)sx_installQuickLogButton {
-    // Intentionally empty. Quick log export now lives on a long press of the X profile icon.
+    // Intentionally empty. Quick log export now lives on a long press of the X home button.
 }
 
 - (void)sx_quickLog_webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation {
@@ -35,10 +35,10 @@
         "if(window.__scarletXLongPressLogInstalled)return;"
         "window.__scarletXLongPressLogInstalled=true;"
         "var timer=null,target=null,fired=false;"
-        "function profileFromEvent(e){var n=e&&e.target;return n&&n.closest?n.closest('[data-testid=\\\"DashButton_ProfileIcon_Link\\\"]'):null;}"
+        "function homeFromEvent(e){var n=e&&e.target;return n&&n.closest?n.closest('a[href=\"/home\"]'):null;}"
         "function clear(){if(timer){clearTimeout(timer);timer=null;}target=null;}"
         "document.addEventListener('touchstart',function(e){"
-            "var p=profileFromEvent(e);if(!p)return;clear();target=p;fired=false;"
+            "var p=homeFromEvent(e);if(!p)return;clear();target=p;fired=false;"
             "timer=setTimeout(function(){timer=null;if(!target)return;fired=true;"
                 "try{window.webkit.messageHandlers.scarletx.postMessage({type:'quick-log-export'});}catch(_){}"
             "},600);"
@@ -49,7 +49,7 @@
             "if(!target)return;var consumed=fired;clear();"
             "if(consumed){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();setTimeout(function(){fired=false;},0);}"
         "},{capture:true,passive:false});"
-        "document.addEventListener('contextmenu',function(e){if(profileFromEvent(e)&&fired){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();}},true);"
+        "document.addEventListener('contextmenu',function(e){if(homeFromEvent(e)&&fired){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();}},true);"
     "})();";
     [webView evaluateJavaScript:script completionHandler:^(id result, NSError *error) {
         if (error) {
@@ -62,7 +62,7 @@
     if ([message.name isEqualToString:@"scarletx"] && [message.body isKindOfClass:NSDictionary.class]) {
         NSString *type = [message.body[@"type"] isKindOfClass:NSString.class] ? message.body[@"type"] : @"";
         if ([type isEqualToString:@"quick-log-export"]) {
-            [[DiagnosticsStore shared] addEvent:@"Quick log export" detail:@"Profile icon long press" url:nil];
+            [[DiagnosticsStore shared] addEvent:@"Quick log export" detail:@"Home button long press" url:nil];
             [self sx_exportDiagnostics:nil];
             return;
         }
@@ -100,7 +100,7 @@
     @try { webView = [self valueForKey:@"webView"]; } @catch (__unused NSException *e) {}
     if (!webView) { [self sx_shareDiagnostics:sender]; return; }
 
-    NSString *script = @"(function(){var p=document.querySelector('[data-testid=\\\"DashButton_ProfileIcon_Link\\\"]');var img=p&&p.querySelector('img');var dialogs=document.querySelectorAll('[role=dialog],[role=menu]');var buttons=document.querySelectorAll('button[aria-label$=\\\"に切り替える\\\"]');return {probe:'closed-dom',profileExists:!!p,profileExpanded:p?(p.getAttribute('aria-expanded')||''):'',profileLabel:p?(p.getAttribute('aria-label')||''):'',profileImage:img?(img.currentSrc||img.src||''):'',dialogCount:dialogs.length,switchButtonCount:buttons.length,switchLabels:Array.from(buttons).map(function(b){return b.getAttribute('aria-label')||'';})};})()";
+    NSString *script = @"(function(){var p=document.querySelector('[data-testid=\"DashButton_ProfileIcon_Link\"]');var img=p&&p.querySelector('img');var dialogs=document.querySelectorAll('[role=dialog],[role=menu]');var buttons=document.querySelectorAll('button[aria-label$=\"に切り替える\"]');return {probe:'closed-dom',profileExists:!!p,profileExpanded:p?(p.getAttribute('aria-expanded')||''):'',profileLabel:p?(p.getAttribute('aria-label')||''):'',profileImage:img?(img.currentSrc||img.src||''):'',dialogCount:dialogs.length,switchButtonCount:buttons.length,switchLabels:Array.from(buttons).map(function(b){return b.getAttribute('aria-label')||'';})};})()";
     __weak typeof(self) weakSelf = self;
     [webView evaluateJavaScript:script completionHandler:^(id result, NSError *error) {
         typeof(self) self = weakSelf;
