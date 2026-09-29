@@ -28,7 +28,7 @@
     ];
     self.dimmingView=[UIView new]; self.dimmingView.backgroundColor=[UIColor colorWithWhite:0 alpha:.35]; self.dimmingView.alpha=0; self.dimmingView.translatesAutoresizingMaskIntoConstraints=NO; [self.view addSubview:self.dimmingView]; [self.dimmingView addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(backgroundTapped:)]];
     self.panelView=[UIView new]; self.panelView.backgroundColor=UIColor.systemBackgroundColor; self.panelView.translatesAutoresizingMaskIntoConstraints=NO; [self.view addSubview:self.panelView];
-    self.tableView=[[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStylePlain]; self.tableView.backgroundColor=UIColor.systemBackgroundColor; self.tableView.separatorStyle=UITableViewCellSeparatorStyleNone; self.tableView.dataSource=self; self.tableView.delegate=self; self.tableView.rowHeight=54; self.tableView.translatesAutoresizingMaskIntoConstraints=NO; [self.panelView addSubview:self.tableView];
+    self.tableView=[[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStylePlain]; self.tableView.backgroundColor=UIColor.systemBackgroundColor; self.tableView.separatorStyle=UITableViewCellSeparatorStyleNone; self.tableView.dataSource=self; self.tableView.delegate=self; self.tableView.rowHeight=50; self.tableView.contentInset=UIEdgeInsetsMake(2,0,12,0); self.tableView.translatesAutoresizingMaskIntoConstraints=NO; [self.panelView addSubview:self.tableView];
     self.tableView.tableHeaderView=[self buildProfileHeader];
     CGFloat width=MIN(340.0,UIScreen.mainScreen.bounds.size.width*.86); self.panelLeadingConstraint=[self.panelView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:-width];
     [NSLayoutConstraint activateConstraints:@[[self.dimmingView.topAnchor constraintEqualToAnchor:self.view.topAnchor],[self.dimmingView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],[self.dimmingView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],[self.dimmingView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],self.panelLeadingConstraint,[self.panelView.topAnchor constraintEqualToAnchor:self.view.topAnchor],[self.panelView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],[self.panelView.widthAnchor constraintEqualToConstant:width],[self.tableView.topAnchor constraintEqualToAnchor:self.panelView.safeAreaLayoutGuide.topAnchor],[self.tableView.leadingAnchor constraintEqualToAnchor:self.panelView.leadingAnchor],[self.tableView.trailingAnchor constraintEqualToAnchor:self.panelView.trailingAnchor],[self.tableView.bottomAnchor constraintEqualToAnchor:self.panelView.bottomAnchor]]];
@@ -74,39 +74,32 @@
 
 - (UIView *)buildProfileHeader {
     NSArray *accounts=[self.profileData[@"accounts"] isKindOfClass:NSArray.class]?self.profileData[@"accounts"]:@[];
-    UIView *header=[[UIView alloc] initWithFrame:CGRectMake(0,0,340,184)];
+    UIView *header=[[UIView alloc] initWithFrame:CGRectMake(0,0,340,150)];
     UIImageView *avatar=[self accountAvatarAtX:18 y:12 size:48 URL:self.profileData[@"avatarURL"]]; [header addSubview:avatar];
 
-    CGFloat x=76;
+    CGFloat x=286;
     NSInteger accountIndex=0;
+    NSInteger shown=0;
     for(NSDictionary *account in accounts){
-        if(x>276)break;
+        if(shown>=4)break;
         if(![account isKindOfClass:NSDictionary.class]){accountIndex++;continue;}
         NSString *handle=[account[@"handle"] isKindOfClass:NSString.class]?account[@"handle"]:@"";
         NSString *avatarURL=[account[@"avatarURL"] isKindOfClass:NSString.class]?account[@"avatarURL"]:@"";
-        UIImageView *other=[self accountAvatarAtX:x y:12 size:36 URL:avatarURL]; [header addSubview:other];
-        UILabel *accountHandle=[[UILabel alloc] initWithFrame:CGRectMake(x-10,51,56,30)];
-        accountHandle.font=[UIFont systemFontOfSize:9 weight:UIFontWeightMedium];
-        accountHandle.textColor=UIColor.secondaryLabelColor;
-        accountHandle.textAlignment=NSTextAlignmentCenter;
-        accountHandle.numberOfLines=2;
-        accountHandle.adjustsFontSizeToFitWidth=YES;
-        accountHandle.minimumScaleFactor=.7;
-        accountHandle.text=handle;
-        [header addSubview:accountHandle];
+        UIImageView *other=[self accountAvatarAtX:x y:16 size:34 URL:avatarURL]; [header addSubview:other];
         UIButton *probe=[UIButton buttonWithType:UIButtonTypeCustom];
-        probe.frame=CGRectMake(x-10,8,56,72);
+        probe.frame=CGRectMake(x-5,11,44,44);
         probe.tag=accountIndex;
         probe.accessibilityLabel=[NSString stringWithFormat:@"%@ に切り替える",handle];
         [probe addTarget:self action:@selector(accountProbeTapped:) forControlEvents:UIControlEventTouchUpInside];
         [header addSubview:probe];
-        x+=66;
+        x-=42;
+        shown++;
         accountIndex++;
     }
 
-    UILabel *name=[[UILabel alloc] initWithFrame:CGRectMake(18,82,304,24)]; name.font=[UIFont systemFontOfSize:18 weight:UIFontWeightBold]; name.text=[self.profileData[@"name"] isKindOfClass:NSString.class]?self.profileData[@"name"]:@""; [header addSubview:name];
-    UILabel *handle=[[UILabel alloc] initWithFrame:CGRectMake(18,106,304,21)]; handle.font=[UIFont systemFontOfSize:15]; handle.textColor=UIColor.secondaryLabelColor; handle.text=[self.profileData[@"handle"] isKindOfClass:NSString.class]?self.profileData[@"handle"]:@""; [header addSubview:handle];
-    UILabel *counts=[[UILabel alloc] initWithFrame:CGRectMake(18,134,310,22)]; counts.font=[UIFont systemFontOfSize:14]; counts.textColor=UIColor.secondaryLabelColor;
+    UILabel *name=[[UILabel alloc] initWithFrame:CGRectMake(18,70,304,22)]; name.font=[UIFont systemFontOfSize:17 weight:UIFontWeightBold]; name.text=[self.profileData[@"name"] isKindOfClass:NSString.class]?self.profileData[@"name"]:@""; [header addSubview:name];
+    UILabel *handle=[[UILabel alloc] initWithFrame:CGRectMake(18,93,304,20)]; handle.font=[UIFont systemFontOfSize:14]; handle.textColor=UIColor.secondaryLabelColor; handle.text=[self.profileData[@"handle"] isKindOfClass:NSString.class]?self.profileData[@"handle"]:@""; [header addSubview:handle];
+    UILabel *counts=[[UILabel alloc] initWithFrame:CGRectMake(18,121,310,20)]; counts.font=[UIFont systemFontOfSize:13]; counts.textColor=UIColor.secondaryLabelColor;
     NSString *following=[self.profileData[@"following"] isKindOfClass:NSString.class]?self.profileData[@"following"]:@"";
     NSString *followers=[self.profileData[@"followers"] isKindOfClass:NSString.class]?self.profileData[@"followers"]:@"";
     NSDictionary *followerProbe=[self.profileData[@"followerProbe"] isKindOfClass:NSDictionary.class]?self.profileData[@"followerProbe"]:nil;
@@ -116,7 +109,6 @@
     if(following.length==0&&friendsCount)following=friendsCount.stringValue;
     if(followers.length==0&&followersCount)followers=followersCount.stringValue;
     counts.text=[NSString stringWithFormat:@"%@ フォロー中    %@ フォロワー",following,followers]; [header addSubview:counts];
-    if(accounts.count){ UILabel *hint=[[UILabel alloc] initWithFrame:CGRectMake(18,160,304,18)]; hint.font=[UIFont systemFontOfSize:12]; hint.textColor=UIColor.tertiaryLabelColor; hint.text=@"ログイン中の他のアカウント（タップで切り替え）"; [header addSubview:hint]; }
     return header;
 }
 
@@ -125,6 +117,6 @@
 - (void)backgroundTapped:(id)sender{if(!self.accountSelectionInFlight)[self dismissAnimated:YES];}
 - (void)swipedClosed:(id)sender{if(!self.accountSelectionInFlight)[self dismissAnimated:YES];}
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{return self.items.count;}
-- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath { UITableViewCell *cell=[tableView dequeueReusableCellWithIdentifier:@"drawer"]; if(!cell)cell=[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"drawer"]; NSDictionary *item=self.items[indexPath.row]; cell.textLabel.text=item[@"title"]; cell.textLabel.font=[UIFont systemFontOfSize:18 weight:UIFontWeightSemibold]; cell.imageView.image=[UIImage systemImageNamed:item[@"icon"]]; return cell; }
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath { UITableViewCell *cell=[tableView dequeueReusableCellWithIdentifier:@"drawer"]; if(!cell)cell=[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"drawer"]; NSDictionary *item=self.items[indexPath.row]; cell.textLabel.text=item[@"title"]; cell.textLabel.font=[UIFont systemFontOfSize:17 weight:UIFontWeightSemibold]; cell.imageView.image=[UIImage systemImageNamed:item[@"icon"]]; cell.imageView.tintColor=UIColor.labelColor; return cell; }
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath { if(self.accountSelectionInFlight)return; [tableView deselectRowAtIndexPath:indexPath animated:YES]; NSDictionary *item=self.items[indexPath.row]; id<NativeDrawerViewControllerDelegate> delegate=self.delegate; NSString *action=item[@"action"],*path=item[@"path"]; if(!action&&!path)return; [self dismissAnimated:YES]; if([action isEqual:@"settings"])[delegate nativeDrawerDidSelectScarletSettings:self]; else if(path)[delegate nativeDrawer:self didSelectPath:path]; }
 @end
