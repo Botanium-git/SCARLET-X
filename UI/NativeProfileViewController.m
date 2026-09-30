@@ -15,6 +15,15 @@
     [self buildUI];
 }
 
+- (void)applyProfileData:(NSDictionary *)profileData {
+    self.profileData=[profileData isKindOfClass:NSDictionary.class]?[profileData copy]:@{};
+    if(!self.isViewLoaded)return;
+    [self.scrollView removeFromSuperview];
+    self.scrollView=nil;
+    self.contentView=nil;
+    [self buildUI];
+}
+
 - (NSString *)stringValue:(id)value {
     if([value isKindOfClass:NSString.class])return value;
     if([value isKindOfClass:NSNumber.class])return [(NSNumber *)value stringValue];
@@ -93,6 +102,7 @@
     NSDictionary *followerProbe=[data[@"followerProbe"] isKindOfClass:NSDictionary.class]?data[@"followerProbe"]:@{};
     NSDictionary *counts=[followerProbe[@"counts"] isKindOfClass:NSDictionary.class]?followerProbe[@"counts"]:@{};
     NSArray *posts=[data[@"posts"] isKindOfClass:NSArray.class]?data[@"posts"]:@[];
+    BOOL postsLoading=[data[@"postsLoading"] respondsToSelector:@selector(boolValue)]?[data[@"postsLoading"] boolValue]:NO;
 
     NSString *name=[self stringValue:data[@"name"]];
     NSString *handle=[self stringValue:data[@"handle"]];
@@ -204,7 +214,7 @@
         empty.textColor=UIColor.secondaryLabelColor;
         empty.textAlignment=NSTextAlignmentCenter;
         empty.numberOfLines=0;
-        empty.text=@"この時点でX側に読み込まれている\n通常ポストはありません";
+        empty.text=postsLoading?@"Xからポストを読み込み中…":@"通常ポストはありません";
         [postsStack addArrangedSubview:empty];
         [empty.heightAnchor constraintGreaterThanOrEqualToConstant:100].active=YES;
     }
