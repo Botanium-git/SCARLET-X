@@ -21,6 +21,19 @@
     return @"";
 }
 
+- (NSString *)displayDate:(NSString *)raw {
+    if(raw.length==0)return @"";
+    NSDateFormatter *input=[NSDateFormatter new];
+    input.locale=[[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
+    input.dateFormat=@"EEE MMM dd HH:mm:ss Z yyyy";
+    NSDate *date=[input dateFromString:raw];
+    if(!date)return raw;
+    NSDateFormatter *output=[NSDateFormatter new];
+    output.locale=[NSLocale currentLocale];
+    output.dateFormat=@"M/d H:mm";
+    return [output stringFromDate:date];
+}
+
 - (void)loadImageURLString:(NSString *)urlString into:(UIImageView *)imageView {
     if(![urlString isKindOfClass:NSString.class]||urlString.length==0)return;
     NSURL *url=[NSURL URLWithString:urlString]; if(!url)return;
@@ -32,10 +45,54 @@
     }] resume];
 }
 
+- (UIView *)postViewForPost:(NSDictionary *)post {
+    UIStackView *stack=[UIStackView new];
+    stack.axis=UILayoutConstraintAxisVertical;
+    stack.spacing=8;
+    stack.layoutMargins=UIEdgeInsetsMake(14,16,14,16);
+    stack.layoutMarginsRelativeArrangement=YES;
+
+    NSString *created=[self displayDate:[self stringValue:post[@"createdAt"]]];
+    if(created.length){
+        UILabel *date=[UILabel new];
+        date.font=[UIFont systemFontOfSize:13];
+        date.textColor=UIColor.secondaryLabelColor;
+        date.text=created;
+        [stack addArrangedSubview:date];
+    }
+
+    UILabel *body=[UILabel new];
+    body.font=[UIFont systemFontOfSize:15];
+    body.numberOfLines=0;
+    body.text=[self stringValue:post[@"text"]];
+    [stack addArrangedSubview:body];
+
+    NSString *mediaURL=[self stringValue:post[@"mediaURL"]];
+    if(mediaURL.length){
+        UIImageView *media=[UIImageView new];
+        media.translatesAutoresizingMaskIntoConstraints=NO;
+        media.backgroundColor=UIColor.secondarySystemBackgroundColor;
+        media.contentMode=UIViewContentModeScaleAspectFill;
+        media.clipsToBounds=YES;
+        media.layer.cornerRadius=12;
+        [media.heightAnchor constraintEqualToConstant:220].active=YES;
+        [stack addArrangedSubview:media];
+        [self loadImageURLString:mediaURL into:media];
+    }
+
+    UIView *separator=[UIView new];
+    separator.translatesAutoresizingMaskIntoConstraints=NO;
+    separator.backgroundColor=UIColor.separatorColor;
+    [separator.heightAnchor constraintEqualToConstant:.5].active=YES;
+    [stack addArrangedSubview:separator];
+    return stack;
+}
+
 - (void)buildUI {
     NSDictionary *data=[self.profileData isKindOfClass:NSDictionary.class]?self.profileData:@{};
     NSDictionary *followerProbe=[data[@"followerProbe"] isKindOfClass:NSDictionary.class]?data[@"followerProbe"]:@{};
     NSDictionary *counts=[followerProbe[@"counts"] isKindOfClass:NSDictionary.class]?followerProbe[@"counts"]:@{};
+    NSArray *posts=[data[@"posts"] isKindOfClass:NSArray.class]?data[@"posts"]:@[];
 
     NSString *name=[self stringValue:data[@"name"]];
     NSString *handle=[self stringValue:data[@"handle"]];
@@ -123,14 +180,34 @@
     separator.backgroundColor=UIColor.separatorColor;
     [self.contentView addSubview:separator];
 
-    UILabel *phaseLabel=[UILabel new];
-    phaseLabel.translatesAutoresizingMaskIntoConstraints=NO;
-    phaseLabel.font=[UIFont systemFontOfSize:14];
-    phaseLabel.textColor=UIColor.secondaryLabelColor;
-    phaseLabel.textAlignment=NSTextAlignmentCenter;
-    phaseLabel.numberOfLines=0;
-    phaseLabel.text=@"プロフィール上部をネイティブ表示中\n投稿一覧は次の段階で追加";
-    [self.contentView addSubview:phaseLabel];
+    UILabel *sectionTitle=[UILabel new];
+    sectionTitle.translatesAutoresizingMaskIntoConstraints=NO;
+    sectionTitle.font=[UIFont systemFontOfSize:17 weight:UIFontWeightBold];
+    sectionTitle.text=@"ポスト";
+    [self.contentView addSubview:sectionTitle];
+
+    UIStackView *postsStack=[UIStackView new];
+    postsStack.translatesAutoresizingMaskIntoConstraints=NO;
+    postsStack.axis=UILayoutConstraintAxisVertical;
+    postsStack.spacing=0;
+    [self.contentView addSubview:postsStack];
+
+    NSInteger added=0;
+    for(id item in posts){
+        if(![item isKindOfClass:NSDictionary.class])continue;
+        [postsStack addArrangedSubview:[self postViewForPost:(NSDictionary *)item]];
+        added++;
+    }
+    if(added==0){
+        UILabel *empty=[UILabel new];
+        empty.font=[UIFont systemFontOfSize:14];
+        empty.textColor=UIColor.secondaryLabelColor;
+        empty.textAlignment=NSTextAlignmentCenter;
+        empty.numberOfLines=0;
+        empty.text=@"この時点でX側に読み込まれている\n通常ポストはありません";
+        [postsStack addArrangedSubview:empty];
+        [empty.heightAnchor constraintGreaterThanOrEqualToConstant:100].active=YES;
+    }
 
     UILayoutGuide *safe=self.view.safeAreaLayoutGuide;
     [NSLayoutConstraint activateConstraints:@[
@@ -179,10 +256,14 @@
         [separator.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor],
         [separator.heightAnchor constraintEqualToConstant:.5],
 
-        [phaseLabel.topAnchor constraintEqualToAnchor:separator.bottomAnchor constant:28],
-        [phaseLabel.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:24],
-        [phaseLabel.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-24],
-        [phaseLabel.bottomAnchor constraintEqualToAnchor:self.contentView.bottomAnchor constant:-40]
+        [sectionTitle.topAnchor constraintEqualToAnchor:separator.bottomAnchor constant:14],
+        [sectionTitle.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:16],
+        [sectionTitle.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
+
+        [postsStack.topAnchor constraintEqualToAnchor:sectionTitle.bottomAnchor constant:4],
+        [postsStack.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor],
+        [postsStack.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor],
+        [postsStack.bottomAnchor constraintEqualToAnchor:self.contentView.bottomAnchor constant:-30]
     ]];
 }
 
