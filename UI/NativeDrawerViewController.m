@@ -24,7 +24,8 @@
         @{@"title":@"フォローリクエスト", @"icon":@"person.badge.clock", @"path":@"/follower_requests"},
         @{@"title":@"クリエイタースタジオ", @"icon":@"paperplane", @"path":@"/i/jf/creators/studio"},
         @{@"title":@"設定とプライバシー", @"icon":@"gearshape", @"path":@"/settings/account"},
-        @{@"title":@"Scarlet X", @"icon":@"slider.horizontal.3", @"action":@"settings"}
+        @{@"title":@"Scarlet X", @"icon":@"slider.horizontal.3", @"action":@"settings"},
+        @{@"title":@"ログアウト", @"icon":@"rectangle.portrait.and.arrow.right", @"path":@"/logout", @"destructive":@YES}
     ];
     self.dimmingView=[UIView new]; self.dimmingView.backgroundColor=[UIColor colorWithWhite:0 alpha:.35]; self.dimmingView.alpha=0; self.dimmingView.translatesAutoresizingMaskIntoConstraints=NO; [self.view addSubview:self.dimmingView]; [self.dimmingView addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(backgroundTapped:)]];
     self.panelView=[UIView new]; self.panelView.backgroundColor=UIColor.systemBackgroundColor; self.panelView.translatesAutoresizingMaskIntoConstraints=NO; [self.view addSubview:self.panelView];
@@ -138,6 +139,18 @@
 - (void)backgroundTapped:(id)sender{if(!self.accountSelectionInFlight)[self dismissAnimated:YES];}
 - (void)swipedClosed:(id)sender{if(!self.accountSelectionInFlight)[self dismissAnimated:YES];}
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{return self.items.count;}
-- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath { UITableViewCell *cell=[tableView dequeueReusableCellWithIdentifier:@"drawer"]; if(!cell)cell=[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"drawer"]; NSDictionary *item=self.items[indexPath.row]; cell.textLabel.text=item[@"title"]; cell.textLabel.font=[UIFont systemFontOfSize:17 weight:UIFontWeightSemibold]; cell.imageView.image=[UIImage systemImageNamed:item[@"icon"]]; cell.imageView.tintColor=UIColor.labelColor; return cell; }
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    UITableViewCell *cell=[tableView dequeueReusableCellWithIdentifier:@"drawer"];
+    if(!cell)cell=[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"drawer"];
+    NSDictionary *item=self.items[indexPath.row];
+    BOOL destructive=[item[@"destructive"] boolValue];
+    UIColor *tint=destructive?UIColor.systemRedColor:UIColor.labelColor;
+    cell.textLabel.text=item[@"title"];
+    cell.textLabel.font=[UIFont systemFontOfSize:17 weight:UIFontWeightSemibold];
+    cell.textLabel.textColor=tint;
+    cell.imageView.image=[UIImage systemImageNamed:item[@"icon"]];
+    cell.imageView.tintColor=tint;
+    return cell;
+}
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath { if(self.accountSelectionInFlight)return; [tableView deselectRowAtIndexPath:indexPath animated:YES]; NSDictionary *item=self.items[indexPath.row]; id<NativeDrawerViewControllerDelegate> delegate=self.delegate; NSString *action=item[@"action"],*path=item[@"path"]; if(!action&&!path)return; [self dismissAnimated:YES]; if([action isEqual:@"settings"])[delegate nativeDrawerDidSelectScarletSettings:self]; else if(path)[delegate nativeDrawer:self didSelectPath:path]; }
 @end
