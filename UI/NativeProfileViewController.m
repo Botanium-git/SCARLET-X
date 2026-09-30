@@ -85,7 +85,6 @@
     editButton.layer.cornerRadius=18;
     editButton.layer.borderWidth=1;
     editButton.layer.borderColor=UIColor.separatorColor.CGColor;
-    editButton.contentEdgeInsets=UIEdgeInsetsMake(7,14,7,14);
     editButton.enabled=NO;
     editButton.alpha=.55;
     [self.contentView addSubview:editButton];
@@ -157,6 +156,7 @@
 
         [editButton.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
         [editButton.topAnchor constraintEqualToAnchor:banner.bottomAnchor constant:12],
+        [editButton.heightAnchor constraintEqualToConstant:36],
 
         [nameLabel.topAnchor constraintEqualToAnchor:avatar.bottomAnchor constant:12],
         [nameLabel.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:16],
