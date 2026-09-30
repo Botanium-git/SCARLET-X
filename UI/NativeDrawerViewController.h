@@ -7,6 +7,8 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol NativeDrawerViewControllerDelegate <NSObject>
 - (void)nativeDrawer:(NativeDrawerViewController *)drawer didSelectPath:(NSString *)path;
 - (void)nativeDrawerDidSelectScarletSettings:(NativeDrawerViewController *)drawer;
+@optional
+- (void)nativeDrawerDidSelectNativeProfile:(NativeDrawerViewController *)drawer;
 @end
 
 @interface NativeDrawerViewController : UIViewController

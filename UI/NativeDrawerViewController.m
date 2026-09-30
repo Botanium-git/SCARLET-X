@@ -15,7 +15,7 @@
     [super viewDidLoad];
     self.view.backgroundColor = UIColor.clearColor;
     self.items = @[
-        @{@"title":@"プロフィール", @"icon":@"person", @"path":@"/i/profile"},
+        @{@"title":@"プロフィール", @"icon":@"person", @"action":@"profile"},
         @{@"title":@"プレミアム", @"icon":@"checkmark.seal", @"path":@"/i/premium_sign_up"},
         @{@"title":@"履歴", @"icon":@"bookmark", @"path":@"/i/bookmarks"},
         @{@"title":@"コミュニティ", @"icon":@"person.3", @"path":@"/i/communities"},
@@ -152,5 +152,16 @@
     cell.imageView.tintColor=tint;
     return cell;
 }
-- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath { if(self.accountSelectionInFlight)return; [tableView deselectRowAtIndexPath:indexPath animated:YES]; NSDictionary *item=self.items[indexPath.row]; id<NativeDrawerViewControllerDelegate> delegate=self.delegate; NSString *action=item[@"action"],*path=item[@"path"]; if(!action&&!path)return; [self dismissAnimated:YES]; if([action isEqual:@"settings"])[delegate nativeDrawerDidSelectScarletSettings:self]; else if(path)[delegate nativeDrawer:self didSelectPath:path]; }
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    if(self.accountSelectionInFlight)return;
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    NSDictionary *item=self.items[indexPath.row];
+    id<NativeDrawerViewControllerDelegate> delegate=self.delegate;
+    NSString *action=item[@"action"],*path=item[@"path"];
+    if(!action&&!path)return;
+    [self dismissAnimated:YES];
+    if([action isEqual:@"profile"]&&[delegate respondsToSelector:@selector(nativeDrawerDidSelectNativeProfile:)]) [delegate nativeDrawerDidSelectNativeProfile:self];
+    else if([action isEqual:@"settings"]) [delegate nativeDrawerDidSelectScarletSettings:self];
+    else if(path) [delegate nativeDrawer:self didSelectPath:path];
+}
 @end
