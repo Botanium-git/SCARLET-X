@@ -72,12 +72,33 @@
     [delegate nativeDrawer:self didSelectPath:path];
 }
 
+- (void)addAccountTapped:(UIButton *)sender {
+    if(self.accountSelectionInFlight)return;
+    self.accountSelectionInFlight=YES;
+    self.view.userInteractionEnabled=NO;
+    id<NativeDrawerViewControllerDelegate> delegate=self.delegate;
+    [self dismissAnimated:YES];
+    [delegate nativeDrawer:self didSelectPath:@"/i/flow/login"];
+}
+
 - (UIView *)buildProfileHeader {
     NSArray *accounts=[self.profileData[@"accounts"] isKindOfClass:NSArray.class]?self.profileData[@"accounts"]:@[];
     UIView *header=[[UIView alloc] initWithFrame:CGRectMake(0,0,340,150)];
     UIImageView *avatar=[self accountAvatarAtX:18 y:12 size:48 URL:self.profileData[@"avatarURL"]]; [header addSubview:avatar];
 
-    CGFloat x=286;
+    UIButton *addAccount=[UIButton buttonWithType:UIButtonTypeSystem];
+    addAccount.frame=CGRectMake(286,16,34,34);
+    addAccount.layer.cornerRadius=17;
+    addAccount.layer.borderWidth=1.5;
+    addAccount.layer.borderColor=UIColor.secondaryLabelColor.CGColor;
+    addAccount.tintColor=UIColor.labelColor;
+    UIImageSymbolConfiguration *plusConfig=[UIImageSymbolConfiguration configurationWithPointSize:15 weight:UIImageSymbolWeightSemibold];
+    [addAccount setImage:[UIImage systemImageNamed:@"plus" withConfiguration:plusConfig] forState:UIControlStateNormal];
+    addAccount.accessibilityLabel=@"アカウントを追加";
+    [addAccount addTarget:self action:@selector(addAccountTapped:) forControlEvents:UIControlEventTouchUpInside];
+    [header addSubview:addAccount];
+
+    CGFloat x=244;
     NSInteger accountIndex=0;
     NSInteger shown=0;
     for(NSDictionary *account in accounts){
