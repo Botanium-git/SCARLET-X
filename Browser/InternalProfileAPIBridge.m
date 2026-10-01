@@ -63,9 +63,11 @@ static char SXInternalProfileAPIReloadKey;
           "if(!originalFactory||originalFactory.__scarletXWrapped)continue;"
           "post({type:'bootstrap-module-seen',moduleId:'923187'});"
           "var wrapped=function(module,exports,req){"
+            "post({type:'factory-enter',moduleId:'923187',alreadyCached:!!(req.c&&req.c['923187'])});"
             "var originalD=req.d,cachedOriginalW=null,cachedWrappedW=null;"
             "req.d=function(target,defs){"
               "try{"
+                "post({type:'req-d',defsType:typeof defs,isArray:Array.isArray(defs),defsKeys:defs&&typeof defs==='object'?Object.keys(defs).slice(0,40):[]});"
                 "if(defs&&typeof defs==='object'&&!Array.isArray(defs)&&typeof defs.W==='function'){"
                   "var copy={};Object.keys(defs).forEach(function(k){copy[k]=defs[k];});"
                   "var originalGetter=defs.W;"
@@ -128,6 +130,22 @@ static char SXInternalProfileAPIReloadKey;
     "})();";
 }
 
+- (NSString *)sx_internalProfileAPI_cacheProbeScript {
+    return @"(function(){"
+    "function post(o){try{window.webkit.messageHandlers.scarletxInternalProfileAPI.postMessage(o);}catch(_){}}"
+    "try{"
+      "var q=window.webpackChunk_twitter_responsive_web,req=null;"
+      "if(!Array.isArray(q)){post({type:'cache-probe',stage:'no-chunk-global'});return;}"
+      "var marker=930000000+Math.floor(Math.random()*60000000);"
+      "q.push([[marker],{},function(r){req=r;}]);"
+      "if(!req){post({type:'cache-probe',stage:'no-require'});return;}"
+      "var c=req.c&&req.c['923187'],m=req.m&&req.m['923187'],ex=c&&c.exports,d=null;"
+      "try{d=ex?Object.getOwnPropertyDescriptor(ex,'W'):null;}catch(_e){}"
+      "post({type:'cache-probe',stage:'ok',factoryPresent:!!m,cachePresent:!!c,loaded:!!(c&&c.loaded),exportKeys:ex&&typeof ex==='object'?Object.keys(ex).slice(0,40):[],WType:ex?typeof ex.W:'missing',WDescriptor:d?{configurable:!!d.configurable,enumerable:!!d.enumerable,hasGet:typeof d.get==='function',hasSet:typeof d.set==='function',writable:'writable'in d?!!d.writable:null,valueType:'value'in d?typeof d.value:null}:null});"
+    "}catch(e){post({type:'cache-probe',stage:'exception',message:String(e&&e.stack||e)});}"
+    "})();";
+}
+
 - (void)sx_internalProfileAPI_viewDidLoad {
     [self sx_internalProfileAPI_viewDidLoad];
 
@@ -148,6 +166,18 @@ static char SXInternalProfileAPIReloadKey;
                                                  forMainFrameOnly:YES];
         [controller addUserScript:hook];
         [[DiagnosticsStore shared] addEvent:@"Internal profile API bridge installed" detail:@"document-start module 923187.W capture installed" url:webView.URL];
+
+        NSString *cacheProbe = [self sx_internalProfileAPI_cacheProbeScript];
+        __weak WKWebView *probeWebView = webView;
+        for (NSNumber *delay in @[@1.0, @3.0, @6.0]) {
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay.doubleValue * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                WKWebView *strongProbeWebView = probeWebView;
+                if (!strongProbeWebView) return;
+                [strongProbeWebView evaluateJavaScript:cacheProbe completionHandler:^(id result, NSError *error) {
+                    if (error) [[DiagnosticsStore shared] addError:@"Internal profile API cache probe evaluate failed" error:error url:strongProbeWebView.URL];
+                }];
+            });
+        }
     }
 
     if (![objc_getAssociatedObject(self, &SXInternalProfileAPIReloadKey) boolValue]) {
