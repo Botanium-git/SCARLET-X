@@ -171,21 +171,123 @@ static char SX214VideoURLKey;
     return grid;
 }
 
-- (UIView *)sx_212_postViewForPost:(NSDictionary *)post {
-    UIStackView *stack=[UIStackView new];
-    stack.axis=UILayoutConstraintAxisVertical;
-    stack.spacing=8;
-    stack.layoutMargins=UIEdgeInsetsMake(14,16,14,16);
-    stack.layoutMarginsRelativeArrangement=YES;
+- (NSString *)sx_215_inlineDate:(NSString *)raw {
+    if(raw.length==0)return @"";
+    NSDateFormatter *input=[NSDateFormatter new];
+    input.locale=[[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
+    input.dateFormat=@"EEE MMM dd HH:mm:ss Z yyyy";
+    NSDate *date=[input dateFromString:raw];
+    if(!date)return @"";
+    NSDateFormatter *output=[NSDateFormatter new];
+    output.locale=[NSLocale currentLocale];
+    output.dateFormat=@"M/d";
+    return [output stringFromDate:date];
+}
 
-    NSString *created=[self displayDate:[self stringValue:post[@"createdAt"]]];
-    if(created.length){
-        UILabel *date=[UILabel new];
-        date.font=[UIFont systemFontOfSize:13];
-        date.textColor=UIColor.secondaryLabelColor;
-        date.text=created;
-        [stack addArrangedSubview:date];
+- (UIView *)sx_215_actionItemWithSymbol:(NSString *)symbol count:(NSNumber *)count {
+    UIStackView *item=[UIStackView new];
+    item.axis=UILayoutConstraintAxisHorizontal;
+    item.alignment=UIStackViewAlignmentCenter;
+    item.spacing=5;
+
+    UIImageView *icon=[UIImageView new];
+    icon.translatesAutoresizingMaskIntoConstraints=NO;
+    icon.image=[UIImage systemImageNamed:symbol];
+    icon.tintColor=UIColor.secondaryLabelColor;
+    icon.contentMode=UIViewContentModeScaleAspectFit;
+    [NSLayoutConstraint activateConstraints:@[
+        [icon.widthAnchor constraintEqualToConstant:17],
+        [icon.heightAnchor constraintEqualToConstant:17]
+    ]];
+    [item addArrangedSubview:icon];
+
+    NSInteger value=[count respondsToSelector:@selector(integerValue)]?[count integerValue]:0;
+    if(value>0){
+        UILabel *label=[UILabel new];
+        label.font=[UIFont systemFontOfSize:12];
+        label.textColor=UIColor.secondaryLabelColor;
+        label.text=[NSString stringWithFormat:@"%ld",(long)value];
+        [item addArrangedSubview:label];
     }
+    return item;
+}
+
+- (UIView *)sx_212_postViewForPost:(NSDictionary *)post {
+    NSDictionary *profile=[self.profileData isKindOfClass:NSDictionary.class]?self.profileData:@{};
+    NSString *name=[self stringValue:profile[@"name"]];
+    NSString *handle=[self stringValue:profile[@"handle"]];
+    NSString *avatarURL=[self stringValue:profile[@"avatarURL"]];
+    if(handle.length && ![handle hasPrefix:@"@"])handle=[@"@" stringByAppendingString:handle];
+
+    UIStackView *root=[UIStackView new];
+    root.axis=UILayoutConstraintAxisVertical;
+    root.spacing=0;
+
+    UIStackView *row=[UIStackView new];
+    row.axis=UILayoutConstraintAxisHorizontal;
+    row.alignment=UIStackViewAlignmentTop;
+    row.spacing=10;
+    row.layoutMargins=UIEdgeInsetsMake(11,12,8,12);
+    row.layoutMarginsRelativeArrangement=YES;
+    [root addArrangedSubview:row];
+
+    UIImageView *avatar=[UIImageView new];
+    avatar.translatesAutoresizingMaskIntoConstraints=NO;
+    avatar.backgroundColor=UIColor.secondarySystemBackgroundColor;
+    avatar.contentMode=UIViewContentModeScaleAspectFill;
+    avatar.clipsToBounds=YES;
+    avatar.layer.cornerRadius=20;
+    avatar.image=[UIImage systemImageNamed:@"person.crop.circle.fill"];
+    [NSLayoutConstraint activateConstraints:@[
+        [avatar.widthAnchor constraintEqualToConstant:40],
+        [avatar.heightAnchor constraintEqualToConstant:40]
+    ]];
+    [row addArrangedSubview:avatar];
+    if(avatarURL.length)[self loadImageURLString:avatarURL into:avatar];
+
+    UIStackView *content=[UIStackView new];
+    content.axis=UILayoutConstraintAxisVertical;
+    content.alignment=UIStackViewAlignmentFill;
+    content.spacing=5;
+    [row addArrangedSubview:content];
+
+    UIStackView *header=[UIStackView new];
+    header.axis=UILayoutConstraintAxisHorizontal;
+    header.alignment=UIStackViewAlignmentCenter;
+    header.spacing=4;
+    [content addArrangedSubview:header];
+
+    UILabel *nameLabel=[UILabel new];
+    nameLabel.font=[UIFont systemFontOfSize:15 weight:UIFontWeightSemibold];
+    nameLabel.text=name;
+    nameLabel.lineBreakMode=NSLineBreakByTruncatingTail;
+    [nameLabel setContentCompressionResistancePriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal];
+    [header addArrangedSubview:nameLabel];
+
+    UILabel *meta=[UILabel new];
+    meta.font=[UIFont systemFontOfSize:15];
+    meta.textColor=UIColor.secondaryLabelColor;
+    NSString *date=[self sx_215_inlineDate:[self stringValue:post[@"createdAt"]]];
+    if(handle.length&&date.length)meta.text=[NSString stringWithFormat:@"%@ · %@",handle,date];
+    else meta.text=handle.length?handle:date;
+    meta.lineBreakMode=NSLineBreakByTruncatingTail;
+    [meta setContentCompressionResistancePriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal];
+    [header addArrangedSubview:meta];
+
+    UIView *spacer=[UIView new];
+    [spacer setContentHuggingPriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal];
+    [header addArrangedSubview:spacer];
+
+    UIImageView *more=[UIImageView new];
+    more.translatesAutoresizingMaskIntoConstraints=NO;
+    more.image=[UIImage systemImageNamed:@"ellipsis"];
+    more.tintColor=UIColor.secondaryLabelColor;
+    more.contentMode=UIViewContentModeScaleAspectFit;
+    [NSLayoutConstraint activateConstraints:@[
+        [more.widthAnchor constraintEqualToConstant:18],
+        [more.heightAnchor constraintEqualToConstant:18]
+    ]];
+    [header addArrangedSubview:more];
 
     NSString *text=[self stringValue:post[@"text"]];
     if(text.length){
@@ -193,7 +295,7 @@ static char SX214VideoURLKey;
         body.font=[UIFont systemFontOfSize:15];
         body.numberOfLines=0;
         body.text=text;
-        [stack addArrangedSubview:body];
+        [content addArrangedSubview:body];
     }
 
     NSArray *media=[post[@"media"] isKindOfClass:NSArray.class]?post[@"media"]:@[];
@@ -202,24 +304,35 @@ static char SX214VideoURLKey;
         if(legacyURL.length)media=@[@{@"type":@"photo",@"previewURL":legacyURL}];
     }
     UIView *mediaGrid=[self sx_212_mediaGridForMedia:media];
-    if(mediaGrid)[stack addArrangedSubview:mediaGrid];
+    if(mediaGrid){
+        [content setCustomSpacing:9 afterView:content.arrangedSubviews.lastObject];
+        [content addArrangedSubview:mediaGrid];
+    }
 
     NSNumber *reply=[post[@"replyCount"] isKindOfClass:NSNumber.class]?post[@"replyCount"]:@0;
     NSNumber *retweet=[post[@"retweetCount"] isKindOfClass:NSNumber.class]?post[@"retweetCount"]:@0;
     NSNumber *favorite=[post[@"favoriteCount"] isKindOfClass:NSNumber.class]?post[@"favoriteCount"]:@0;
-    UILabel *counts=[UILabel new];
-    counts.font=[UIFont systemFontOfSize:13];
-    counts.textColor=UIColor.secondaryLabelColor;
-    counts.numberOfLines=1;
-    counts.text=[NSString stringWithFormat:@"返信 %@    リポスト %@    いいね %@",reply,retweet,favorite];
-    [stack addArrangedSubview:counts];
+
+    UIStackView *actions=[UIStackView new];
+    actions.axis=UILayoutConstraintAxisHorizontal;
+    actions.alignment=UIStackViewAlignmentCenter;
+    actions.distribution=UIStackViewDistributionEqualSpacing;
+    [actions addArrangedSubview:[self sx_215_actionItemWithSymbol:@"bubble" count:reply]];
+    [actions addArrangedSubview:[self sx_215_actionItemWithSymbol:@"arrow.2.squarepath" count:retweet]];
+    [actions addArrangedSubview:[self sx_215_actionItemWithSymbol:@"heart" count:favorite]];
+    [actions addArrangedSubview:[self sx_215_actionItemWithSymbol:@"chart.bar" count:nil]];
+    [actions addArrangedSubview:[self sx_215_actionItemWithSymbol:@"bookmark" count:nil]];
+    [actions addArrangedSubview:[self sx_215_actionItemWithSymbol:@"square.and.arrow.up" count:nil]];
+    [actions.heightAnchor constraintEqualToConstant:28].active=YES;
+    [content setCustomSpacing:5 afterView:content.arrangedSubviews.lastObject];
+    [content addArrangedSubview:actions];
 
     UIView *separator=[UIView new];
     separator.translatesAutoresizingMaskIntoConstraints=NO;
     separator.backgroundColor=UIColor.separatorColor;
     [separator.heightAnchor constraintEqualToConstant:.5].active=YES;
-    [stack addArrangedSubview:separator];
-    return stack;
+    [root addArrangedSubview:separator];
+    return root;
 }
 
 @end
