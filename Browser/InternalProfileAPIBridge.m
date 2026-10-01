@@ -162,6 +162,84 @@ static char SXInternalProfileAPIHandlerKey;
 - (void)sx_internalProfileAPI_goHome {
     [self sx_internalProfileAPI_installBeforeFirstNavigation];
     [self sx_internalProfileAPI_goHome];
+
+    WKWebView *webView = nil;
+    @try { webView = [self valueForKey:@"webView"]; } @catch (__unused NSException *exception) {}
+    if (![webView isKindOfClass:WKWebView.class]) return;
+    NSString *probe = [self sx_internalProfileAPI_fiberRecoveryScript];
+    __weak WKWebView *weakWebView = webView;
+    for (NSNumber *delay in @[@3.0, @6.0, @10.0]) {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay.doubleValue * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            WKWebView *strongWebView = weakWebView;
+            if (!strongWebView) return;
+            [strongWebView evaluateJavaScript:probe completionHandler:^(id result, NSError *error) {
+                if (error) [[DiagnosticsStore shared] addError:@"Internal profile API fiber recovery evaluate failed" error:error url:strongWebView.URL];
+            }];
+        });
+    }
+}
+
+- (NSString *)sx_internalProfileAPI_fiberRecoveryScript {
+    return @"(function(){"
+    "function post(o){try{window.webkit.messageHandlers.scarletxInternalProfileAPI.postMessage(o);}catch(_){}}"
+    "function fiberOf(n){if(!n)return null;var ks=[];try{ks=Object.keys(n);}catch(_){return null;}for(var i=0;i<ks.length;i++)if(ks[i].indexOf('__reactFiber$')===0)return n[ks[i]];return null;}"
+    "function addUnique(a,v){if(!v||typeof v!=='object')return;if(a.indexOf(v)<0)a.push(v);}"
+    "try{"
+      "var req=null,q=window.webpackChunk_twitter_responsive_web;"
+      "if(!Array.isArray(q)){post({type:'fiber-recovery',stage:'no-webpack'});return;}"
+      "var marker=940000000+Math.floor(Math.random()*50000000);q.push([[marker],{},function(r){req=r;}]);"
+      "if(!req){post({type:'fiber-recovery',stage:'no-require'});return;}"
+      "var atoms=null;try{atoms=req(302983);}catch(e){}"
+      "var nodes=[];"
+      "['[data-testid=primaryColumn]','[data-testid=DashButton_ProfileIcon_Link]','main','body'].forEach(function(s){try{var n=document.querySelector(s);if(n)nodes.push(n);}catch(_){}});"
+      "try{Array.prototype.slice.call(document.querySelectorAll('article,[role=main] div')).slice(0,120).forEach(function(n){nodes.push(n);});}catch(_){ }"
+      "var candidates=[],reduxStores=[],fiberCount=0,contextCount=0;"
+      "for(var ni=0;ni<nodes.length;ni++){"
+        "var f=fiberOf(nodes[ni]);"
+        "for(var d=0;f&&d<120;d++,f=f.return){"
+          "fiberCount++;"
+          "var c=null;try{c=f.dependencies&&f.dependencies.firstContext;}catch(_){ }"
+          "for(var ci=0;c&&ci<30;ci++){"
+            "contextCount++;var vals=[];"
+            "try{vals.push(c.memoizedValue);}catch(_){ }"
+            "try{if(c.context){vals.push(c.context._currentValue);vals.push(c.context._currentValue2);}}catch(_){ }"
+            "for(var vi=0;vi<vals.length;vi++){var v=vals[vi];"
+              "if(v&&typeof v==='object'){"
+                "if(typeof v.get==='function'&&typeof v.set==='function'&&typeof v.sub==='function')addUnique(candidates,v);"
+                "var rs=(v.store&&typeof v.store==='object')?v.store:v;"
+                "if(rs&&typeof rs.getState==='function'&&typeof rs.dispatch==='function'&&typeof rs.subscribe==='function')addUnique(reduxStores,rs);"
+              "}"
+            "}"
+            "try{c=c.next;}catch(_){break;}"
+          "}"
+        "}"
+      "}"
+      "var api=null,jotaiIndex=-1;"
+      "if(atoms&&atoms.S9){for(var i=0;i<candidates.length;i++){try{var x=candidates[i].get(atoms.S9);if(x&&typeof x.withEndpoint==='function'){api=x;jotaiIndex=i;break;}}catch(_){}}}"
+      "var uid='';var reduxSummary=[];"
+      "for(var ri=0;ri<reduxStores.length;ri++){"
+        "try{var st=reduxStores[ri].getState();var session=st&&st.session;var s={index:ri,topKeys:st&&typeof st==='object'?Object.keys(st).slice(0,50):[],sessionKeys:session&&typeof session==='object'?Object.keys(session).slice(0,40):[]};reduxSummary.push(s);"
+          "var vals=[session&&session.user_id,session&&session.userId,session&&session.user&&session.user.id_str,st&&st.loggedInUserId,st&&st.currentUserId];"
+          "for(var ui=0;ui<vals.length;ui++){if(vals[ui]!=null&&String(vals[ui]).length){uid=String(vals[ui]);break;}}"
+          "if(uid)break;"
+        "}catch(_){ }"
+      "}"
+      "post({type:'fiber-recovery',stage:'scan',fiberCount:fiberCount,contextCount:contextCount,jotaiCandidates:candidates.length,reduxCandidates:reduxStores.length,jotaiMatch:jotaiIndex,apiFound:!!api,userId:uid,reduxSummary:reduxSummary});"
+      "if(!api)return;"
+      "window.__scarletXAPI=api;window.__scarletXAPICapturedAt=Date.now();"
+      "post({type:'api-captured-via-fiber',apiKeys:Object.keys(api).slice(0,80),userId:uid});"
+      "if(!uid)return;"
+      "try{var epm=req(923288),factory=epm&&epm.Ay,endpoint=typeof factory==='function'?api.withEndpoint(factory):null;"
+        "if(!endpoint||typeof endpoint.fetchUserOriginals!=='function'){post({type:'fiber-fetch-error',stage:'endpoint',endpointKeys:endpoint&&typeof endpoint==='object'?Object.keys(endpoint).slice(0,80):[]});return;}"
+        "post({type:'fiber-fetch-started',userId:uid,endpointKeys:Object.keys(endpoint).slice(0,80)});"
+        "Promise.resolve(endpoint.fetchUserOriginals({userId:uid,count:5,cursor:void 0,isPaymentsEnrolled:false,sortByMostLiked:false})).then(function(v){"
+          "var json='';try{json=JSON.stringify(v);}catch(e){json='[JSON stringify failed: '+String(e)+']';}"
+          "if(json.length>180000)json=json.slice(0,180000)+'...[truncated]';"
+          "post({type:'fiber-fetch-success',userId:uid,resultType:typeof v,resultKeys:v&&typeof v==='object'?Object.keys(v).slice(0,80):[],resultJSON:json});"
+        "}).catch(function(e){post({type:'fiber-fetch-error',stage:'request',userId:uid,message:String(e&&e.stack||e)});});"
+      "}catch(e){post({type:'fiber-fetch-error',stage:'exception',userId:uid,message:String(e&&e.stack||e)});}"
+    "}catch(e){post({type:'fiber-recovery',stage:'exception',message:String(e&&e.stack||e)});}"
+    "})();";
 }
 
 - (NSString *)sx_internalProfileAPI_fetchScriptForUserId:(NSString *)userId {
