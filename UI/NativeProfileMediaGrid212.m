@@ -1,10 +1,13 @@
 #import "NativeProfileViewController.h"
 #import <objc/runtime.h>
 
-@interface NativeProfileViewController (MediaGrid212)
+@interface NativeProfileViewController (MediaGrid212BaseMethods)
 - (NSString *)stringValue:(id)value;
 - (NSString *)displayDate:(NSString *)raw;
 - (void)loadImageURLString:(NSString *)urlString into:(UIImageView *)imageView;
+@end
+
+@interface NativeProfileViewController (MediaGrid212)
 - (UIView *)sx_212_postViewForPost:(NSDictionary *)post;
 @end
 
