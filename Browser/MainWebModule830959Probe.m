@@ -26,8 +26,10 @@ static char SXModule830959ProbeHandlerKey;
 + (void)load {
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        Method original = class_getInstanceMethod(self, @selector(viewDidAppear:));
-        Method replacement = class_getInstanceMethod(self, @selector(sx_830959_viewDidAppear:));
+        // BrowserViewController implements viewDidLoad directly, so swizzling this selector
+        // stays scoped to BrowserViewController. Do not swizzle inherited viewDidAppear: here.
+        Method original = class_getInstanceMethod(self, @selector(viewDidLoad));
+        Method replacement = class_getInstanceMethod(self, @selector(sx_830959_viewDidLoad));
         if (original && replacement) method_exchangeImplementations(original, replacement);
     });
 }
@@ -44,8 +46,8 @@ static char SXModule830959ProbeHandlerKey;
     "})();";
 }
 
-- (void)sx_830959_viewDidAppear:(BOOL)animated {
-    [self sx_830959_viewDidAppear:animated];
+- (void)sx_830959_viewDidLoad {
+    [self sx_830959_viewDidLoad];
 
     WKWebView *webView = nil;
     @try { webView = [self valueForKey:@"webView"]; } @catch (__unused NSException *exception) {}
