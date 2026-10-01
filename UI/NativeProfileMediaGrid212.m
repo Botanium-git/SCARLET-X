@@ -180,7 +180,7 @@ static char SX214VideoURLKey;
     if(!date)return @"";
     NSDateFormatter *output=[NSDateFormatter new];
     output.locale=[NSLocale currentLocale];
-    output.dateFormat=@"M/d";
+    output.dateFormat=@"yyyy/MM/dd";
     return [output stringFromDate:date];
 }
 
@@ -226,7 +226,7 @@ static char SX214VideoURLKey;
     UIStackView *row=[UIStackView new];
     row.axis=UILayoutConstraintAxisHorizontal;
     row.alignment=UIStackViewAlignmentTop;
-    row.spacing=10;
+    row.spacing=12;
     row.layoutMargins=UIEdgeInsetsMake(11,12,8,12);
     row.layoutMarginsRelativeArrangement=YES;
     [root addArrangedSubview:row];
