@@ -1,5 +1,6 @@
 #import "NativeProfileViewController.h"
 #import <objc/runtime.h>
+#import <AVKit/AVKit.h>
 
 @interface NativeProfileViewController (MediaGrid212BaseMethods)
 - (NSString *)stringValue:(id)value;
@@ -9,7 +10,12 @@
 
 @interface NativeProfileViewController (MediaGrid212)
 - (UIView *)sx_212_postViewForPost:(NSDictionary *)post;
+- (UIView *)sx_212_mediaTile:(NSDictionary *)media;
+- (UIView *)sx_212_mediaGridForMedia:(NSArray *)mediaItems;
+- (void)sx_214_playMediaTap:(UITapGestureRecognizer *)gesture;
 @end
+
+static char SX214VideoURLKey;
 
 @implementation NativeProfileViewController (MediaGrid212)
 
@@ -20,6 +26,23 @@
         Method replacement = class_getInstanceMethod(self, @selector(sx_212_postViewForPost:));
         if (original && replacement) method_exchangeImplementations(original, replacement);
     });
+}
+
+- (void)sx_214_playMediaTap:(UITapGestureRecognizer *)gesture {
+    UIView *tile = gesture.view;
+    NSString *urlString = objc_getAssociatedObject(tile, &SX214VideoURLKey);
+    if (![urlString isKindOfClass:NSString.class] || urlString.length == 0) return;
+
+    NSURL *url = [NSURL URLWithString:urlString];
+    if (!url) return;
+
+    AVPlayer *player = [AVPlayer playerWithURL:url];
+    AVPlayerViewController *controller = [AVPlayerViewController new];
+    controller.player = player;
+    controller.modalPresentationStyle = UIModalPresentationFullScreen;
+    [self presentViewController:controller animated:YES completion:^{
+        [player play];
+    }];
 }
 
 - (UIView *)sx_212_mediaTile:(NSDictionary *)media {
@@ -61,6 +84,14 @@
             [play.widthAnchor constraintEqualToConstant:44],
             [play.heightAnchor constraintEqualToConstant:44]
         ]];
+
+        NSString *videoURL=[self stringValue:media[@"videoURL"]];
+        if(videoURL.length){
+            objc_setAssociatedObject(container, &SX214VideoURLKey, videoURL, OBJC_ASSOCIATION_COPY_NONATOMIC);
+            container.userInteractionEnabled=YES;
+            UITapGestureRecognizer *tap=[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(sx_214_playMediaTap:)];
+            [container addGestureRecognizer:tap];
+        }
     }
     return container;
 }
