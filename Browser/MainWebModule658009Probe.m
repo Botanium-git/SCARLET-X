@@ -3,53 +3,51 @@
 #import <WebKit/WebKit.h>
 #import <objc/runtime.h>
 
-@interface SXAppRegistrationProbeHandler : NSObject <WKScriptMessageHandler>
+@interface SXAppRegistrationBroadProbeHandler : NSObject <WKScriptMessageHandler>
 @end
 
-@implementation SXAppRegistrationProbeHandler
+@implementation SXAppRegistrationBroadProbeHandler
 - (void)userContentController:(WKUserContentController *)userContentController didReceiveScriptMessage:(WKScriptMessage *)message {
-    if (![message.name isEqualToString:@"scarletxAppRegistrationProbe"] || ![message.body isKindOfClass:NSDictionary.class]) return;
+    if (![message.name isEqualToString:@"scarletxAppRegistrationBroadProbe"] || ![message.body isKindOfClass:NSDictionary.class]) return;
     NSDictionary *body = (NSDictionary *)message.body;
     NSData *json = [NSJSONSerialization dataWithJSONObject:body options:0 error:nil];
     NSString *detail = json ? [[NSString alloc] initWithData:json encoding:NSUTF8StringEncoding] : [body description];
-    [[DiagnosticsStore shared] addEvent:@"Main Web App registration probe" detail:detail ?: @"{}" url:nil];
+    [[DiagnosticsStore shared] addEvent:@"Main Web App registration broad probe" detail:detail ?: @"{}" url:nil];
 }
 @end
 
-@interface BrowserViewController (AppRegistrationProbe)
+@interface BrowserViewController (AppRegistrationBroadProbe)
 @end
 
-@implementation BrowserViewController (AppRegistrationProbe)
+@implementation BrowserViewController (AppRegistrationBroadProbe)
 
-static char SXAppRegistrationProbeHandlerKey;
+static char SXAppRegistrationBroadProbeHandlerKey;
 
 + (void)load {
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         Method original = class_getInstanceMethod(self, @selector(viewDidLoad));
-        Method replacement = class_getInstanceMethod(self, @selector(sx_appRegistration_viewDidLoad));
+        Method replacement = class_getInstanceMethod(self, @selector(sx_appRegistrationBroad_viewDidLoad));
         if (original && replacement) method_exchangeImplementations(original, replacement);
     });
 }
 
-- (NSString *)sx_appRegistrationProbeScript {
+- (NSString *)sx_appRegistrationBroadProbeScript {
     return @"(function(){"
-    "if(window.__scarletXAppRegistrationProbeDone)return;"
-    "function around(src,index,before,after){try{src=String(src||'');index=Number(index||0);return src.slice(Math.max(0,index-(before||2500)),Math.min(src.length,index+(after||7000)));}catch(_){return '';}}"
+    "if(window.__scarletXAppRegistrationBroadProbeDone)return;"
+    "function around(src,index,before,after){try{src=String(src||'');index=Number(index||0);return src.slice(Math.max(0,index-(before||2200)),Math.min(src.length,index+(after||7000)));}catch(_){return '';}}"
     "function safeExports(req,id){var out=[];try{var c=req&&req.c&&req.c[id],ex=c&&c.exports;if(ex&&typeof ex==='object')out=Object.keys(ex).slice(0,120);}catch(_){}return out;}"
-    "function moduleItem(req,id){var src='';try{src=String(req.m[id]||'');}catch(_){}var item={moduleId:String(id),factoryLength:src.length,loaded:!!(req.c&&req.c[id]),exportKeys:safeExports(req,String(id)),factoryStart:src.slice(0,36000),factoryEnd:src.slice(Math.max(0,src.length-30000)),snippets:{}};function sn(key,needle,b,a){var p=src.indexOf(needle);item.snippets[key]=p>=0?around(src,p,b,a):'';}sn('registerComponent','registerComponent',12000,18000);sn('appLiteral','\"App\"',12000,18000);sn('jotaiStore','jotaiStore',12000,18000);sn('Provider','Provider',12000,18000);sn('storeProp','store:',12000,18000);sn('302983','302983',12000,18000);sn('658009','658009',12000,18000);sn('createElement','createElement',9000,14000);sn('jsx','.jsx',9000,14000);return item;}"
-    "function importsOf(src){var out=[],seen={};try{var re=/([A-Za-z_$][\\w$]*)\\s*=\\s*r\\((\\d+)\\)/g,m;while((m=re.exec(src))&&out.length<160){var key=m[1]+':'+m[2];if(!seen[key]){seen[key]=1;out.push({alias:m[1],moduleId:m[2],index:m.index});}}}catch(_){}return out;}"
+    "function summarize(req,id,src){src=String(src||'');var item={moduleId:String(id),factoryLength:src.length,loaded:!!(req.c&&req.c[id]),exportKeys:safeExports(req,String(id)),hits:{}};var needles={module989295:'989295',registerComponent:'registerComponent',registerConfig:'registerConfig',registerRunnable:'registerRunnable',runApplication:'runApplication',appDouble:'\"App\"',appSingle:\"'App'\",jotaiStore:'jotaiStore',provider:'Provider',storeProp:'store:'};Object.keys(needles).forEach(function(k){var p=src.indexOf(needles[k]);if(p>=0)item.hits[k]={index:p,snippet:around(src,p,6500,12000)};});item.factoryStart=src.slice(0,18000);item.factoryEnd=src.slice(Math.max(0,src.length-14000));return item;}"
     "var globals=[];try{globals=Object.keys(window).filter(function(k){try{return /^webpackChunk/.test(k)&&Array.isArray(window[k]);}catch(_){return false;}}).slice(0,12);}catch(_){}"
     "var results=[];"
-    "globals.forEach(function(name,gi){var req=null;try{var marker=870000000+Math.floor(Math.random()*90000000)+gi;window[name].push([[marker],{},function(r){req=r;}]);}catch(e){}if(!req||!req.m)return;var root={chunkGlobal:name,scannedCount:Object.keys(req.m).length,registrationModules:[]};"
-    "try{Object.keys(req.m).forEach(function(mid){if(root.registrationModules.length>=24)return;var src='';try{src=String(req.m[mid]||'');}catch(_){}if(src.indexOf('registerComponent')<0||src.indexOf('App')<0)return;var hits=[];var needles=['registerComponent(\"App\"','registerComponent(\'App\'','registerComponent(\"App\",','registerComponent(\'App\','];for(var ni=0;ni<needles.length;ni++){var p=src.indexOf(needles[ni]);if(p>=0)hits.push(p);}if(!hits.length){var rp=src.indexOf('registerComponent');if(rp>=0&&around(src,rp,2000,5000).indexOf('App')>=0)hits.push(rp);}if(!hits.length)return;var item=moduleItem(req,mid);item.registrationHits=hits.slice(0,12).map(function(p){return{index:p,snippet:around(src,p,12000,22000)};});item.imports=importsOf(src);item.relatedImports=[];item.imports.forEach(function(im){if(item.relatedImports.length>=40)return;var ms='';try{ms=String(req.m[im.moduleId]||'');}catch(_){}if(!ms)return;var relevant=ms.indexOf('jotaiStore')>=0||ms.indexOf('Provider')>=0||ms.indexOf('302983')>=0||ms.indexOf('658009')>=0||ms.indexOf('createContext')>=0||ms.indexOf('store:')>=0;if(relevant){var child=moduleItem(req,im.moduleId);child.importAlias=im.alias;child.importIndex=im.index;item.relatedImports.push(child);}});root.registrationModules.push(item);});}catch(e){root.scanError=String(e);}"
-    "if(root.registrationModules.length)results.push(root);});"
-    "if(!results.length)return;window.__scarletXAppRegistrationProbeDone=true;try{window.webkit.messageHandlers.scarletxAppRegistrationProbe.postMessage({pagePath:String(location.pathname||''),results:results});}catch(_){}"
+    "globals.forEach(function(name,gi){var req=null;try{var marker=870000000+Math.floor(Math.random()*90000000)+gi;window[name].push([[marker],{},function(r){req=r;}]);}catch(e){}if(!req||!req.m)return;var root={chunkGlobal:name,scannedCount:Object.keys(req.m).length,module989295Referrers:[],registrationKeywordModules:[],appLiteralModules:[]};"
+    "try{Object.keys(req.m).forEach(function(mid){var src='';try{src=String(req.m[mid]||'');}catch(_){}if(!src)return;var has989=src.indexOf('989295')>=0;var hasReg=src.indexOf('registerComponent')>=0||src.indexOf('registerConfig')>=0||src.indexOf('registerRunnable')>=0;var hasApp=src.indexOf('\"App\"')>=0||src.indexOf(\"'App'\")>=0;if(has989&&root.module989295Referrers.length<50)root.module989295Referrers.push(summarize(req,mid,src));if(hasReg&&root.registrationKeywordModules.length<50)root.registrationKeywordModules.push(summarize(req,mid,src));if(hasApp&&(has989||hasReg||src.indexOf('runApplication')>=0)&&root.appLiteralModules.length<50)root.appLiteralModules.push(summarize(req,mid,src));});}catch(e){root.scanError=String(e);}results.push(root);});"
+    "window.__scarletXAppRegistrationBroadProbeDone=true;try{window.webkit.messageHandlers.scarletxAppRegistrationBroadProbe.postMessage({pagePath:String(location.pathname||''),results:results});}catch(_){}"
     "})();";
 }
 
-- (void)sx_appRegistration_viewDidLoad {
-    [self sx_appRegistration_viewDidLoad];
+- (void)sx_appRegistrationBroad_viewDidLoad {
+    [self sx_appRegistrationBroad_viewDidLoad];
 
     WKWebView *webView = nil;
     @try { webView = [self valueForKey:@"webView"]; } @catch (__unused NSException *exception) {}
@@ -58,14 +56,14 @@ static char SXAppRegistrationProbeHandlerKey;
     WKUserContentController *controller = webView.configuration.userContentController;
     if (!controller) return;
 
-    SXAppRegistrationProbeHandler *handler = objc_getAssociatedObject(self, &SXAppRegistrationProbeHandlerKey);
+    SXAppRegistrationBroadProbeHandler *handler = objc_getAssociatedObject(self, &SXAppRegistrationBroadProbeHandlerKey);
     if (!handler) {
-        handler = [SXAppRegistrationProbeHandler new];
-        objc_setAssociatedObject(self, &SXAppRegistrationProbeHandlerKey, handler, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-        [controller addScriptMessageHandler:handler name:@"scarletxAppRegistrationProbe"];
+        handler = [SXAppRegistrationBroadProbeHandler new];
+        objc_setAssociatedObject(self, &SXAppRegistrationBroadProbeHandlerKey, handler, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        [controller addScriptMessageHandler:handler name:@"scarletxAppRegistrationBroadProbe"];
     }
 
-    NSString *script = [self sx_appRegistrationProbeScript];
+    NSString *script = [self sx_appRegistrationBroadProbeScript];
     __weak WKWebView *weakWebView = webView;
     for (NSNumber *delay in @[@0.75, @2.0, @4.0]) {
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay.doubleValue * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
