@@ -29,14 +29,13 @@
 @implementation BrowserViewController (InternalProfileAPIBridge)
 
 static char SXInternalProfileAPIHandlerKey;
-static char SXInternalProfileAPIReloadKey;
 
 + (void)load {
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        Method viewDidLoadOriginal = class_getInstanceMethod(self, @selector(viewDidLoad));
-        Method viewDidLoadReplacement = class_getInstanceMethod(self, @selector(sx_internalProfileAPI_viewDidLoad));
-        if (viewDidLoadOriginal && viewDidLoadReplacement) method_exchangeImplementations(viewDidLoadOriginal, viewDidLoadReplacement);
+        Method goHomeOriginal = class_getInstanceMethod(self, @selector(goHome));
+        Method goHomeReplacement = class_getInstanceMethod(self, @selector(sx_internalProfileAPI_goHome));
+        if (goHomeOriginal && goHomeReplacement) method_exchangeImplementations(goHomeOriginal, goHomeReplacement);
 
         Method profileOriginal = class_getInstanceMethod(self, @selector(nativeDrawerDidSelectNativeProfile:));
         Method profileReplacement = class_getInstanceMethod(self, @selector(sx_internalProfileAPI_nativeDrawerDidSelectNativeProfile:));
@@ -130,67 +129,39 @@ static char SXInternalProfileAPIReloadKey;
     "})();";
 }
 
-- (NSString *)sx_internalProfileAPI_cacheProbeScript {
-    return @"(function(){"
-    "function post(o){try{window.webkit.messageHandlers.scarletxInternalProfileAPI.postMessage(o);}catch(_){}}"
-    "try{"
-      "var q=window.webpackChunk_twitter_responsive_web,req=null;"
-      "if(!Array.isArray(q)){post({type:'cache-probe',stage:'no-chunk-global'});return;}"
-      "var marker=930000000+Math.floor(Math.random()*60000000);"
-      "q.push([[marker],{},function(r){req=r;}]);"
-      "if(!req){post({type:'cache-probe',stage:'no-require'});return;}"
-      "var c=req.c&&req.c['923187'],m=req.m&&req.m['923187'],ex=c&&c.exports,d=null;"
-      "try{d=ex?Object.getOwnPropertyDescriptor(ex,'W'):null;}catch(_e){}"
-      "post({type:'cache-probe',stage:'ok',factoryPresent:!!m,cachePresent:!!c,loaded:!!(c&&c.loaded),exportKeys:ex&&typeof ex==='object'?Object.keys(ex).slice(0,40):[],WType:ex?typeof ex.W:'missing',WDescriptor:d?{configurable:!!d.configurable,enumerable:!!d.enumerable,hasGet:typeof d.get==='function',hasSet:typeof d.set==='function',writable:'writable'in d?!!d.writable:null,valueType:'value'in d?typeof d.value:null}:null});"
-    "}catch(e){post({type:'cache-probe',stage:'exception',message:String(e&&e.stack||e)});}"
-    "})();";
-}
-
-- (void)sx_internalProfileAPI_viewDidLoad {
-    [self sx_internalProfileAPI_viewDidLoad];
-
+- (void)sx_internalProfileAPI_installBeforeFirstNavigation {
     WKWebView *webView = nil;
     @try { webView = [self valueForKey:@"webView"]; } @catch (__unused NSException *exception) {}
-    if (![webView isKindOfClass:WKWebView.class]) return;
+    if (![webView isKindOfClass:WKWebView.class]) {
+        [[DiagnosticsStore shared] addEvent:@"Internal profile API pre-navigation install failed" detail:@"webView unavailable before goHome" url:nil];
+        return;
+    }
 
     WKUserContentController *controller = webView.configuration.userContentController;
-    if (!controller) return;
+    if (!controller) {
+        [[DiagnosticsStore shared] addEvent:@"Internal profile API pre-navigation install failed" detail:@"userContentController unavailable before goHome" url:webView.URL];
+        return;
+    }
 
     SXInternalProfileAPIHandler *handler = objc_getAssociatedObject(self, &SXInternalProfileAPIHandlerKey);
     if (!handler) {
         handler = [SXInternalProfileAPIHandler new];
         objc_setAssociatedObject(self, &SXInternalProfileAPIHandlerKey, handler, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         [controller addScriptMessageHandler:handler name:@"scarletxInternalProfileAPI"];
+
         WKUserScript *hook = [[WKUserScript alloc] initWithSource:[self sx_internalProfileAPI_documentStartScript]
                                                     injectionTime:WKUserScriptInjectionTimeAtDocumentStart
                                                  forMainFrameOnly:YES];
         [controller addUserScript:hook];
-        [[DiagnosticsStore shared] addEvent:@"Internal profile API bridge installed" detail:@"document-start module 923187.W capture installed" url:webView.URL];
-
-        NSString *cacheProbe = [self sx_internalProfileAPI_cacheProbeScript];
-        __weak WKWebView *probeWebView = webView;
-        for (NSNumber *delay in @[@1.0, @3.0, @6.0]) {
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay.doubleValue * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                WKWebView *strongProbeWebView = probeWebView;
-                if (!strongProbeWebView) return;
-                [strongProbeWebView evaluateJavaScript:cacheProbe completionHandler:^(id result, NSError *error) {
-                    if (error) [[DiagnosticsStore shared] addError:@"Internal profile API cache probe evaluate failed" error:error url:strongProbeWebView.URL];
-                }];
-            });
-        }
+        [[DiagnosticsStore shared] addEvent:@"Internal profile API pre-navigation installed"
+                                     detail:@"923187.W capture installed before first goHome navigation"
+                                        url:webView.URL];
     }
+}
 
-    if (![objc_getAssociatedObject(self, &SXInternalProfileAPIReloadKey) boolValue]) {
-        objc_setAssociatedObject(self, &SXInternalProfileAPIReloadKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-        __weak WKWebView *weakWebView = webView;
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.35 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            WKWebView *strongWebView = weakWebView;
-            if (strongWebView) {
-                [[DiagnosticsStore shared] addEvent:@"Internal profile API bridge reload" detail:@"reloading once so bootstrap capture is active before X webpack executes" url:strongWebView.URL];
-                [strongWebView reload];
-            }
-        });
-    }
+- (void)sx_internalProfileAPI_goHome {
+    [self sx_internalProfileAPI_installBeforeFirstNavigation];
+    [self sx_internalProfileAPI_goHome];
 }
 
 - (NSString *)sx_internalProfileAPI_fetchScriptForUserId:(NSString *)userId {
