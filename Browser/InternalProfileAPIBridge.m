@@ -46,55 +46,62 @@ static char SXInternalProfileAPIReloadKey;
 
 - (NSString *)sx_internalProfileAPI_documentStartScript {
     return @"(function(){"
-    "if(window.__scarletXInternalProfileHookInstalled)return;"
-    "window.__scarletXInternalProfileHookInstalled=true;"
+    "if(window.__scarletXInternalAPIHookInstalled)return;"
+    "window.__scarletXInternalAPIHookInstalled=true;"
+    "function post(o){try{window.webkit.messageHandlers.scarletxInternalProfileAPI.postMessage(o);}catch(_){}}"
     "var name='webpackChunk_twitter_responsive_web';"
     "var q=window[name]=window[name]||[];"
-    "if(q.__scarletXInternalProfilePushHooked)return;"
-    "q.__scarletXInternalProfilePushHooked=true;"
+    "if(q.__scarletXBootstrapPushHooked)return;"
+    "q.__scarletXBootstrapPushHooked=true;"
     "var originalPush=q.push;"
     "q.push=function(){"
       "try{"
         "for(var ai=0;ai<arguments.length;ai++){"
           "var chunk=arguments[ai],mods=chunk&&chunk[1];"
-          "if(!mods||!mods['658009'])continue;"
-          "var originalFactory=mods['658009'];"
-          "if(originalFactory&&originalFactory.__scarletXWrapped)continue;"
+          "if(!mods||!mods['923187'])continue;"
+          "var originalFactory=mods['923187'];"
+          "if(!originalFactory||originalFactory.__scarletXWrapped)continue;"
+          "post({type:'bootstrap-module-seen',moduleId:'923187'});"
           "var wrapped=function(module,exports,req){"
-            "var originalD=req.d;"
+            "var originalD=req.d,cachedOriginalW=null,cachedWrappedW=null;"
             "req.d=function(target,defs){"
               "try{"
-                "if(Array.isArray(defs)){"
-                  "var copy=defs.slice();"
-                  "for(var i=0;i+2<copy.length;i+=3){"
-                    "if(copy[i]==='Kq'&&typeof copy[i+2]==='function'){"
-                      "var originalKq=copy[i+2];"
-                      "copy[i+2]=function(props){"
-                        "try{"
-                          "if(props&&props.store){"
-                            "window.__scarletXJotaiStore=props.store;"
-                            "window.__scarletXJotaiStoreCapturedAt=Date.now();"
-                            "if(!window.__scarletXJotaiStoreCapturePosted){"
-                              "window.__scarletXJotaiStoreCapturePosted=true;"
-                              "try{window.webkit.messageHandlers.scarletxInternalProfileAPI.postMessage({type:'store-captured',hasGet:typeof props.store.get==='function',hasSet:typeof props.store.set==='function',hasSub:typeof props.store.sub==='function'});}catch(_e){}"
-                            "}"
+                "if(defs&&typeof defs==='object'&&!Array.isArray(defs)&&typeof defs.W==='function'){"
+                  "var copy={};Object.keys(defs).forEach(function(k){copy[k]=defs[k];});"
+                  "var originalGetter=defs.W;"
+                  "copy.W=function(){"
+                    "var originalW=originalGetter();"
+                    "if(typeof originalW!=='function')return originalW;"
+                    "if(cachedWrappedW&&cachedOriginalW===originalW)return cachedWrappedW;"
+                    "cachedOriginalW=originalW;"
+                    "cachedWrappedW=function(){"
+                      "var result=originalW.apply(this,arguments);"
+                      "try{"
+                        "if(result&&result.api&&typeof result.api.withEndpoint==='function'){"
+                          "window.__scarletXAPI=result.api;"
+                          "window.__scarletXAPIJotaiStore=result.jotaiStore||null;"
+                          "window.__scarletXAPICapturedAt=Date.now();"
+                          "if(!window.__scarletXAPICapturePosted){"
+                            "window.__scarletXAPICapturePosted=true;"
+                            "post({type:'api-captured',hasWithEndpoint:typeof result.api.withEndpoint==='function',hasJotaiStore:!!result.jotaiStore,serviceKeys:Object.keys(result).slice(0,40),apiKeys:Object.keys(result.api).slice(0,60)});"
                           "}"
-                        "}catch(_e){}"
-                        "return originalKq.apply(this,arguments);"
-                      "};"
-                    "}"
-                  "}"
+                        "}"
+                      "}catch(e){post({type:'capture-error',stage:'W-return',message:String(e&&e.stack||e)});}"
+                      "return result;"
+                    "};"
+                    "return cachedWrappedW;"
+                  "};"
                   "return originalD.call(req,target,copy);"
                 "}"
-              "}catch(_e){}"
+              "}catch(e){post({type:'capture-error',stage:'req.d',message:String(e&&e.stack||e)});}"
               "return originalD.call(req,target,defs);"
             "};"
             "try{return originalFactory.call(this,module,exports,req);}finally{req.d=originalD;}"
           "};"
           "wrapped.__scarletXWrapped=true;"
-          "mods['658009']=wrapped;"
+          "mods['923187']=wrapped;"
         "}"
-      "}catch(_e){}"
+      "}catch(e){post({type:'capture-error',stage:'push',message:String(e&&e.stack||e)});}"
       "return originalPush.apply(this,arguments);"
     "};"
     "})();";
@@ -119,7 +126,7 @@ static char SXInternalProfileAPIReloadKey;
                                                     injectionTime:WKUserScriptInjectionTimeAtDocumentStart
                                                  forMainFrameOnly:YES];
         [controller addUserScript:hook];
-        [[DiagnosticsStore shared] addEvent:@"Internal profile API bridge installed" detail:@"document-start Jotai provider capture installed" url:webView.URL];
+        [[DiagnosticsStore shared] addEvent:@"Internal profile API bridge installed" detail:@"document-start module 923187.W capture installed" url:webView.URL];
     }
 
     if (![objc_getAssociatedObject(self, &SXInternalProfileAPIReloadKey) boolValue]) {
@@ -128,7 +135,7 @@ static char SXInternalProfileAPIReloadKey;
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.35 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             WKWebView *strongWebView = weakWebView;
             if (strongWebView) {
-                [[DiagnosticsStore shared] addEvent:@"Internal profile API bridge reload" detail:@"reloading once so document-start capture is active before X webpack executes" url:strongWebView.URL];
+                [[DiagnosticsStore shared] addEvent:@"Internal profile API bridge reload" detail:@"reloading once so bootstrap capture is active before X webpack executes" url:strongWebView.URL];
                 [strongWebView reload];
             }
         });
@@ -144,25 +151,20 @@ static char SXInternalProfileAPIReloadKey;
       "var uid=%@;"
       "function post(o){try{window.webkit.messageHandlers.scarletxInternalProfileAPI.postMessage(o);}catch(_){}}"
       "try{"
-        "var store=window.__scarletXJotaiStore;"
-        "if(!store||typeof store.get!=='function'){post({type:'fetch-error',stage:'store',message:'captured Jotai store is unavailable',uid:uid});return {started:false,stage:'store'};}"
+        "var api=window.__scarletXAPI;"
+        "if(!api||typeof api.withEndpoint!=='function'){post({type:'fetch-error',stage:'api',message:'captured API object is unavailable',uid:uid,apiType:typeof api});return {started:false,stage:'api'};}"
         "var req=null,q=window.webpackChunk_twitter_responsive_web;"
         "if(!Array.isArray(q)){post({type:'fetch-error',stage:'webpack',message:'webpack chunk global unavailable',uid:uid});return {started:false,stage:'webpack'};}"
         "var marker=910000000+Math.floor(Math.random()*80000000);"
         "q.push([[marker],{},function(r){req=r;}]);"
         "if(!req){post({type:'fetch-error',stage:'require',message:'webpack require unavailable',uid:uid});return {started:false,stage:'require'};}"
-        "var atoms=req(302983),endpointModule=req(923288);"
-        "if(!atoms||!atoms.S9){post({type:'fetch-error',stage:'atom',message:'302983.S9 unavailable',uid:uid});return {started:false,stage:'atom'};}"
-        "var api=store.get(atoms.S9);"
-        "if(!api||typeof api.withEndpoint!=='function'){post({type:'fetch-error',stage:'api',message:'API object unavailable from Jotai store',uid:uid,apiType:typeof api});return {started:false,stage:'api'};}"
-        "var factory=endpointModule&&endpointModule.Ay;"
+        "var endpointModule=req(923288),factory=endpointModule&&endpointModule.Ay;"
         "if(typeof factory!=='function'){post({type:'fetch-error',stage:'endpoint-factory',message:'923288.Ay unavailable',uid:uid});return {started:false,stage:'endpoint-factory'};}"
         "var endpoint=api.withEndpoint(factory);"
         "if(!endpoint||typeof endpoint.fetchUserOriginals!=='function'){post({type:'fetch-error',stage:'endpoint',message:'fetchUserOriginals unavailable',uid:uid,keys:endpoint&&typeof endpoint==='object'?Object.keys(endpoint).slice(0,80):[]});return {started:false,stage:'endpoint'};}"
-        "post({type:'fetch-started',uid:uid,storeCapturedAt:Number(window.__scarletXJotaiStoreCapturedAt||0),apiKeys:Object.keys(api).slice(0,80),endpointKeys:Object.keys(endpoint).slice(0,80)});"
+        "post({type:'fetch-started',uid:uid,apiCapturedAt:Number(window.__scarletXAPICapturedAt||0),endpointKeys:Object.keys(endpoint).slice(0,80)});"
         "Promise.resolve(endpoint.fetchUserOriginals({userId:String(uid),count:20,cursor:void 0,isPaymentsEnrolled:false,sortByMostLiked:false})).then(function(result){"
-          "var json='';"
-          "try{json=JSON.stringify(result);}catch(e){json='[JSON stringify failed: '+String(e)+']';}"
+          "var json='';try{json=JSON.stringify(result);}catch(e){json='[JSON stringify failed: '+String(e)+']';}"
           "if(json.length>180000)json=json.slice(0,180000)+'...[truncated]';"
           "post({type:'fetch-success',uid:uid,resultType:typeof result,resultKeys:result&&typeof result==='object'?Object.keys(result).slice(0,80):[],resultJSON:json});"
         "}).catch(function(e){post({type:'fetch-error',stage:'request',uid:uid,message:String(e&&e.stack||e)});});"
@@ -172,8 +174,6 @@ static char SXInternalProfileAPIReloadKey;
 }
 
 - (void)sx_internalProfileAPI_nativeDrawerDidSelectNativeProfile:(NativeDrawerViewController *)drawer {
-    [self sx_internalProfileAPI_nativeDrawerDidSelectNativeProfile:drawer];
-
     NSDictionary *base = [drawer.profileData isKindOfClass:NSDictionary.class] ? drawer.profileData : @{};
     NSDictionary *probe = [base[@"followerProbe"] isKindOfClass:NSDictionary.class] ? base[@"followerProbe"] : @{};
     NSString *userId = [probe[@"currentUserId"] isKindOfClass:NSString.class] ? probe[@"currentUserId"] : @"";
@@ -181,10 +181,13 @@ static char SXInternalProfileAPIReloadKey;
 
     WKWebView *webView = nil;
     @try { webView = [self valueForKey:@"webView"]; } @catch (__unused NSException *exception) {}
-    if (![webView isKindOfClass:WKWebView.class]) return;
+    [[DiagnosticsStore shared] addEvent:@"Internal profile API profile-entry" detail:[NSString stringWithFormat:@"userId=%@ webView=%@", userId.length ? userId : @"<empty>", [webView isKindOfClass:WKWebView.class] ? @"YES" : @"NO"] url:[webView isKindOfClass:WKWebView.class] ? webView.URL : nil];
 
+    [self sx_internalProfileAPI_nativeDrawerDidSelectNativeProfile:drawer];
+
+    if (![webView isKindOfClass:WKWebView.class]) return;
     if (userId.length == 0) {
-        [[DiagnosticsStore shared] addEvent:@"Internal profile API fetch skipped" detail:@"current profile userId was unavailable" url:webView.URL];
+        [[DiagnosticsStore shared] addEvent:@"Internal profile API fetch skipped" detail:@"current profile userId was unavailable before native profile open" url:webView.URL];
         return;
     }
 
@@ -199,8 +202,7 @@ static char SXInternalProfileAPIReloadKey;
                 [[DiagnosticsStore shared] addError:@"Internal profile API evaluate failed" error:error url:strongWebView.URL];
                 return;
             }
-            NSString *detail = [result description] ?: @"";
-            [[DiagnosticsStore shared] addEvent:@"Internal profile API evaluate returned" detail:detail url:strongWebView.URL];
+            [[DiagnosticsStore shared] addEvent:@"Internal profile API evaluate returned" detail:[result description] ?: @"" url:strongWebView.URL];
         }];
     });
 }
