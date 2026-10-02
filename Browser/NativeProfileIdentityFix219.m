@@ -42,7 +42,7 @@
         "var resolvedId=String((entity&&entity.rest_id)||(l&&l.id_str)||uid||'');"
         "var sn=(l&&l.screen_name)||(entity&&entity.screen_name)||screen||'';"
         "var avatar=(l&&l.profile_image_url_https)||(entity&&entity.profile_image_url_https)||'';if(typeof avatar==='string')avatar=avatar.replace('_normal.','_400x400.');"
-        "return {name:String((l&&l.name)||(entity&&entity.name)||''),handle:sn?'@'+sn:'',bio:String((l&&l.description)||(entity&&entity.description)||''),avatarURL:String(avatar||''),bannerURL:String((l&&l.profile_banner_url)||(entity&&entity.profile_banner_url)||''),following:l&&l.friends_count!=null?String(l.friends_count):'',followers:l&&l.followers_count!=null?String(l.followers_count):'',userId:resolvedId};"
+        "return {name:String((l&&l.name)||(entity&&entity.name)||''),handle:sn?'@'+sn:'',bio:String((l&&l.description)||(entity&&entity.description)||''),avatarURL:String(avatar||''),bannerURL:String((l&&l.profile_banner_url)||(entity&&entity.profile_banner_url)||''),following:l&&l.friends_count!=null?String(l.friends_count):'',followers:l&&l.followers_count!=null?String(l.followers_count):'',createdAt:String((l&&l.created_at)||(entity&&entity.created_at)||''),userId:resolvedId};"
     "})()",uid,screen];
 }
 
