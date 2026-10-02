@@ -125,14 +125,17 @@
     }
 
     NSDictionary *data=[self.profileData isKindOfClass:NSDictionary.class]?self.profileData:@{};
-    NSArray *posts=[data[@"posts"] isKindOfClass:NSArray.class]?data[@"posts"]:@[];
-    BOOL postsLoading=[data[@"postsLoading"] respondsToSelector:@selector(boolValue)]?[data[@"postsLoading"] boolValue]:NO;
     NSInteger selected=0;
     @try { selected=[[self valueForKey:@"selectedProfileTab"] integerValue]; } @catch(__unused NSException *exception) {}
 
-    if(selected==0){
+    if(selected==0||selected==1){
+        NSString *itemsKey=selected==0?@"posts":@"replies";
+        NSString *loadingKey=selected==0?@"postsLoading":@"repliesLoading";
+        NSArray *items=[data[itemsKey] isKindOfClass:NSArray.class]?data[itemsKey]:@[];
+        BOOL hasLoading=[data[loadingKey] respondsToSelector:@selector(boolValue)];
+        BOOL loading=hasLoading?[data[loadingKey] boolValue]:(![data.allKeys containsObject:itemsKey]);
         NSInteger added=0;
-        for(id item in posts){
+        for(id item in items){
             if(![item isKindOfClass:NSDictionary.class])continue;
             [postsStack addArrangedSubview:[self postViewForPost:(NSDictionary *)item]];
             added++;
@@ -143,7 +146,8 @@
             empty.textColor=UIColor.secondaryLabelColor;
             empty.textAlignment=NSTextAlignmentCenter;
             empty.numberOfLines=0;
-            empty.text=postsLoading?@"Xからポストを読み込み中…":@"通常ポストはありません";
+            if(selected==0)empty.text=loading?@"Xからポストを読み込み中…":@"通常ポストはありません";
+            else empty.text=loading?@"Xから返信を読み込み中…":@"返信はありません";
             [postsStack addArrangedSubview:empty];
             [empty.heightAnchor constraintGreaterThanOrEqualToConstant:100].active=YES;
         }
@@ -152,7 +156,7 @@
         empty.font=[UIFont systemFontOfSize:14];
         empty.textColor=UIColor.secondaryLabelColor;
         empty.textAlignment=NSTextAlignmentCenter;
-        empty.text=@"このタブのデータはまだ接続していません";
+        empty.text=selected==2?@"リポストはまだ接続していません":@"メディアはまだ接続していません";
         [postsStack addArrangedSubview:empty];
         [empty.heightAnchor constraintGreaterThanOrEqualToConstant:120].active=YES;
     }
