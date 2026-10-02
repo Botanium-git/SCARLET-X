@@ -1,6 +1,8 @@
 #import "NativeProfileViewController.h"
 #import <objc/runtime.h>
 
+static char SX237RepostDisplayLimitKey;
+
 @interface NativeProfileViewController (IncrementalUpdate223Private)
 - (NSString *)stringValue:(id)value;
 - (NSString *)joinedTextForRaw:(NSString *)raw;
@@ -117,6 +119,20 @@
     }];
 }
 
+- (NSInteger)sx237_repostDisplayLimit {
+    NSNumber *stored=objc_getAssociatedObject(self,&SX237RepostDisplayLimitKey);
+    NSInteger value=[stored respondsToSelector:@selector(integerValue)]?[stored integerValue]:0;
+    return value>0?value:8;
+}
+
+- (void)sx237_showMoreReposts:(UIButton *)sender {
+    NSInteger next=[self sx237_repostDisplayLimit]+8;
+    objc_setAssociatedObject(self,&SX237RepostDisplayLimitKey,@(next),OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    UIView *content=[self sx223_contentView];
+    UIStackView *postsStack=[self sx223_postsStackInContent:content];
+    [self sx223_reloadPostsStack:postsStack];
+}
+
 - (void)sx223_reloadPostsStack:(UIStackView *)postsStack {
     if(!postsStack)return;
     for(UIView *view in [postsStack.arrangedSubviews copy]){
@@ -138,8 +154,11 @@
         NSArray *items=[data[itemsKey] isKindOfClass:NSArray.class]?data[itemsKey]:@[];
         BOOL hasLoading=[data[loadingKey] respondsToSelector:@selector(boolValue)];
         BOOL loading=hasLoading?[data[loadingKey] boolValue]:(![data.allKeys containsObject:itemsKey]);
+        NSUInteger renderCount=items.count;
+        if(selected==2)renderCount=MIN(items.count,(NSUInteger)[self sx237_repostDisplayLimit]);
         NSInteger added=0;
-        for(id item in items){
+        for(NSUInteger idx=0;idx<renderCount;idx++){
+            id item=items[idx];
             if(![item isKindOfClass:NSDictionary.class])continue;
             [postsStack addArrangedSubview:[self postViewForPost:(NSDictionary *)item]];
             added++;
@@ -153,6 +172,14 @@
             empty.text=loading?loadingTexts[(NSUInteger)selected]:emptyTexts[(NSUInteger)selected];
             [postsStack addArrangedSubview:empty];
             [empty.heightAnchor constraintGreaterThanOrEqualToConstant:100].active=YES;
+        } else if(selected==2&&renderCount<items.count){
+            UIButton *more=[UIButton buttonWithType:UIButtonTypeSystem];
+            more.translatesAutoresizingMaskIntoConstraints=NO;
+            [more setTitle:@"さらに表示" forState:UIControlStateNormal];
+            more.titleLabel.font=[UIFont systemFontOfSize:14 weight:UIFontWeightSemibold];
+            [more addTarget:self action:@selector(sx237_showMoreReposts:) forControlEvents:UIControlEventTouchUpInside];
+            [more.heightAnchor constraintEqualToConstant:48].active=YES;
+            [postsStack addArrangedSubview:more];
         }
     } else {
         UILabel *empty=[UILabel new];
