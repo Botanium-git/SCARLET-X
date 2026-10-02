@@ -3,6 +3,7 @@
 
 @interface NativeProfileViewController (IncrementalUpdate223Private)
 - (NSString *)stringValue:(id)value;
+- (NSString *)joinedTextForRaw:(NSString *)raw;
 - (void)loadImageURLString:(NSString *)urlString into:(UIImageView *)imageView;
 - (UIView *)postViewForPost:(NSDictionary *)post;
 @end
@@ -56,6 +57,29 @@
     return result;
 }
 
+- (UIView *)sx223_findViewWithAccessibilityIdentifier:(NSString *)identifier inView:(UIView *)root {
+    if([root.accessibilityIdentifier isEqualToString:identifier])return root;
+    for(UIView *sub in root.subviews){
+        UIView *match=[self sx223_findViewWithAccessibilityIdentifier:identifier inView:sub];
+        if(match)return match;
+    }
+    return nil;
+}
+
+- (void)sx223_updateJoinedDateInContent:(UIView *)content data:(NSDictionary *)data {
+    UILabel *label=(UILabel *)[self sx223_findViewWithAccessibilityIdentifier:@"sx.profile.joined.label" inView:content];
+    UIView *container=[self sx223_findViewWithAccessibilityIdentifier:@"sx.profile.joined.container" inView:content];
+    if(![label isKindOfClass:UILabel.class]||![container isKindOfClass:UIView.class])return;
+    NSString *joined=[self joinedTextForRaw:[self stringValue:data[@"createdAt"]]];
+    label.text=joined;
+    for(NSLayoutConstraint *constraint in container.constraints){
+        if([constraint.identifier isEqualToString:@"sx.profile.joined.height"]){
+            constraint.constant=joined.length?20:0;
+            break;
+        }
+    }
+}
+
 - (void)sx223_updateTabBar:(UIStackView *)tabBar {
     if(!tabBar)return;
     NSInteger selected=0;
@@ -71,20 +95,22 @@
         for(UIView *sub in remove)[sub removeFromSuperview];
 
         BOOL active=(idx==(NSUInteger)selected);
+        UIColor *tint=active?UIColor.labelColor:UIColor.secondaryLabelColor;
         if(button){
-            button.titleLabel.font=[UIFont systemFontOfSize:15 weight:(active?UIFontWeightBold:UIFontWeightSemibold)];
-            [button setTitleColor:(active?UIColor.labelColor:UIColor.secondaryLabelColor) forState:UIControlStateNormal];
+            button.titleLabel.font=[UIFont systemFontOfSize:15 weight:(idx==0?UIFontWeightBold:UIFontWeightSemibold)];
+            [button setTitleColor:tint forState:UIControlStateNormal];
+            button.tintColor=tint;
         }
         if(active){
             UIView *indicator=[UIView new];
             indicator.translatesAutoresizingMaskIntoConstraints=NO;
-            indicator.backgroundColor=UIColor.systemBlueColor;
+            indicator.backgroundColor=UIColor.labelColor;
             indicator.layer.cornerRadius=1.5;
             [container addSubview:indicator];
             [NSLayoutConstraint activateConstraints:@[
                 [indicator.bottomAnchor constraintEqualToAnchor:container.bottomAnchor],
                 [indicator.centerXAnchor constraintEqualToAnchor:container.centerXAnchor],
-                [indicator.widthAnchor constraintEqualToConstant:54],
+                [indicator.widthAnchor constraintEqualToConstant:(idx==0?108:48)],
                 [indicator.heightAnchor constraintEqualToConstant:3]
             ]];
         }
@@ -172,6 +198,7 @@
         countsLabel.text=[NSString stringWithFormat:@"%@ フォロー中    %@ フォロワー",following.length?following:@"—",followers.length?followers:@"—"];
     }
 
+    [self sx223_updateJoinedDateInContent:content data:next];
     [self sx223_updateTabBar:[self sx223_tabBarInContent:content]];
     [self sx223_reloadPostsStack:[self sx223_postsStackInContent:content]];
     [content setNeedsLayout];
