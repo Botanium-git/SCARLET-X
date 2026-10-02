@@ -1,5 +1,6 @@
 #import "NativeProfileViewController.h"
 #import <objc/runtime.h>
+#import <math.h>
 
 @implementation NativeProfileViewController (NativeCountFormat238)
 
