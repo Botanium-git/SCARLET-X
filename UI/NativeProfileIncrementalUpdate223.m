@@ -128,9 +128,13 @@
     NSInteger selected=0;
     @try { selected=[[self valueForKey:@"selectedProfileTab"] integerValue]; } @catch(__unused NSException *exception) {}
 
-    if(selected==0||selected==1){
-        NSString *itemsKey=selected==0?@"posts":@"replies";
-        NSString *loadingKey=selected==0?@"postsLoading":@"repliesLoading";
+    if(selected>=0&&selected<=2){
+        NSArray<NSString *> *itemsKeys=@[@"posts",@"replies",@"reposts"];
+        NSArray<NSString *> *loadingKeys=@[@"postsLoading",@"repliesLoading",@"repostsLoading"];
+        NSArray<NSString *> *loadingTexts=@[@"Xからポストを読み込み中…",@"Xから返信を読み込み中…",@"Xからリポストを読み込み中…"];
+        NSArray<NSString *> *emptyTexts=@[@"通常ポストはありません",@"返信はありません",@"リポストはありません"];
+        NSString *itemsKey=itemsKeys[(NSUInteger)selected];
+        NSString *loadingKey=loadingKeys[(NSUInteger)selected];
         NSArray *items=[data[itemsKey] isKindOfClass:NSArray.class]?data[itemsKey]:@[];
         BOOL hasLoading=[data[loadingKey] respondsToSelector:@selector(boolValue)];
         BOOL loading=hasLoading?[data[loadingKey] boolValue]:(![data.allKeys containsObject:itemsKey]);
@@ -146,8 +150,7 @@
             empty.textColor=UIColor.secondaryLabelColor;
             empty.textAlignment=NSTextAlignmentCenter;
             empty.numberOfLines=0;
-            if(selected==0)empty.text=loading?@"Xからポストを読み込み中…":@"通常ポストはありません";
-            else empty.text=loading?@"Xから返信を読み込み中…":@"返信はありません";
+            empty.text=loading?loadingTexts[(NSUInteger)selected]:emptyTexts[(NSUInteger)selected];
             [postsStack addArrangedSubview:empty];
             [empty.heightAnchor constraintGreaterThanOrEqualToConstant:100].active=YES;
         }
@@ -156,7 +159,7 @@
         empty.font=[UIFont systemFontOfSize:14];
         empty.textColor=UIColor.secondaryLabelColor;
         empty.textAlignment=NSTextAlignmentCenter;
-        empty.text=selected==2?@"リポストはまだ接続していません":@"メディアはまだ接続していません";
+        empty.text=@"メディアはまだ接続していません";
         [postsStack addArrangedSubview:empty];
         [empty.heightAnchor constraintGreaterThanOrEqualToConstant:120].active=YES;
     }
