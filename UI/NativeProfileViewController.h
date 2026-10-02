@@ -4,7 +4,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface NativeProfileViewController : UIViewController
 @property(nonatomic,copy) NSDictionary *profileData;
-@property(nonatomic,copy,nullable) void (^loadMoreHandler)(NSInteger tab);
 - (void)applyProfileData:(NSDictionary *)profileData;
 @end
 
