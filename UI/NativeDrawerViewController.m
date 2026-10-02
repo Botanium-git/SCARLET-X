@@ -84,11 +84,13 @@
 
 - (UIView *)buildProfileHeader {
     NSArray *accounts=[self.profileData[@"accounts"] isKindOfClass:NSArray.class]?self.profileData[@"accounts"]:@[];
-    UIView *header=[[UIView alloc] initWithFrame:CGRectMake(0,0,340,150)];
+    CGFloat headerWidth=MIN(320.0,UIScreen.mainScreen.bounds.size.width*.82);
+    UIView *header=[[UIView alloc] initWithFrame:CGRectMake(0,0,headerWidth,150)];
     UIImageView *avatar=[self accountAvatarAtX:18 y:12 size:48 URL:self.profileData[@"avatarURL"]]; [header addSubview:avatar];
 
     UIButton *addAccount=[UIButton buttonWithType:UIButtonTypeSystem];
-    addAccount.frame=CGRectMake(286,16,34,34);
+    CGFloat addX=MAX(18.0,headerWidth-54.0);
+    addAccount.frame=CGRectMake(addX,16,34,34);
     addAccount.layer.cornerRadius=17;
     addAccount.layer.borderWidth=1.5;
     addAccount.layer.borderColor=UIColor.secondaryLabelColor.CGColor;
@@ -99,7 +101,7 @@
     [addAccount addTarget:self action:@selector(addAccountTapped:) forControlEvents:UIControlEventTouchUpInside];
     [header addSubview:addAccount];
 
-    CGFloat x=244;
+    CGFloat x=addX-42.0;
     NSInteger accountIndex=0;
     NSInteger shown=0;
     for(NSDictionary *account in accounts){
@@ -107,6 +109,7 @@
         if(![account isKindOfClass:NSDictionary.class]){accountIndex++;continue;}
         NSString *handle=[account[@"handle"] isKindOfClass:NSString.class]?account[@"handle"]:@"";
         NSString *avatarURL=[account[@"avatarURL"] isKindOfClass:NSString.class]?account[@"avatarURL"]:@"";
+        if(x<74.0)break;
         UIImageView *other=[self accountAvatarAtX:x y:16 size:34 URL:avatarURL]; [header addSubview:other];
         UIButton *probe=[UIButton buttonWithType:UIButtonTypeCustom];
         probe.frame=CGRectMake(x-5,11,44,44);
@@ -119,9 +122,10 @@
         accountIndex++;
     }
 
-    UILabel *name=[[UILabel alloc] initWithFrame:CGRectMake(18,70,304,22)]; name.font=[UIFont systemFontOfSize:17 weight:UIFontWeightBold]; name.text=[self.profileData[@"name"] isKindOfClass:NSString.class]?self.profileData[@"name"]:@""; [header addSubview:name];
-    UILabel *handle=[[UILabel alloc] initWithFrame:CGRectMake(18,93,304,20)]; handle.font=[UIFont systemFontOfSize:14]; handle.textColor=UIColor.secondaryLabelColor; handle.text=[self.profileData[@"handle"] isKindOfClass:NSString.class]?self.profileData[@"handle"]:@""; [header addSubview:handle];
-    UILabel *counts=[[UILabel alloc] initWithFrame:CGRectMake(18,121,310,20)]; counts.font=[UIFont systemFontOfSize:13]; counts.textColor=UIColor.secondaryLabelColor;
+    CGFloat textWidth=MAX(0.0,headerWidth-36.0);
+    UILabel *name=[[UILabel alloc] initWithFrame:CGRectMake(18,70,textWidth,22)]; name.font=[UIFont systemFontOfSize:17 weight:UIFontWeightBold]; name.text=[self.profileData[@"name"] isKindOfClass:NSString.class]?self.profileData[@"name"]:@""; [header addSubview:name];
+    UILabel *handle=[[UILabel alloc] initWithFrame:CGRectMake(18,93,textWidth,20)]; handle.font=[UIFont systemFontOfSize:14]; handle.textColor=UIColor.secondaryLabelColor; handle.text=[self.profileData[@"handle"] isKindOfClass:NSString.class]?self.profileData[@"handle"]:@""; [header addSubview:handle];
+    UILabel *counts=[[UILabel alloc] initWithFrame:CGRectMake(18,121,textWidth,20)]; counts.font=[UIFont systemFontOfSize:13]; counts.textColor=UIColor.secondaryLabelColor;
     NSString *following=[self.profileData[@"following"] isKindOfClass:NSString.class]?self.profileData[@"following"]:@"";
     NSString *followers=[self.profileData[@"followers"] isKindOfClass:NSString.class]?self.profileData[@"followers"]:@"";
     NSDictionary *followerProbe=[self.profileData[@"followerProbe"] isKindOfClass:NSDictionary.class]?self.profileData[@"followerProbe"]:nil;
