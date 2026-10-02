@@ -48,9 +48,15 @@
     if(screen.length==0)return;
     NSURL *url=[NSURL URLWithString:[NSString stringWithFormat:@"https://x.com/%@",screen]];
     if(!url)return;
+
     UIActivityViewController *share=[[UIActivityViewController alloc] initWithActivityItems:@[url] applicationActivities:nil];
-    UIPopoverPresentationController *popover=share.popoverPresentationController;
-    if(popover){popover.sourceView=sender;popover.sourceRect=sender.bounds;}
+    if(UI_USER_INTERFACE_IDIOM()==UIUserInterfaceIdiomPad){
+        UIPopoverPresentationController *popover=share.popoverPresentationController;
+        popover.sourceView=sender;
+        popover.sourceRect=sender.bounds;
+    } else {
+        share.modalPresentationStyle=UIModalPresentationPageSheet;
+    }
     [self presentViewController:share animated:YES completion:nil];
 }
 
