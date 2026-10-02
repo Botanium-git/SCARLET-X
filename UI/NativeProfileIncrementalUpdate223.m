@@ -1,5 +1,6 @@
 #import "NativeProfileViewController.h"
 #import <objc/runtime.h>
+#import <objc/message.h>
 
 static char SX237RepostDisplayLimitKey;
 
@@ -133,6 +134,25 @@ static char SX237RepostDisplayLimitKey;
     [self sx223_reloadPostsStack:postsStack];
 }
 
+- (void)sx238_loadMoreTimeline:(UIButton *)sender {
+    UIViewController *presenter=self.navigationController.presentingViewController ?: self.presentingViewController;
+    SEL selector=NSSelectorFromString(@"sx238_loadMoreProfile:");
+    if(presenter&&[presenter respondsToSelector:selector]){
+        ((void(*)(id,SEL,id))objc_msgSend)(presenter,selector,self);
+    }
+}
+
+- (UIButton *)sx238_moreButtonWithTitle:(NSString *)title action:(SEL)action enabled:(BOOL)enabled {
+    UIButton *button=[UIButton buttonWithType:UIButtonTypeSystem];
+    button.translatesAutoresizingMaskIntoConstraints=NO;
+    [button setTitle:title forState:UIControlStateNormal];
+    button.titleLabel.font=[UIFont systemFontOfSize:14 weight:UIFontWeightSemibold];
+    button.enabled=enabled;
+    [button addTarget:self action:action forControlEvents:UIControlEventTouchUpInside];
+    [button.heightAnchor constraintEqualToConstant:48].active=YES;
+    return button;
+}
+
 - (void)sx223_reloadPostsStack:(UIStackView *)postsStack {
     if(!postsStack)return;
     for(UIView *view in [postsStack.arrangedSubviews copy]){
@@ -147,13 +167,19 @@ static char SX237RepostDisplayLimitKey;
     if(selected>=0&&selected<=2){
         NSArray<NSString *> *itemsKeys=@[@"posts",@"replies",@"reposts"];
         NSArray<NSString *> *loadingKeys=@[@"postsLoading",@"repliesLoading",@"repostsLoading"];
+        NSArray<NSString *> *moreLoadingKeys=@[@"postsMoreLoading",@"repliesMoreLoading",@"repostsMoreLoading"];
+        NSArray<NSString *> *hasMoreKeys=@[@"postsHasMore",@"repliesHasMore",@"repostsHasMore"];
         NSArray<NSString *> *loadingTexts=@[@"Xからポストを読み込み中…",@"Xから返信を読み込み中…",@"Xからリポストを読み込み中…"];
         NSArray<NSString *> *emptyTexts=@[@"通常ポストはありません",@"返信はありません",@"リポストはありません"];
         NSString *itemsKey=itemsKeys[(NSUInteger)selected];
         NSString *loadingKey=loadingKeys[(NSUInteger)selected];
+        NSString *moreLoadingKey=moreLoadingKeys[(NSUInteger)selected];
+        NSString *hasMoreKey=hasMoreKeys[(NSUInteger)selected];
         NSArray *items=[data[itemsKey] isKindOfClass:NSArray.class]?data[itemsKey]:@[];
         BOOL hasLoading=[data[loadingKey] respondsToSelector:@selector(boolValue)];
         BOOL loading=hasLoading?[data[loadingKey] boolValue]:(![data.allKeys containsObject:itemsKey]);
+        BOOL moreLoading=[data[moreLoadingKey] respondsToSelector:@selector(boolValue)]?[data[moreLoadingKey] boolValue]:NO;
+        BOOL hasMore=[data[hasMoreKey] respondsToSelector:@selector(boolValue)]?[data[hasMoreKey] boolValue]:(items.count>0);
         NSUInteger renderCount=items.count;
         if(selected==2)renderCount=MIN(items.count,(NSUInteger)[self sx237_repostDisplayLimit]);
         NSInteger added=0;
@@ -173,13 +199,10 @@ static char SX237RepostDisplayLimitKey;
             [postsStack addArrangedSubview:empty];
             [empty.heightAnchor constraintGreaterThanOrEqualToConstant:100].active=YES;
         } else if(selected==2&&renderCount<items.count){
-            UIButton *more=[UIButton buttonWithType:UIButtonTypeSystem];
-            more.translatesAutoresizingMaskIntoConstraints=NO;
-            [more setTitle:@"さらに表示" forState:UIControlStateNormal];
-            more.titleLabel.font=[UIFont systemFontOfSize:14 weight:UIFontWeightSemibold];
-            [more addTarget:self action:@selector(sx237_showMoreReposts:) forControlEvents:UIControlEventTouchUpInside];
-            [more.heightAnchor constraintEqualToConstant:48].active=YES;
-            [postsStack addArrangedSubview:more];
+            [postsStack addArrangedSubview:[self sx238_moreButtonWithTitle:@"さらに表示" action:@selector(sx237_showMoreReposts:) enabled:YES]];
+        } else if(hasMore){
+            NSString *title=moreLoading?@"読み込み中…":@"さらに読み込む";
+            [postsStack addArrangedSubview:[self sx238_moreButtonWithTitle:title action:@selector(sx238_loadMoreTimeline:) enabled:!moreLoading]];
         }
     } else {
         UILabel *empty=[UILabel new];
