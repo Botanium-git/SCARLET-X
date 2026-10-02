@@ -50,7 +50,7 @@
     if(!url)return;
 
     UIActivityViewController *share=[[UIActivityViewController alloc] initWithActivityItems:@[url] applicationActivities:nil];
-    if(UI_USER_INTERFACE_IDIOM()==UIUserInterfaceIdiomPad){
+    if(UIDevice.currentDevice.userInterfaceIdiom==UIUserInterfaceIdiomPad){
         UIPopoverPresentationController *popover=share.popoverPresentationController;
         popover.sourceView=sender;
         popover.sourceRect=sender.bounds;
