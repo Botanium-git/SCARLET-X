@@ -42,6 +42,18 @@
     [self sx230_applyProfileData:merged];
 }
 
+- (void)sx231_shareProfile:(UIButton *)sender {
+    NSString *handle=[self.profileData[@"handle"] isKindOfClass:NSString.class]?self.profileData[@"handle"]:@"";
+    NSString *screen=[handle hasPrefix:@"@"]?[handle substringFromIndex:1]:handle;
+    if(screen.length==0)return;
+    NSURL *url=[NSURL URLWithString:[NSString stringWithFormat:@"https://x.com/%@",screen]];
+    if(!url)return;
+    UIActivityViewController *share=[[UIActivityViewController alloc] initWithActivityItems:@[url] applicationActivities:nil];
+    UIPopoverPresentationController *popover=share.popoverPresentationController;
+    if(popover){popover.sourceView=sender;popover.sourceRect=sender.bounds;}
+    [self presentViewController:share animated:YES completion:nil];
+}
+
 - (void)sx230_buildUI {
     [self sx230_buildUI];
 
@@ -74,6 +86,7 @@
     UILabel *handleLabel=labels.count>1?labels[1]:nil;
     UILabel *bioLabel=labels.count>2?labels[2]:nil;
     UILabel *countsLabel=labels.count>3?labels[3]:nil;
+    UIImageView *banner=images.count>0?images[0]:nil;
     UIImageView *avatar=images.count>1?images[1]:nil;
 
     nameLabel.font=[UIFont systemFontOfSize:19 weight:UIFontWeightBold];
@@ -113,19 +126,41 @@
         else if(constraint.firstItem==bioLabel&&constraint.firstAttribute==NSLayoutAttributeTop&&constraint.secondItem==handleLabel&&constraint.secondAttribute==NSLayoutAttributeBottom)constraint.constant=12;
         else if(constraint.firstItem==joinedContainer&&constraint.firstAttribute==NSLayoutAttributeTop&&constraint.secondItem==bioLabel&&constraint.secondAttribute==NSLayoutAttributeBottom)constraint.constant=8;
         else if(constraint.firstItem==countsLabel&&constraint.firstAttribute==NSLayoutAttributeTop&&constraint.secondItem==joinedContainer&&constraint.secondAttribute==NSLayoutAttributeBottom)constraint.constant=8;
-        else if(constraint.firstItem==actions&&constraint.firstAttribute==NSLayoutAttributeTop&&constraint.secondItem==countsLabel&&constraint.secondAttribute==NSLayoutAttributeBottom)constraint.constant=14;
-        else if(constraint.firstItem!=nil&&constraint.firstAttribute==NSLayoutAttributeTop&&constraint.secondItem==actions&&constraint.secondAttribute==NSLayoutAttributeBottom)constraint.constant=10;
     }
 
-    if(actions){
-        for(NSLayoutConstraint *constraint in actions.constraints){
-            if(constraint.firstAttribute==NSLayoutAttributeHeight&&constraint.secondItem==nil)constraint.constant=38;
+    if(actions&&actions.arrangedSubviews.count>=2&&banner&&countsLabel){
+        UIButton *edit=[actions.arrangedSubviews[1] isKindOfClass:UIButton.class]?(UIButton *)actions.arrangedSubviews[1]:nil;
+        UIView *separator=nil;
+        NSMutableArray<NSLayoutConstraint *> *remove=[NSMutableArray array];
+        for(NSLayoutConstraint *constraint in content.constraints){
+            if(constraint.firstItem==actions||constraint.secondItem==actions){
+                if(constraint.firstItem!=actions&&constraint.firstAttribute==NSLayoutAttributeTop&&constraint.secondItem==actions&&constraint.secondAttribute==NSLayoutAttributeBottom)separator=constraint.firstItem;
+                [remove addObject:constraint];
+            }
         }
-        for(UIView *view in actions.arrangedSubviews){
-            if(![view isKindOfClass:UIButton.class])continue;
-            UIButton *button=(UIButton *)view;
-            button.titleLabel.font=[UIFont systemFontOfSize:14 weight:UIFontWeightSemibold];
-            button.layer.cornerRadius=19;
+        [NSLayoutConstraint deactivateConstraints:remove];
+        if(edit){
+            [actions removeArrangedSubview:edit];
+            [edit removeFromSuperview];
+        }
+        [actions removeFromSuperview];
+
+        if(edit){
+            edit.translatesAutoresizingMaskIntoConstraints=NO;
+            edit.titleLabel.font=[UIFont systemFontOfSize:14 weight:UIFontWeightSemibold];
+            edit.layer.cornerRadius=18;
+            [content addSubview:edit];
+            [NSLayoutConstraint activateConstraints:@[
+                [edit.trailingAnchor constraintEqualToAnchor:content.trailingAnchor constant:-16],
+                [edit.topAnchor constraintEqualToAnchor:banner.bottomAnchor constant:12],
+                [edit.heightAnchor constraintEqualToConstant:36],
+                [edit.widthAnchor constraintGreaterThanOrEqualToConstant:156]
+            ]];
+        }
+        if(separator){
+            [NSLayoutConstraint activateConstraints:@[
+                [separator.topAnchor constraintEqualToAnchor:countsLabel.bottomAnchor constant:20]
+            ]];
         }
     }
 
@@ -142,6 +177,25 @@
                 if(button.tag==0)button.titleLabel.font=[UIFont systemFontOfSize:14 weight:UIFontWeightBold];
             }
         }
+    }
+
+    if(![self sx230_findAccessibilityIdentifier:@"sx.profile.share.top" inView:self.view]){
+        UIButton *share=[UIButton buttonWithType:UIButtonTypeSystem];
+        share.translatesAutoresizingMaskIntoConstraints=NO;
+        share.accessibilityIdentifier=@"sx.profile.share.top";
+        share.backgroundColor=[UIColor colorWithWhite:0 alpha:.58];
+        share.tintColor=UIColor.whiteColor;
+        share.layer.cornerRadius=19;
+        [share setImage:[UIImage systemImageNamed:@"square.and.arrow.up"] forState:UIControlStateNormal];
+        [share addTarget:self action:@selector(sx231_shareProfile:) forControlEvents:UIControlEventTouchUpInside];
+        [self.view addSubview:share];
+        UILayoutGuide *safe=self.view.safeAreaLayoutGuide;
+        [NSLayoutConstraint activateConstraints:@[
+            [share.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-62],
+            [share.topAnchor constraintEqualToAnchor:safe.topAnchor constant:8],
+            [share.widthAnchor constraintEqualToConstant:38],
+            [share.heightAnchor constraintEqualToConstant:38]
+        ]];
     }
 
     [content setNeedsLayout];
