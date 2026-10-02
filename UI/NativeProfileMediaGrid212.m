@@ -32,17 +32,13 @@ static char SX214VideoURLKey;
     UIView *tile = gesture.view;
     NSString *urlString = objc_getAssociatedObject(tile, &SX214VideoURLKey);
     if (![urlString isKindOfClass:NSString.class] || urlString.length == 0) return;
-
     NSURL *url = [NSURL URLWithString:urlString];
     if (!url) return;
-
     AVPlayer *player = [AVPlayer playerWithURL:url];
     AVPlayerViewController *controller = [AVPlayerViewController new];
     controller.player = player;
     controller.modalPresentationStyle = UIModalPresentationFullScreen;
-    [self presentViewController:controller animated:YES completion:^{
-        [player play];
-    }];
+    [self presentViewController:controller animated:YES completion:^{ [player play]; }];
 }
 
 - (UIView *)sx_212_mediaTile:(NSDictionary *)media {
@@ -50,7 +46,6 @@ static char SX214VideoURLKey;
     container.translatesAutoresizingMaskIntoConstraints=NO;
     container.backgroundColor=UIColor.secondarySystemBackgroundColor;
     container.clipsToBounds=YES;
-
     UIImageView *image=[UIImageView new];
     image.translatesAutoresizingMaskIntoConstraints=NO;
     image.contentMode=UIViewContentModeScaleAspectFill;
@@ -62,10 +57,8 @@ static char SX214VideoURLKey;
         [image.trailingAnchor constraintEqualToAnchor:container.trailingAnchor],
         [image.bottomAnchor constraintEqualToAnchor:container.bottomAnchor]
     ]];
-
     NSString *preview=[self stringValue:media[@"previewURL"]];
     if(preview.length)[self loadImageURLString:preview into:image];
-
     NSString *type=[self stringValue:media[@"type"]];
     if([type isEqualToString:@"video"]||[type isEqualToString:@"animated_gif"]){
         UIImageView *play=[UIImageView new];
@@ -84,7 +77,6 @@ static char SX214VideoURLKey;
             [play.widthAnchor constraintEqualToConstant:44],
             [play.heightAnchor constraintEqualToConstant:44]
         ]];
-
         NSString *videoURL=[self stringValue:media[@"videoURL"]];
         if(videoURL.length){
             objc_setAssociatedObject(container, &SX214VideoURLKey, videoURL, OBJC_ASSOCIATION_COPY_NONATOMIC);
@@ -99,76 +91,20 @@ static char SX214VideoURLKey;
 - (UIView *)sx_212_mediaGridForMedia:(NSArray *)mediaItems {
     NSArray *items=mediaItems.count>4?[mediaItems subarrayWithRange:NSMakeRange(0,4)]:mediaItems;
     if(items.count==0)return nil;
-
-    UIView *(^tileAt)(NSUInteger)=^UIView *(NSUInteger idx){
-        id obj=items[idx];
-        return [self sx_212_mediaTile:[obj isKindOfClass:NSDictionary.class]?obj:@{}];
-    };
-
+    UIView *(^tileAt)(NSUInteger)=^UIView *(NSUInteger idx){ id obj=items[idx]; return [self sx_212_mediaTile:[obj isKindOfClass:NSDictionary.class]?obj:@{}]; };
     if(items.count==1){
-        UIView *tile=tileAt(0);
-        tile.layer.cornerRadius=12;
-        [tile.heightAnchor constraintEqualToConstant:220].active=YES;
-        return tile;
+        UIView *tile=tileAt(0); tile.layer.cornerRadius=12; [tile.heightAnchor constraintEqualToConstant:220].active=YES; return tile;
     }
-
     if(items.count==2){
-        UIStackView *row=[UIStackView new];
-        row.axis=UILayoutConstraintAxisHorizontal;
-        row.spacing=2;
-        row.distribution=UIStackViewDistributionFillEqually;
-        [row addArrangedSubview:tileAt(0)];
-        [row addArrangedSubview:tileAt(1)];
-        row.clipsToBounds=YES;
-        row.layer.cornerRadius=12;
-        [row.heightAnchor constraintEqualToConstant:220].active=YES;
-        return row;
+        UIStackView *row=[UIStackView new]; row.axis=UILayoutConstraintAxisHorizontal; row.spacing=2; row.distribution=UIStackViewDistributionFillEqually; [row addArrangedSubview:tileAt(0)]; [row addArrangedSubview:tileAt(1)]; row.clipsToBounds=YES; row.layer.cornerRadius=12; [row.heightAnchor constraintEqualToConstant:220].active=YES; return row;
     }
-
     if(items.count==3){
-        UIStackView *right=[UIStackView new];
-        right.axis=UILayoutConstraintAxisVertical;
-        right.spacing=2;
-        right.distribution=UIStackViewDistributionFillEqually;
-        [right addArrangedSubview:tileAt(1)];
-        [right addArrangedSubview:tileAt(2)];
-
-        UIStackView *row=[UIStackView new];
-        row.axis=UILayoutConstraintAxisHorizontal;
-        row.spacing=2;
-        row.distribution=UIStackViewDistributionFillEqually;
-        [row addArrangedSubview:tileAt(0)];
-        [row addArrangedSubview:right];
-        row.clipsToBounds=YES;
-        row.layer.cornerRadius=12;
-        [row.heightAnchor constraintEqualToConstant:240].active=YES;
-        return row;
+        UIStackView *right=[UIStackView new]; right.axis=UILayoutConstraintAxisVertical; right.spacing=2; right.distribution=UIStackViewDistributionFillEqually; [right addArrangedSubview:tileAt(1)]; [right addArrangedSubview:tileAt(2)];
+        UIStackView *row=[UIStackView new]; row.axis=UILayoutConstraintAxisHorizontal; row.spacing=2; row.distribution=UIStackViewDistributionFillEqually; [row addArrangedSubview:tileAt(0)]; [row addArrangedSubview:right]; row.clipsToBounds=YES; row.layer.cornerRadius=12; [row.heightAnchor constraintEqualToConstant:240].active=YES; return row;
     }
-
-    UIStackView *top=[UIStackView new];
-    top.axis=UILayoutConstraintAxisHorizontal;
-    top.spacing=2;
-    top.distribution=UIStackViewDistributionFillEqually;
-    [top addArrangedSubview:tileAt(0)];
-    [top addArrangedSubview:tileAt(1)];
-
-    UIStackView *bottom=[UIStackView new];
-    bottom.axis=UILayoutConstraintAxisHorizontal;
-    bottom.spacing=2;
-    bottom.distribution=UIStackViewDistributionFillEqually;
-    [bottom addArrangedSubview:tileAt(2)];
-    [bottom addArrangedSubview:tileAt(3)];
-
-    UIStackView *grid=[UIStackView new];
-    grid.axis=UILayoutConstraintAxisVertical;
-    grid.spacing=2;
-    grid.distribution=UIStackViewDistributionFillEqually;
-    [grid addArrangedSubview:top];
-    [grid addArrangedSubview:bottom];
-    grid.clipsToBounds=YES;
-    grid.layer.cornerRadius=12;
-    [grid.heightAnchor constraintEqualToConstant:260].active=YES;
-    return grid;
+    UIStackView *top=[UIStackView new]; top.axis=UILayoutConstraintAxisHorizontal; top.spacing=2; top.distribution=UIStackViewDistributionFillEqually; [top addArrangedSubview:tileAt(0)]; [top addArrangedSubview:tileAt(1)];
+    UIStackView *bottom=[UIStackView new]; bottom.axis=UILayoutConstraintAxisHorizontal; bottom.spacing=2; bottom.distribution=UIStackViewDistributionFillEqually; [bottom addArrangedSubview:tileAt(2)]; [bottom addArrangedSubview:tileAt(3)];
+    UIStackView *grid=[UIStackView new]; grid.axis=UILayoutConstraintAxisVertical; grid.spacing=2; grid.distribution=UIStackViewDistributionFillEqually; [grid addArrangedSubview:top]; [grid addArrangedSubview:bottom]; grid.clipsToBounds=YES; grid.layer.cornerRadius=12; [grid.heightAnchor constraintEqualToConstant:260].active=YES; return grid;
 }
 
 - (NSString *)sx_215_inlineDate:(NSString *)raw {
@@ -189,39 +125,54 @@ static char SX214VideoURLKey;
     item.axis=UILayoutConstraintAxisHorizontal;
     item.alignment=UIStackViewAlignmentCenter;
     item.spacing=5;
-
     UIImageView *icon=[UIImageView new];
     icon.translatesAutoresizingMaskIntoConstraints=NO;
     icon.image=[UIImage systemImageNamed:symbol];
     icon.tintColor=UIColor.secondaryLabelColor;
     icon.contentMode=UIViewContentModeScaleAspectFit;
-    [NSLayoutConstraint activateConstraints:@[
-        [icon.widthAnchor constraintEqualToConstant:17],
-        [icon.heightAnchor constraintEqualToConstant:17]
-    ]];
+    [NSLayoutConstraint activateConstraints:@[[icon.widthAnchor constraintEqualToConstant:17],[icon.heightAnchor constraintEqualToConstant:17]]];
     [item addArrangedSubview:icon];
-
     NSInteger value=[count respondsToSelector:@selector(integerValue)]?[count integerValue]:0;
-    if(value>0){
-        UILabel *label=[UILabel new];
-        label.font=[UIFont systemFontOfSize:12];
-        label.textColor=UIColor.secondaryLabelColor;
-        label.text=[NSString stringWithFormat:@"%ld",(long)value];
-        [item addArrangedSubview:label];
-    }
+    if(value>0){ UILabel *label=[UILabel new]; label.font=[UIFont systemFontOfSize:12]; label.textColor=UIColor.secondaryLabelColor; label.text=[NSString stringWithFormat:@"%ld",(long)value]; [item addArrangedSubview:label]; }
     return item;
 }
 
 - (UIView *)sx_212_postViewForPost:(NSDictionary *)post {
     NSDictionary *profile=[self.profileData isKindOfClass:NSDictionary.class]?self.profileData:@{};
-    NSString *name=[self stringValue:profile[@"name"]];
-    NSString *handle=[self stringValue:profile[@"handle"]];
-    NSString *avatarURL=[self stringValue:profile[@"avatarURL"]];
+    NSString *name=[self stringValue:post[@"authorName"]];
+    NSString *handle=[self stringValue:post[@"authorHandle"]];
+    NSString *avatarURL=[self stringValue:post[@"authorAvatarURL"]];
+    if(name.length==0)name=[self stringValue:profile[@"name"]];
+    if(handle.length==0)handle=[self stringValue:profile[@"handle"]];
+    if(avatarURL.length==0)avatarURL=[self stringValue:profile[@"avatarURL"]];
     if(handle.length && ![handle hasPrefix:@"@"])handle=[@"@" stringByAppendingString:handle];
 
     UIStackView *root=[UIStackView new];
     root.axis=UILayoutConstraintAxisVertical;
     root.spacing=0;
+
+    if([post[@"isRepost"] respondsToSelector:@selector(boolValue)]&&[post[@"isRepost"] boolValue]){
+        UIStackView *repost=[UIStackView new];
+        repost.axis=UILayoutConstraintAxisHorizontal;
+        repost.alignment=UIStackViewAlignmentCenter;
+        repost.spacing=6;
+        repost.layoutMargins=UIEdgeInsetsMake(8,64,0,12);
+        repost.layoutMarginsRelativeArrangement=YES;
+        UIImageView *icon=[UIImageView new];
+        icon.translatesAutoresizingMaskIntoConstraints=NO;
+        icon.image=[UIImage systemImageNamed:@"arrow.2.squarepath"];
+        icon.tintColor=UIColor.secondaryLabelColor;
+        [icon.widthAnchor constraintEqualToConstant:14].active=YES;
+        [icon.heightAnchor constraintEqualToConstant:14].active=YES;
+        [repost addArrangedSubview:icon];
+        UILabel *label=[UILabel new];
+        label.font=[UIFont systemFontOfSize:12 weight:UIFontWeightSemibold];
+        label.textColor=UIColor.secondaryLabelColor;
+        NSString *profileName=[self stringValue:profile[@"name"]];
+        label.text=profileName.length?[NSString stringWithFormat:@"%@さんがリポスト",profileName]:@"リポスト";
+        [repost addArrangedSubview:label];
+        [root addArrangedSubview:repost];
+    }
 
     UIStackView *row=[UIStackView new];
     row.axis=UILayoutConstraintAxisHorizontal;
@@ -238,10 +189,7 @@ static char SX214VideoURLKey;
     avatar.clipsToBounds=YES;
     avatar.layer.cornerRadius=20;
     avatar.image=[UIImage systemImageNamed:@"person.crop.circle.fill"];
-    [NSLayoutConstraint activateConstraints:@[
-        [avatar.widthAnchor constraintEqualToConstant:40],
-        [avatar.heightAnchor constraintEqualToConstant:40]
-    ]];
+    [NSLayoutConstraint activateConstraints:@[[avatar.widthAnchor constraintEqualToConstant:40],[avatar.heightAnchor constraintEqualToConstant:40]]];
     [row addArrangedSubview:avatar];
     if(avatarURL.length)[self loadImageURLString:avatarURL into:avatar];
 
@@ -256,63 +204,33 @@ static char SX214VideoURLKey;
     header.alignment=UIStackViewAlignmentCenter;
     header.spacing=4;
     [content addArrangedSubview:header];
-
     UILabel *nameLabel=[UILabel new];
     nameLabel.font=[UIFont systemFontOfSize:15 weight:UIFontWeightSemibold];
     nameLabel.text=name;
     nameLabel.lineBreakMode=NSLineBreakByTruncatingTail;
     [nameLabel setContentCompressionResistancePriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal];
     [header addArrangedSubview:nameLabel];
-
     UILabel *meta=[UILabel new];
     meta.font=[UIFont systemFontOfSize:15];
     meta.textColor=UIColor.secondaryLabelColor;
     NSString *date=[self sx_215_inlineDate:[self stringValue:post[@"createdAt"]]];
-    if(handle.length&&date.length)meta.text=[NSString stringWithFormat:@"%@ · %@",handle,date];
-    else meta.text=handle.length?handle:date;
+    if(handle.length&&date.length)meta.text=[NSString stringWithFormat:@"%@ · %@",handle,date]; else meta.text=handle.length?handle:date;
     meta.lineBreakMode=NSLineBreakByTruncatingTail;
     [meta setContentCompressionResistancePriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal];
     [header addArrangedSubview:meta];
-
-    UIView *spacer=[UIView new];
-    [spacer setContentHuggingPriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal];
-    [header addArrangedSubview:spacer];
-
-    UIImageView *more=[UIImageView new];
-    more.translatesAutoresizingMaskIntoConstraints=NO;
-    more.image=[UIImage systemImageNamed:@"ellipsis"];
-    more.tintColor=UIColor.secondaryLabelColor;
-    more.contentMode=UIViewContentModeScaleAspectFit;
-    [NSLayoutConstraint activateConstraints:@[
-        [more.widthAnchor constraintEqualToConstant:18],
-        [more.heightAnchor constraintEqualToConstant:18]
-    ]];
-    [header addArrangedSubview:more];
+    UIView *spacer=[UIView new]; [spacer setContentHuggingPriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal]; [header addArrangedSubview:spacer];
+    UIImageView *more=[UIImageView new]; more.translatesAutoresizingMaskIntoConstraints=NO; more.image=[UIImage systemImageNamed:@"ellipsis"]; more.tintColor=UIColor.secondaryLabelColor; more.contentMode=UIViewContentModeScaleAspectFit; [NSLayoutConstraint activateConstraints:@[[more.widthAnchor constraintEqualToConstant:18],[more.heightAnchor constraintEqualToConstant:18]]]; [header addArrangedSubview:more];
 
     NSString *text=[self stringValue:post[@"text"]];
-    if(text.length){
-        UILabel *body=[UILabel new];
-        body.font=[UIFont systemFontOfSize:15];
-        body.numberOfLines=0;
-        body.text=text;
-        [content addArrangedSubview:body];
-    }
-
+    if(text.length){ UILabel *body=[UILabel new]; body.font=[UIFont systemFontOfSize:15]; body.numberOfLines=0; body.text=text; [content addArrangedSubview:body]; }
     NSArray *media=[post[@"media"] isKindOfClass:NSArray.class]?post[@"media"]:@[];
-    if(media.count==0){
-        NSString *legacyURL=[self stringValue:post[@"mediaURL"]];
-        if(legacyURL.length)media=@[@{@"type":@"photo",@"previewURL":legacyURL}];
-    }
+    if(media.count==0){ NSString *legacyURL=[self stringValue:post[@"mediaURL"]]; if(legacyURL.length)media=@[@{@"type":@"photo",@"previewURL":legacyURL}]; }
     UIView *mediaGrid=[self sx_212_mediaGridForMedia:media];
-    if(mediaGrid){
-        [content setCustomSpacing:9 afterView:content.arrangedSubviews.lastObject];
-        [content addArrangedSubview:mediaGrid];
-    }
+    if(mediaGrid){ [content setCustomSpacing:9 afterView:content.arrangedSubviews.lastObject]; [content addArrangedSubview:mediaGrid]; }
 
     NSNumber *reply=[post[@"replyCount"] isKindOfClass:NSNumber.class]?post[@"replyCount"]:@0;
     NSNumber *retweet=[post[@"retweetCount"] isKindOfClass:NSNumber.class]?post[@"retweetCount"]:@0;
     NSNumber *favorite=[post[@"favoriteCount"] isKindOfClass:NSNumber.class]?post[@"favoriteCount"]:@0;
-
     UIStackView *actions=[UIStackView new];
     actions.axis=UILayoutConstraintAxisHorizontal;
     actions.alignment=UIStackViewAlignmentCenter;
@@ -327,11 +245,7 @@ static char SX214VideoURLKey;
     [content setCustomSpacing:5 afterView:content.arrangedSubviews.lastObject];
     [content addArrangedSubview:actions];
 
-    UIView *separator=[UIView new];
-    separator.translatesAutoresizingMaskIntoConstraints=NO;
-    separator.backgroundColor=UIColor.separatorColor;
-    [separator.heightAnchor constraintEqualToConstant:.5].active=YES;
-    [root addArrangedSubview:separator];
+    UIView *separator=[UIView new]; separator.translatesAutoresizingMaskIntoConstraints=NO; separator.backgroundColor=UIColor.separatorColor; [separator.heightAnchor constraintEqualToConstant:.5].active=YES; [root addArrangedSubview:separator];
     return root;
 }
 
