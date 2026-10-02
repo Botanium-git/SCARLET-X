@@ -3,6 +3,7 @@
 @interface NativeProfileViewController ()
 @property(nonatomic,strong) UIScrollView *scrollView;
 @property(nonatomic,strong) UIView *contentView;
+@property(nonatomic,assign) NSInteger selectedProfileTab;
 @end
 
 @implementation NativeProfileViewController
@@ -97,6 +98,70 @@
     return stack;
 }
 
+- (void)profileTabTapped:(UIButton *)sender {
+    NSInteger next=sender.tag;
+    if(next<0||next>3||next==self.selectedProfileTab)return;
+    self.selectedProfileTab=next;
+    [self applyProfileData:self.profileData];
+}
+
+- (void)profileTabSwiped:(UISwipeGestureRecognizer *)gesture {
+    NSInteger next=self.selectedProfileTab;
+    if(gesture.direction==UISwipeGestureRecognizerDirectionLeft)next=MIN(3,next+1);
+    else if(gesture.direction==UISwipeGestureRecognizerDirectionRight)next=MAX(0,next-1);
+    if(next==self.selectedProfileTab)return;
+    self.selectedProfileTab=next;
+    [self applyProfileData:self.profileData];
+}
+
+- (UIView *)profileTabBar {
+    NSArray<NSString *> *titles=@[@"ポスト",@"返信",@"ハイライト",@"メディア"];
+    UIStackView *tabs=[UIStackView new];
+    tabs.translatesAutoresizingMaskIntoConstraints=NO;
+    tabs.axis=UILayoutConstraintAxisHorizontal;
+    tabs.distribution=UIStackViewDistributionFillEqually;
+    tabs.alignment=UIStackViewAlignmentFill;
+    tabs.spacing=0;
+
+    [titles enumerateObjectsUsingBlock:^(NSString *title,NSUInteger idx,BOOL *stop){
+        UIView *container=[UIView new];
+        container.translatesAutoresizingMaskIntoConstraints=NO;
+
+        UIButton *button=[UIButton buttonWithType:UIButtonTypeSystem];
+        button.translatesAutoresizingMaskIntoConstraints=NO;
+        button.tag=(NSInteger)idx;
+        [button setTitle:title forState:UIControlStateNormal];
+        button.titleLabel.font=[UIFont systemFontOfSize:15 weight:(idx==(NSUInteger)self.selectedProfileTab?UIFontWeightBold:UIFontWeightSemibold)];
+        [button setTitleColor:(idx==(NSUInteger)self.selectedProfileTab?UIColor.labelColor:UIColor.secondaryLabelColor) forState:UIControlStateNormal];
+        [button addTarget:self action:@selector(profileTabTapped:) forControlEvents:UIControlEventTouchUpInside];
+        [container addSubview:button];
+
+        [NSLayoutConstraint activateConstraints:@[
+            [button.topAnchor constraintEqualToAnchor:container.topAnchor],
+            [button.leadingAnchor constraintEqualToAnchor:container.leadingAnchor],
+            [button.trailingAnchor constraintEqualToAnchor:container.trailingAnchor],
+            [button.bottomAnchor constraintEqualToAnchor:container.bottomAnchor]
+        ]];
+
+        if(idx==(NSUInteger)self.selectedProfileTab){
+            UIView *indicator=[UIView new];
+            indicator.translatesAutoresizingMaskIntoConstraints=NO;
+            indicator.backgroundColor=UIColor.systemBlueColor;
+            indicator.layer.cornerRadius=1.5;
+            [container addSubview:indicator];
+            [NSLayoutConstraint activateConstraints:@[
+                [indicator.bottomAnchor constraintEqualToAnchor:container.bottomAnchor],
+                [indicator.centerXAnchor constraintEqualToAnchor:container.centerXAnchor],
+                [indicator.widthAnchor constraintEqualToConstant:54],
+                [indicator.heightAnchor constraintEqualToConstant:3]
+            ]];
+        }
+
+        [tabs addArrangedSubview:container];
+    }];
+    return tabs;
+}
+
 - (void)buildUI {
     NSDictionary *data=[self.profileData isKindOfClass:NSDictionary.class]?self.profileData:@{};
     NSDictionary *followerProbe=[data[@"followerProbe"] isKindOfClass:NSDictionary.class]?data[@"followerProbe"]:@{};
@@ -120,6 +185,13 @@
     self.scrollView.translatesAutoresizingMaskIntoConstraints=NO;
     self.scrollView.alwaysBounceVertical=YES;
     [self.view addSubview:self.scrollView];
+
+    UISwipeGestureRecognizer *leftSwipe=[[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(profileTabSwiped:)];
+    leftSwipe.direction=UISwipeGestureRecognizerDirectionLeft;
+    [self.scrollView addGestureRecognizer:leftSwipe];
+    UISwipeGestureRecognizer *rightSwipe=[[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(profileTabSwiped:)];
+    rightSwipe.direction=UISwipeGestureRecognizerDirectionRight;
+    [self.scrollView addGestureRecognizer:rightSwipe];
 
     self.contentView=[UIView new];
     self.contentView.translatesAutoresizingMaskIntoConstraints=NO;
@@ -190,11 +262,13 @@
     separator.backgroundColor=UIColor.separatorColor;
     [self.contentView addSubview:separator];
 
-    UILabel *sectionTitle=[UILabel new];
-    sectionTitle.translatesAutoresizingMaskIntoConstraints=NO;
-    sectionTitle.font=[UIFont systemFontOfSize:17 weight:UIFontWeightBold];
-    sectionTitle.text=@"ポスト";
-    [self.contentView addSubview:sectionTitle];
+    UIView *tabBar=[self profileTabBar];
+    [self.contentView addSubview:tabBar];
+
+    UIView *tabsBottomBorder=[UIView new];
+    tabsBottomBorder.translatesAutoresizingMaskIntoConstraints=NO;
+    tabsBottomBorder.backgroundColor=UIColor.separatorColor;
+    [self.contentView addSubview:tabsBottomBorder];
 
     UIStackView *postsStack=[UIStackView new];
     postsStack.translatesAutoresizingMaskIntoConstraints=NO;
@@ -203,20 +277,30 @@
     [self.contentView addSubview:postsStack];
 
     NSInteger added=0;
-    for(id item in posts){
-        if(![item isKindOfClass:NSDictionary.class])continue;
-        [postsStack addArrangedSubview:[self postViewForPost:(NSDictionary *)item]];
-        added++;
-    }
-    if(added==0){
+    if(self.selectedProfileTab==0){
+        for(id item in posts){
+            if(![item isKindOfClass:NSDictionary.class])continue;
+            [postsStack addArrangedSubview:[self postViewForPost:(NSDictionary *)item]];
+            added++;
+        }
+        if(added==0){
+            UILabel *empty=[UILabel new];
+            empty.font=[UIFont systemFontOfSize:14];
+            empty.textColor=UIColor.secondaryLabelColor;
+            empty.textAlignment=NSTextAlignmentCenter;
+            empty.numberOfLines=0;
+            empty.text=postsLoading?@"Xからポストを読み込み中…":@"通常ポストはありません";
+            [postsStack addArrangedSubview:empty];
+            [empty.heightAnchor constraintGreaterThanOrEqualToConstant:100].active=YES;
+        }
+    } else {
         UILabel *empty=[UILabel new];
         empty.font=[UIFont systemFontOfSize:14];
         empty.textColor=UIColor.secondaryLabelColor;
         empty.textAlignment=NSTextAlignmentCenter;
-        empty.numberOfLines=0;
-        empty.text=postsLoading?@"Xからポストを読み込み中…":@"通常ポストはありません";
+        empty.text=@"このタブのデータはまだ接続していません";
         [postsStack addArrangedSubview:empty];
-        [empty.heightAnchor constraintGreaterThanOrEqualToConstant:100].active=YES;
+        [empty.heightAnchor constraintGreaterThanOrEqualToConstant:120].active=YES;
     }
 
     UILayoutGuide *safe=self.view.safeAreaLayoutGuide;
@@ -266,11 +350,17 @@
         [separator.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor],
         [separator.heightAnchor constraintEqualToConstant:.5],
 
-        [sectionTitle.topAnchor constraintEqualToAnchor:separator.bottomAnchor constant:14],
-        [sectionTitle.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:16],
-        [sectionTitle.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
+        [tabBar.topAnchor constraintEqualToAnchor:separator.bottomAnchor],
+        [tabBar.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor],
+        [tabBar.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor],
+        [tabBar.heightAnchor constraintEqualToConstant:52],
 
-        [postsStack.topAnchor constraintEqualToAnchor:sectionTitle.bottomAnchor constant:4],
+        [tabsBottomBorder.topAnchor constraintEqualToAnchor:tabBar.bottomAnchor],
+        [tabsBottomBorder.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor],
+        [tabsBottomBorder.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor],
+        [tabsBottomBorder.heightAnchor constraintEqualToConstant:.5],
+
+        [postsStack.topAnchor constraintEqualToAnchor:tabsBottomBorder.bottomAnchor],
         [postsStack.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor],
         [postsStack.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor],
         [postsStack.bottomAnchor constraintEqualToAnchor:self.contentView.bottomAnchor constant:-30]
