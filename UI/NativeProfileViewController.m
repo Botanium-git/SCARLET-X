@@ -12,8 +12,37 @@
     [super viewDidLoad];
     self.view.backgroundColor=UIColor.systemBackgroundColor;
     self.title=@"プロフィール";
-    self.navigationItem.leftBarButtonItem=[[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"xmark"] style:UIBarButtonItemStylePlain target:self action:@selector(closeTapped:)];
     [self buildUI];
+
+    UIButton *back=[UIButton buttonWithType:UIButtonTypeSystem];
+    back.translatesAutoresizingMaskIntoConstraints=NO;
+    back.backgroundColor=[UIColor colorWithWhite:0 alpha:.58];
+    back.tintColor=UIColor.whiteColor;
+    back.layer.cornerRadius=19;
+    [back setImage:[UIImage systemImageNamed:@"chevron.left"] forState:UIControlStateNormal];
+    [back addTarget:self action:@selector(closeTapped:) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:back];
+
+    UIButton *search=[UIButton buttonWithType:UIButtonTypeSystem];
+    search.translatesAutoresizingMaskIntoConstraints=NO;
+    search.backgroundColor=[UIColor colorWithWhite:0 alpha:.58];
+    search.tintColor=UIColor.whiteColor;
+    search.layer.cornerRadius=19;
+    [search setImage:[UIImage systemImageNamed:@"magnifyingglass"] forState:UIControlStateNormal];
+    [search addTarget:self action:@selector(searchTapped:) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:search];
+
+    UILayoutGuide *safe=self.view.safeAreaLayoutGuide;
+    [NSLayoutConstraint activateConstraints:@[
+        [back.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:16],
+        [back.topAnchor constraintEqualToAnchor:safe.topAnchor constant:8],
+        [back.widthAnchor constraintEqualToConstant:38],
+        [back.heightAnchor constraintEqualToConstant:38],
+        [search.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-16],
+        [search.topAnchor constraintEqualToAnchor:safe.topAnchor constant:8],
+        [search.widthAnchor constraintEqualToConstant:38],
+        [search.heightAnchor constraintEqualToConstant:38]
+    ]];
 }
 
 - (void)applyProfileData:(NSDictionary *)profileData {
@@ -42,6 +71,19 @@
     output.locale=[NSLocale currentLocale];
     output.dateFormat=@"M/d H:mm";
     return [output stringFromDate:date];
+}
+
+- (NSString *)joinedTextForRaw:(NSString *)raw {
+    if(raw.length==0)return @"";
+    NSDateFormatter *input=[NSDateFormatter new];
+    input.locale=[[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
+    input.dateFormat=@"EEE MMM dd HH:mm:ss Z yyyy";
+    NSDate *date=[input dateFromString:raw];
+    if(!date)return @"";
+    NSDateFormatter *output=[NSDateFormatter new];
+    output.locale=[[NSLocale alloc] initWithLocaleIdentifier:@"ja_JP"];
+    output.dateFormat=@"yyyy年M月";
+    return [NSString stringWithFormat:@"%@からXを利用しています",[output stringFromDate:date]];
 }
 
 - (void)loadImageURLString:(NSString *)urlString into:(UIImageView *)imageView {
@@ -115,7 +157,7 @@
 }
 
 - (UIView *)profileTabBar {
-    NSArray<NSString *> *titles=@[@"ポスト",@"返信",@"ハイライト",@"メディア"];
+    NSArray<NSString *> *symbols=@[@"list.bullet.rectangle",@"bubble",@"arrow.2.squarepath",@"rectangle.on.rectangle"];
     UIStackView *tabs=[UIStackView new];
     tabs.translatesAutoresizingMaskIntoConstraints=NO;
     tabs.axis=UILayoutConstraintAxisHorizontal;
@@ -123,16 +165,22 @@
     tabs.alignment=UIStackViewAlignmentFill;
     tabs.spacing=0;
 
-    [titles enumerateObjectsUsingBlock:^(NSString *title,NSUInteger idx,BOOL *stop){
+    [symbols enumerateObjectsUsingBlock:^(NSString *symbol,NSUInteger idx,BOOL *stop){
         UIView *container=[UIView new];
         container.translatesAutoresizingMaskIntoConstraints=NO;
 
         UIButton *button=[UIButton buttonWithType:UIButtonTypeSystem];
         button.translatesAutoresizingMaskIntoConstraints=NO;
         button.tag=(NSInteger)idx;
-        [button setTitle:title forState:UIControlStateNormal];
-        button.titleLabel.font=[UIFont systemFontOfSize:15 weight:(idx==(NSUInteger)self.selectedProfileTab?UIFontWeightBold:UIFontWeightSemibold)];
-        [button setTitleColor:(idx==(NSUInteger)self.selectedProfileTab?UIColor.labelColor:UIColor.secondaryLabelColor) forState:UIControlStateNormal];
+        [button setImage:[UIImage systemImageNamed:symbol] forState:UIControlStateNormal];
+        if(idx==0){
+            [button setTitle:@"  ポスト" forState:UIControlStateNormal];
+            button.titleLabel.font=[UIFont systemFontOfSize:15 weight:UIFontWeightBold];
+        }
+        BOOL active=(idx==(NSUInteger)self.selectedProfileTab);
+        UIColor *tint=active?UIColor.labelColor:UIColor.secondaryLabelColor;
+        [button setTitleColor:tint forState:UIControlStateNormal];
+        button.tintColor=tint;
         [button addTarget:self action:@selector(profileTabTapped:) forControlEvents:UIControlEventTouchUpInside];
         [container addSubview:button];
 
@@ -143,16 +191,16 @@
             [button.bottomAnchor constraintEqualToAnchor:container.bottomAnchor]
         ]];
 
-        if(idx==(NSUInteger)self.selectedProfileTab){
+        if(active){
             UIView *indicator=[UIView new];
             indicator.translatesAutoresizingMaskIntoConstraints=NO;
-            indicator.backgroundColor=UIColor.systemBlueColor;
+            indicator.backgroundColor=UIColor.labelColor;
             indicator.layer.cornerRadius=1.5;
             [container addSubview:indicator];
             [NSLayoutConstraint activateConstraints:@[
                 [indicator.bottomAnchor constraintEqualToAnchor:container.bottomAnchor],
                 [indicator.centerXAnchor constraintEqualToAnchor:container.centerXAnchor],
-                [indicator.widthAnchor constraintEqualToConstant:54],
+                [indicator.widthAnchor constraintEqualToConstant:(idx==0?108:48)],
                 [indicator.heightAnchor constraintEqualToConstant:3]
             ]];
         }
@@ -160,6 +208,18 @@
         [tabs addArrangedSubview:container];
     }];
     return tabs;
+}
+
+- (UIButton *)profileActionButtonWithTitle:(NSString *)title {
+    UIButton *button=[UIButton buttonWithType:UIButtonTypeSystem];
+    button.translatesAutoresizingMaskIntoConstraints=NO;
+    [button setTitle:title forState:UIControlStateNormal];
+    [button setTitleColor:UIColor.labelColor forState:UIControlStateNormal];
+    button.titleLabel.font=[UIFont systemFontOfSize:15 weight:UIFontWeightSemibold];
+    button.layer.cornerRadius=20;
+    button.layer.borderWidth=1;
+    button.layer.borderColor=UIColor.separatorColor.CGColor;
+    return button;
 }
 
 - (void)buildUI {
@@ -176,6 +236,7 @@
     NSString *bannerURL=[self stringValue:data[@"bannerURL"]];
     NSString *following=[self stringValue:data[@"following"]];
     NSString *followers=[self stringValue:data[@"followers"]];
+    NSString *joined=[self joinedTextForRaw:[self stringValue:data[@"createdAt"]]];
     if(following.length==0)following=[self stringValue:counts[@"friends_count"]];
     if(following.length==0)following=[self stringValue:counts[@"legacy.friends_count"]];
     if(followers.length==0)followers=[self stringValue:counts[@"followers_count"]];
@@ -184,6 +245,7 @@
     self.scrollView=[UIScrollView new];
     self.scrollView.translatesAutoresizingMaskIntoConstraints=NO;
     self.scrollView.alwaysBounceVertical=YES;
+    if(@available(iOS 11.0,*))self.scrollView.contentInsetAdjustmentBehavior=UIScrollViewContentInsetAdjustmentNever;
     [self.view addSubview:self.scrollView];
 
     UISwipeGestureRecognizer *leftSwipe=[[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(profileTabSwiped:)];
@@ -217,22 +279,24 @@
     [self.contentView addSubview:avatar];
     [self loadImageURLString:avatarURL into:avatar];
 
-    UIButton *editButton=[UIButton buttonWithType:UIButtonTypeSystem];
-    editButton.translatesAutoresizingMaskIntoConstraints=NO;
-    [editButton setTitle:@"プロフィールを編集" forState:UIControlStateNormal];
-    editButton.titleLabel.font=[UIFont systemFontOfSize:15 weight:UIFontWeightSemibold];
-    editButton.layer.cornerRadius=18;
-    editButton.layer.borderWidth=1;
-    editButton.layer.borderColor=UIColor.separatorColor.CGColor;
-    editButton.enabled=NO;
-    editButton.alpha=.55;
-    [self.contentView addSubview:editButton];
-
     UILabel *nameLabel=[UILabel new];
     nameLabel.translatesAutoresizingMaskIntoConstraints=NO;
     nameLabel.font=[UIFont systemFontOfSize:20 weight:UIFontWeightBold];
     nameLabel.text=name;
+    nameLabel.lineBreakMode=NSLineBreakByTruncatingTail;
     [self.contentView addSubview:nameLabel];
+
+    UIButton *verify=[UIButton buttonWithType:UIButtonTypeSystem];
+    verify.translatesAutoresizingMaskIntoConstraints=NO;
+    [verify setTitle:@"認証を受ける" forState:UIControlStateNormal];
+    [verify setImage:[UIImage systemImageNamed:@"checkmark.seal.fill"] forState:UIControlStateNormal];
+    verify.tintColor=UIColor.systemBlueColor;
+    [verify setTitleColor:UIColor.labelColor forState:UIControlStateNormal];
+    verify.titleLabel.font=[UIFont systemFontOfSize:13 weight:UIFontWeightSemibold];
+    verify.layer.cornerRadius=15;
+    verify.layer.borderWidth=1;
+    verify.layer.borderColor=UIColor.separatorColor.CGColor;
+    [self.contentView addSubview:verify];
 
     UILabel *handleLabel=[UILabel new];
     handleLabel.translatesAutoresizingMaskIntoConstraints=NO;
@@ -248,6 +312,35 @@
     bioLabel.text=bio;
     [self.contentView addSubview:bioLabel];
 
+    UIView *joinedContainer=[UIView new];
+    joinedContainer.translatesAutoresizingMaskIntoConstraints=NO;
+    joinedContainer.accessibilityIdentifier=@"sx.profile.joined.container";
+    [self.contentView addSubview:joinedContainer];
+    UIImageView *calendar=[UIImageView new];
+    calendar.translatesAutoresizingMaskIntoConstraints=NO;
+    calendar.image=[UIImage systemImageNamed:@"calendar"];
+    calendar.tintColor=UIColor.secondaryLabelColor;
+    [joinedContainer addSubview:calendar];
+    UILabel *joinedLabel=[UILabel new];
+    joinedLabel.translatesAutoresizingMaskIntoConstraints=NO;
+    joinedLabel.accessibilityIdentifier=@"sx.profile.joined.label";
+    joinedLabel.font=[UIFont systemFontOfSize:14];
+    joinedLabel.textColor=UIColor.secondaryLabelColor;
+    joinedLabel.text=joined;
+    [joinedContainer addSubview:joinedLabel];
+    [NSLayoutConstraint activateConstraints:@[
+        [calendar.leadingAnchor constraintEqualToAnchor:joinedContainer.leadingAnchor],
+        [calendar.centerYAnchor constraintEqualToAnchor:joinedContainer.centerYAnchor],
+        [calendar.widthAnchor constraintEqualToConstant:16],
+        [calendar.heightAnchor constraintEqualToConstant:16],
+        [joinedLabel.leadingAnchor constraintEqualToAnchor:calendar.trailingAnchor constant:6],
+        [joinedLabel.centerYAnchor constraintEqualToAnchor:joinedContainer.centerYAnchor],
+        [joinedLabel.trailingAnchor constraintLessThanOrEqualToAnchor:joinedContainer.trailingAnchor]
+    ]];
+    NSLayoutConstraint *joinedHeight=[joinedContainer.heightAnchor constraintEqualToConstant:(joined.length?20:0)];
+    joinedHeight.identifier=@"sx.profile.joined.height";
+    joinedHeight.active=YES;
+
     UILabel *countsLabel=[UILabel new];
     countsLabel.translatesAutoresizingMaskIntoConstraints=NO;
     countsLabel.font=[UIFont systemFontOfSize:14];
@@ -256,6 +349,15 @@
     NSString *safeFollowers=followers.length?followers:@"—";
     countsLabel.text=[NSString stringWithFormat:@"%@ フォロー中    %@ フォロワー",safeFollowing,safeFollowers];
     [self.contentView addSubview:countsLabel];
+
+    UIStackView *actions=[UIStackView new];
+    actions.translatesAutoresizingMaskIntoConstraints=NO;
+    actions.axis=UILayoutConstraintAxisHorizontal;
+    actions.spacing=8;
+    actions.distribution=UIStackViewDistributionFillEqually;
+    [actions addArrangedSubview:[self profileActionButtonWithTitle:@"プロフィールを共有"]];
+    [actions addArrangedSubview:[self profileActionButtonWithTitle:@"プロフィールを編集"]];
+    [self.contentView addSubview:actions];
 
     UIView *separator=[UIView new];
     separator.translatesAutoresizingMaskIntoConstraints=NO;
@@ -303,9 +405,8 @@
         [empty.heightAnchor constraintGreaterThanOrEqualToConstant:120].active=YES;
     }
 
-    UILayoutGuide *safe=self.view.safeAreaLayoutGuide;
     [NSLayoutConstraint activateConstraints:@[
-        [self.scrollView.topAnchor constraintEqualToAnchor:safe.topAnchor],
+        [self.scrollView.topAnchor constraintEqualToAnchor:self.view.topAnchor],
         [self.scrollView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
         [self.scrollView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
         [self.scrollView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor],
@@ -318,34 +419,42 @@
         [banner.topAnchor constraintEqualToAnchor:self.contentView.topAnchor],
         [banner.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor],
         [banner.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor],
-        [banner.heightAnchor constraintEqualToConstant:150],
+        [banner.heightAnchor constraintEqualToConstant:156],
 
         [avatar.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:16],
-        [avatar.centerYAnchor constraintEqualToAnchor:banner.bottomAnchor],
+        [avatar.centerYAnchor constraintEqualToAnchor:banner.bottomAnchor constant:24],
         [avatar.widthAnchor constraintEqualToConstant:76],
         [avatar.heightAnchor constraintEqualToConstant:76],
 
-        [editButton.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
-        [editButton.topAnchor constraintEqualToAnchor:banner.bottomAnchor constant:12],
-        [editButton.heightAnchor constraintEqualToConstant:36],
-
-        [nameLabel.topAnchor constraintEqualToAnchor:avatar.bottomAnchor constant:12],
+        [nameLabel.topAnchor constraintEqualToAnchor:avatar.bottomAnchor constant:14],
         [nameLabel.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:16],
-        [nameLabel.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
+        [nameLabel.trailingAnchor constraintLessThanOrEqualToAnchor:verify.leadingAnchor constant:-8],
+        [verify.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
+        [verify.centerYAnchor constraintEqualToAnchor:nameLabel.centerYAnchor],
+        [verify.heightAnchor constraintEqualToConstant:30],
 
-        [handleLabel.topAnchor constraintEqualToAnchor:nameLabel.bottomAnchor constant:2],
+        [handleLabel.topAnchor constraintEqualToAnchor:nameLabel.bottomAnchor constant:3],
         [handleLabel.leadingAnchor constraintEqualToAnchor:nameLabel.leadingAnchor],
-        [handleLabel.trailingAnchor constraintEqualToAnchor:nameLabel.trailingAnchor],
+        [handleLabel.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
 
-        [bioLabel.topAnchor constraintEqualToAnchor:handleLabel.bottomAnchor constant:14],
+        [bioLabel.topAnchor constraintEqualToAnchor:handleLabel.bottomAnchor constant:16],
         [bioLabel.leadingAnchor constraintEqualToAnchor:nameLabel.leadingAnchor],
-        [bioLabel.trailingAnchor constraintEqualToAnchor:nameLabel.trailingAnchor],
+        [bioLabel.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
 
-        [countsLabel.topAnchor constraintEqualToAnchor:bioLabel.bottomAnchor constant:14],
+        [joinedContainer.topAnchor constraintEqualToAnchor:bioLabel.bottomAnchor constant:12],
+        [joinedContainer.leadingAnchor constraintEqualToAnchor:nameLabel.leadingAnchor],
+        [joinedContainer.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
+
+        [countsLabel.topAnchor constraintEqualToAnchor:joinedContainer.bottomAnchor constant:10],
         [countsLabel.leadingAnchor constraintEqualToAnchor:nameLabel.leadingAnchor],
-        [countsLabel.trailingAnchor constraintEqualToAnchor:nameLabel.trailingAnchor],
+        [countsLabel.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
 
-        [separator.topAnchor constraintEqualToAnchor:countsLabel.bottomAnchor constant:18],
+        [actions.topAnchor constraintEqualToAnchor:countsLabel.bottomAnchor constant:18],
+        [actions.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:16],
+        [actions.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
+        [actions.heightAnchor constraintEqualToConstant:42],
+
+        [separator.topAnchor constraintEqualToAnchor:actions.bottomAnchor constant:14],
         [separator.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor],
         [separator.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor],
         [separator.heightAnchor constraintEqualToConstant:.5],
@@ -353,7 +462,7 @@
         [tabBar.topAnchor constraintEqualToAnchor:separator.bottomAnchor],
         [tabBar.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor],
         [tabBar.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor],
-        [tabBar.heightAnchor constraintEqualToConstant:52],
+        [tabBar.heightAnchor constraintEqualToConstant:58],
 
         [tabsBottomBorder.topAnchor constraintEqualToAnchor:tabBar.bottomAnchor],
         [tabsBottomBorder.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor],
@@ -369,6 +478,10 @@
 
 - (void)closeTapped:(id)sender {
     [self dismissViewControllerAnimated:YES completion:nil];
+}
+
+- (void)searchTapped:(id)sender {
+    // Native search wiring comes later; keep the official control visible without changing navigation yet.
 }
 
 @end
