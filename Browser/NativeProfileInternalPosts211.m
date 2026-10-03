@@ -179,7 +179,8 @@
 
             if (!error && [state isEqualToString:@"success"]) {
                 NSArray *posts = [dict[@"posts"] isKindOfClass:NSArray.class] ? dict[@"posts"] : @[];
-                NSMutableDictionary *merged = [base mutableCopy] ?: [NSMutableDictionary dictionary];
+                NSMutableDictionary *merged = [strongProfile.profileData mutableCopy] ?: [NSMutableDictionary dictionary];
+                if(merged.count==0&&base) [merged addEntriesFromDictionary:base];
                 merged[@"posts"] = posts;
                 merged[@"postsLoading"] = @NO;
                 merged[@"postProbe"] = @{ @"mode": @"internal-api-211", @"attempts": @(attempt), @"matchedPosts": @(posts.count) };
