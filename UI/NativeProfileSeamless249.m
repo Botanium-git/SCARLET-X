@@ -4,6 +4,8 @@
 
 static char SX249RepostDisplayLimitKey;
 static char SX249InstalledPanKey;
+static char SX250PumpTimerKey;
+static char SX250LastActionTimeKey;
 
 typedef void (*SX249ViewDidLoadIMP)(id, SEL);
 static SX249ViewDidLoadIMP SX249PreviousViewDidLoadIMP = NULL;
@@ -70,6 +72,7 @@ static void SX249AppendLocalReposts(NativeProfileViewController *profile, NSArra
         [stack addArrangedSubview:[profile postViewForPost:(NSDictionary *)item]];
     }
     [content setNeedsLayout];
+    [content layoutIfNeeded];
 }
 
 static UIButton *SX249HiddenFooter(id selfObject, SEL _cmd, NSString *title, SEL action, BOOL enabled) {
@@ -84,15 +87,28 @@ static NSInteger SX249DisplayLimit(id selfObject, SEL _cmd) {
     return SX249RepostLimit((NativeProfileViewController *)selfObject);
 }
 
+static CFTimeInterval SX250LastActionTime(NativeProfileViewController *profile) {
+    NSNumber *stored = objc_getAssociatedObject(profile, &SX250LastActionTimeKey);
+    return [stored respondsToSelector:@selector(doubleValue)] ? stored.doubleValue : 0;
+}
+
+static void SX250MarkAction(NativeProfileViewController *profile) {
+    objc_setAssociatedObject(profile,
+                             &SX250LastActionTimeKey,
+                             @(CACurrentMediaTime()),
+                             OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
 @implementation NativeProfileViewController (NativeProfileSeamless249)
 
-- (void)sx249_handleProfileScroll:(UIPanGestureRecognizer *)gesture {
-    if (gesture.state != UIGestureRecognizerStateBegan &&
-        gesture.state != UIGestureRecognizerStateChanged &&
-        gesture.state != UIGestureRecognizerStateEnded) return;
+- (void)sx250_evaluateSeamlessPagination {
+    if (!self.isViewLoaded || !self.view.window) return;
 
     UIScrollView *scrollView = SX249ScrollView(self);
     if (!SX249NearBottom(scrollView)) return;
+
+    CFTimeInterval now = CACurrentMediaTime();
+    if (now - SX250LastActionTime(self) < 0.35) return;
 
     NSInteger selected = SX249SelectedTab(self);
     if (selected < 0 || selected > 2) return;
@@ -109,37 +125,68 @@ static NSInteger SX249DisplayLimit(id selfObject, SEL _cmd) {
     BOOL hasMore = [data[hasMoreKey] respondsToSelector:@selector(boolValue)] ? [data[hasMoreKey] boolValue] : (items.count > 0);
     BOOL loading = [data[loadingKey] respondsToSelector:@selector(boolValue)] ? [data[loadingKey] boolValue] : NO;
 
+    if (loading) return;
+
     if (selected == 2) {
         NSInteger oldLimit = SX249RepostLimit(self);
         if ((NSUInteger)oldLimit < items.count) {
             NSInteger nextLimit = MIN((NSInteger)items.count, oldLimit + 8);
             SX249SetRepostLimit(self, nextLimit);
             SX249AppendLocalReposts(self, items, oldLimit, nextLimit);
+            SX250MarkAction(self);
 
-            if ((NSUInteger)nextLimit >= items.count && hasMore && !loading) {
+            if ((NSUInteger)nextLimit >= items.count && hasMore) {
                 SX249SetRepostLimit(self, nextLimit + 8);
                 [self sx238_loadMoreTimeline:nil];
             }
             return;
         }
 
-        if (hasMore && !loading) {
+        if (hasMore) {
             if (oldLimit <= (NSInteger)items.count) SX249SetRepostLimit(self, oldLimit + 8);
+            SX250MarkAction(self);
             [self sx238_loadMoreTimeline:nil];
         }
         return;
     }
 
-    if (hasMore && !loading) [self sx238_loadMoreTimeline:nil];
+    if (hasMore) {
+        SX250MarkAction(self);
+        [self sx238_loadMoreTimeline:nil];
+    }
+}
+
+- (void)sx249_handleProfileScroll:(UIPanGestureRecognizer *)gesture {
+    if (gesture.state != UIGestureRecognizerStateBegan &&
+        gesture.state != UIGestureRecognizerStateChanged &&
+        gesture.state != UIGestureRecognizerStateEnded) return;
+    [self sx250_evaluateSeamlessPagination];
 }
 
 - (void)sx249_installScrollTriggerIfNeeded {
     UIScrollView *scrollView = SX249ScrollView(self);
-    if (!scrollView) return;
-    UIGestureRecognizer *pan = scrollView.panGestureRecognizer;
-    if (objc_getAssociatedObject(pan, &SX249InstalledPanKey)) return;
-    [pan addTarget:self action:@selector(sx249_handleProfileScroll:)];
-    objc_setAssociatedObject(pan, &SX249InstalledPanKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    if (scrollView) {
+        UIGestureRecognizer *pan = scrollView.panGestureRecognizer;
+        if (!objc_getAssociatedObject(pan, &SX249InstalledPanKey)) {
+            [pan addTarget:self action:@selector(sx249_handleProfileScroll:)];
+            objc_setAssociatedObject(pan, &SX249InstalledPanKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        }
+    }
+
+    NSTimer *existing = objc_getAssociatedObject(self, &SX250PumpTimerKey);
+    if (existing && existing.valid) return;
+
+    __weak NativeProfileViewController *weakProfile = self;
+    NSTimer *timer = [NSTimer scheduledTimerWithTimeInterval:0.25 repeats:YES block:^(NSTimer *timer) {
+        NativeProfileViewController *profile = weakProfile;
+        if (!profile) {
+            [timer invalidate];
+            return;
+        }
+        [profile sx250_evaluateSeamlessPagination];
+    }];
+    timer.tolerance = 0.08;
+    objc_setAssociatedObject(self, &SX250PumpTimerKey, timer, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
 @end
