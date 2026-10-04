@@ -12,13 +12,30 @@ static SX245PageScriptIMP SX245PageIMP = NULL;
 static SX245StringOneArgIMP SX245FetchIMP = NULL;
 static SX245StringNoArgIMP SX245RecoveryIMP = NULL;
 
+static NSString *SX246DynamicEndpointResolver(void) {
+    return @"(function(){"
+    "function post(o){try{window.webkit.messageHandlers.scarletxInternalProfileAPI.postMessage(o);}catch(_){}}"
+    "function validFactory(f){try{if(typeof f!=='function'||!api||typeof api.withEndpoint!=='function')return false;var ep=api.withEndpoint(f);if(!ep)return false;return typeof ep.fetchUserOriginals==='function'||typeof ep.fetchUserReplies==='function'||typeof ep.fetchUserReposts==='function'||typeof ep.fetchUserTweetsAndReplies==='function';}catch(_){return false;}}"
+    "function remember(f,id,key){window.__scarletXProfileEndpointFactory=f;window.__scarletXProfileEndpointModule=String(id||'');window.__scarletXProfileEndpointExport=String(key||'');if(!window.__scarletXDynamicEndpointPosted){window.__scarletXDynamicEndpointPosted=true;post({type:'dynamic-endpoint-resolver',stage:'matched',moduleId:String(id||''),exportKey:String(key||'')});}return {Ay:f};}"
+    "try{"
+      "var cached=window.__scarletXProfileEndpointFactory;if(validFactory(cached))return {Ay:cached};"
+      "window.__scarletXProfileEndpointFactory=null;window.__scarletXProfileEndpointModule='';window.__scarletXProfileEndpointExport='';window.__scarletXDynamicEndpointPosted=false;"
+      "var mids=[];try{mids=req&&req.m?Object.keys(req.m):[];}catch(_){mids=[];}"
+      "var candidates=[];"
+      "for(var i=0;i<mids.length;i++){var id=String(mids[i]),src='';try{src=String(req.m[id]||'');}catch(_){continue;}if(src.indexOf('fetchUserOriginals')<0)continue;if(src.indexOf('fetchUserReposts')<0&&src.indexOf('fetchUserReplies')<0&&src.indexOf('fetchUserTweetsAndReplies')<0)continue;candidates.push(id);if(candidates.length>=80)break;}"
+      "function inspect(id){var ex=null;try{ex=req(Number(id));}catch(_){try{ex=req(id);}catch(__){return null;}}if(typeof ex==='function'&&validFactory(ex))return remember(ex,id,'<function>');if(!ex||typeof ex!=='object')return null;var ks=[];try{ks=Object.keys(ex);}catch(_){ks=[];}for(var k=0;k<ks.length;k++){var key=ks[k],v=null;try{v=ex[key];}catch(_){continue;}if(validFactory(v))return remember(v,id,key);}return null;}"
+      "for(var c=0;c<candidates.length;c++){var hit=inspect(candidates[c]);if(hit)return hit;}"
+      "var fallback=['477802','923288'];for(var f=0;f<fallback.length;f++){var hit2=inspect(fallback[f]);if(hit2)return hit2;}"
+      "post({type:'dynamic-endpoint-resolver',stage:'not-found',candidateCount:candidates.length});return null;"
+    "}catch(e){post({type:'dynamic-endpoint-resolver',stage:'exception',message:String(e&&e.stack||e)});return null;}"
+    "})()";
+}
+
 static NSString *SX245PatchEndpointFactory(NSString *script) {
     if (![script isKindOfClass:NSString.class] || script.length == 0) return script;
     NSString *legacy = @"req(923288)";
     if ([script rangeOfString:legacy].location == NSNotFound) return script;
-
-    NSString *current = @"(function(){try{return req(477802);}catch(_){try{return req(923288);}catch(__){return null;}}})()";
-    return [script stringByReplacingOccurrencesOfString:legacy withString:current];
+    return [script stringByReplacingOccurrencesOfString:legacy withString:SX246DynamicEndpointResolver()];
 }
 
 static NSString *SX245Posts(id self, SEL _cmd, NSString *userId) {
