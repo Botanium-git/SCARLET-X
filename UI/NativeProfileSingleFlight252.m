@@ -73,6 +73,7 @@ static BOOL SX252NearBottom(UIScrollView *scrollView) {
     return distance <= threshold;
 }
 
+static void SX252Request(id adapter, UITableView *tableView, BOOL allowPending);
 static void SX252Evaluate(id adapter, UITableView *tableView, BOOL allowPending);
 
 static void SX252StartWatchdog(id adapter, UITableView *tableView, NSInteger tab, NSInteger generation) {
@@ -98,11 +99,10 @@ static void SX252StartWatchdog(id adapter, UITableView *tableView, NSInteger tab
     });
 }
 
-static void SX252Evaluate(id adapter, UITableView *tableView, BOOL allowPending) {
+static void SX252Request(id adapter, UITableView *tableView, BOOL allowPending) {
     NativeProfileViewController *profile = SX252Profile(adapter);
     NSInteger tab = SX252SelectedTab(profile);
     if (!profile || tab < 0 || tab > 2 || ![tableView isKindOfClass:UITableView.class]) return;
-    if (!SX252NearBottom(tableView)) return;
 
     NSDictionary *data = [profile.profileData isKindOfClass:NSDictionary.class] ? profile.profileData : @{};
     NSArray *items = SX252Items(data, tab);
@@ -135,8 +135,19 @@ static void SX252Evaluate(id adapter, UITableView *tableView, BOOL allowPending)
     }
 }
 
+static void SX252Evaluate(id adapter, UITableView *tableView, BOOL allowPending) {
+    if (!SX252NearBottom(tableView)) return;
+    SX252Request(adapter, tableView, allowPending);
+}
+
 static NSInteger SX252Rows(id selfObject, SEL _cmd, UITableView *tableView, NSInteger section) {
     NSInteger rows = SX252PreviousRowsIMP ? SX252PreviousRowsIMP(selfObject, _cmd, tableView, section) : 0;
+
+    if (@available(iOS 10.0, *)) {
+        if (tableView.prefetchDataSource != (id<UITableViewDataSourcePrefetching>)selfObject) {
+            tableView.prefetchDataSource = (id<UITableViewDataSourcePrefetching>)selfObject;
+        }
+    }
 
     NativeProfileViewController *profile = SX252Profile(selfObject);
     NSInteger tab = SX252SelectedTab(profile);
@@ -162,7 +173,7 @@ static NSInteger SX252Rows(id selfObject, SEL _cmd, UITableView *tableView, NSIn
                 UITableView *strongTable = weakTable;
                 if (!strongAdapter || !strongTable) return;
                 if (pending || SX252NearBottom(strongTable)) {
-                    SX252Evaluate(strongAdapter, strongTable, NO);
+                    SX252Request(strongAdapter, strongTable, NO);
                 }
             });
         }
@@ -174,6 +185,31 @@ static void SX252Scroll(id selfObject, SEL _cmd, UIScrollView *scrollView) {
     if (SX252PreviousScrollIMP) SX252PreviousScrollIMP(selfObject, _cmd, scrollView);
     if (![scrollView isKindOfClass:UITableView.class]) return;
     SX252Evaluate(selfObject, (UITableView *)scrollView, YES);
+}
+
+static void SX252Prefetch(id selfObject, SEL _cmd, UITableView *tableView, NSArray<NSIndexPath *> *indexPaths) {
+    NativeProfileViewController *profile = SX252Profile(selfObject);
+    NSInteger tab = SX252SelectedTab(profile);
+    if (!profile || tab < 0 || tab > 2 || ![tableView isKindOfClass:UITableView.class]) return;
+
+    NSDictionary *data = [profile.profileData isKindOfClass:NSDictionary.class] ? profile.profileData : @{};
+    NSArray *items = SX252Items(data, tab);
+    if (items.count == 0 || !SX252HasMore(data, tab, items)) return;
+
+    NSInteger triggerRow = MAX(0, (NSInteger)items.count - 8);
+    BOOL shouldPrefetch = NO;
+    for (NSIndexPath *indexPath in indexPaths) {
+        if (indexPath.section == 0 && indexPath.row >= triggerRow) {
+            shouldPrefetch = YES;
+            break;
+        }
+    }
+    if (!shouldPrefetch) return;
+
+    [[DiagnosticsStore shared] addEvent:@"Native profile prefetch trigger"
+                                 detail:[NSString stringWithFormat:@"tab=%ld triggerRow=%ld items=%lu", (long)tab, (long)triggerRow, (unsigned long)items.count]
+                                    url:nil];
+    SX252Request(selfObject, tableView, YES);
 }
 
 @interface SX252SingleFlightInstaller : NSObject
@@ -206,6 +242,11 @@ static void SX252Scroll(id selfObject, SEL _cmd, UIScrollView *scrollView) {
             }
         } else {
             class_addMethod(adapterClass, scrollSelector, (IMP)SX252Scroll, "v@:@");
+        }
+
+        SEL prefetchSelector = @selector(tableView:prefetchRowsAtIndexPaths:);
+        if (!class_getInstanceMethod(adapterClass, prefetchSelector)) {
+            class_addMethod(adapterClass, prefetchSelector, (IMP)SX252Prefetch, "v@:@@");
         }
     });
 }
