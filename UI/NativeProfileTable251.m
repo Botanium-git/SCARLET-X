@@ -138,10 +138,6 @@ static SX251ViewDidLayoutIMP SX251PreviousViewDidLayoutIMP = NULL;
     return [self stateCellForTable:tableView text:(loading ? @"読み込み中…" : @"さらに読み込む")];
 }
 
-- (CGFloat)tableView:(UITableView *)tableView estimatedHeightForRowAtIndexPath:(NSIndexPath *)indexPath {
-    return 240.0;
-}
-
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
     NSInteger tab = [self selectedTab];
     NSDictionary *data = [self data];
@@ -249,7 +245,7 @@ static void SX251InstallTable(NativeProfileViewController *profile) {
     table.backgroundColor = UIColor.systemBackgroundColor;
     table.separatorStyle = UITableViewCellSeparatorStyleNone;
     table.rowHeight = UITableViewAutomaticDimension;
-    table.estimatedRowHeight = 240.0;
+    table.estimatedRowHeight = 0.0;
     table.alwaysBounceVertical = YES;
     if (@available(iOS 11.0, *)) table.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
 
