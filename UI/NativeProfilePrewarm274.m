@@ -4,8 +4,16 @@
 static char SX274CacheKey;
 static char SX274GenerationKey;
 
+typedef UIView *(*SX274PostIMP)(id, SEL, NSDictionary *);
+static SX274PostIMP SX274PreviousPostIMP = NULL;
+
+typedef void (*SX274ReloadIMP)(id, SEL, UIStackView *);
+static SX274ReloadIMP SX274PreviousReloadIMP = NULL;
+
 @interface NativeProfileViewController (NativeProfilePrewarm274Private)
 - (UIView *)postViewForPost:(NSDictionary *)post;
+- (NSInteger)sx271_displayLimitForTab:(NSInteger)tab;
+- (void)sx274_schedulePrewarmForTab:(NSInteger)tab items:(NSArray *)items startIndex:(NSUInteger)startIndex;
 @end
 
 static NSMutableDictionary<NSString *, UIView *> *SX274Cache(NativeProfileViewController *profile) {
@@ -50,20 +58,38 @@ static UIScrollView *SX274ScrollView(NativeProfileViewController *profile) {
     }
 }
 
-@implementation NativeProfileViewController (NativeProfilePrewarm274)
-
-- (UIView *)sx274_cachedOrBuildPostView:(NSDictionary *)post {
+static UIView *SX274PostView(id selfObject, SEL _cmd, NSDictionary *post) {
+    NativeProfileViewController *profile = (NativeProfileViewController *)selfObject;
     NSString *key = SX274PostKey(post);
     if (key.length) {
-        UIView *cached = SX274Cache(self)[key];
+        UIView *cached = SX274Cache(profile)[key];
         if ([cached isKindOfClass:UIView.class] && cached.superview == nil) {
-            [SX274Cache(self) removeObjectForKey:key];
+            [SX274Cache(profile) removeObjectForKey:key];
             return cached;
         }
-        if (cached.superview != nil) [SX274Cache(self) removeObjectForKey:key];
+        if (cached.superview != nil) [SX274Cache(profile) removeObjectForKey:key];
     }
-    return [self postViewForPost:post];
+    return SX274PreviousPostIMP ? SX274PreviousPostIMP(selfObject, _cmd, post) : nil;
 }
+
+static void SX274ReloadPostsStack(id selfObject, SEL _cmd, UIStackView *postsStack) {
+    if (SX274PreviousReloadIMP) SX274PreviousReloadIMP(selfObject, _cmd, postsStack);
+
+    NativeProfileViewController *profile = (NativeProfileViewController *)selfObject;
+    NSInteger tab = SX274SelectedTab(profile);
+    if (tab < 0 || tab > 2) return;
+
+    NSDictionary *data = [profile.profileData isKindOfClass:NSDictionary.class] ? profile.profileData : @{};
+    NSArray<NSString *> *keys = @[@"posts", @"replies", @"reposts"];
+    NSArray *items = [data[keys[(NSUInteger)tab]] isKindOfClass:NSArray.class] ? data[keys[(NSUInteger)tab]] : @[];
+    if (items.count == 0) return;
+
+    NSInteger limit = [profile respondsToSelector:@selector(sx271_displayLimitForTab:)] ? [profile sx271_displayLimitForTab:tab] : 15;
+    NSUInteger startIndex = MIN(items.count, (NSUInteger)MAX(0, limit));
+    if (startIndex < items.count) [profile sx274_schedulePrewarmForTab:tab items:items startIndex:startIndex];
+}
+
+@implementation NativeProfileViewController (NativeProfilePrewarm274)
 
 - (void)sx274_schedulePrewarmForTab:(NSInteger)tab items:(NSArray *)items startIndex:(NSUInteger)startIndex {
     if (tab < 0 || tab > 2 || ![items isKindOfClass:NSArray.class] || startIndex >= items.count) return;
@@ -94,8 +120,8 @@ static UIScrollView *SX274ScrollView(NativeProfileViewController *profile) {
         if ([raw isKindOfClass:NSDictionary.class]) {
             NSDictionary *post = (NSDictionary *)raw;
             NSString *key = SX274PostKey(post);
-            if (key.length && !SX274Cache(strongSelf)[key]) {
-                UIView *view = [strongSelf postViewForPost:post];
+            if (key.length && !SX274Cache(strongSelf)[key] && SX274PreviousPostIMP) {
+                UIView *view = SX274PreviousPostIMP(strongSelf, @selector(postViewForPost:), post);
                 if (view && view.superview == nil) SX274Cache(strongSelf)[key] = view;
             }
         }
@@ -107,6 +133,42 @@ static UIScrollView *SX274ScrollView(NativeProfileViewController *profile) {
 
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.30 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         if (prewarmNext) prewarmNext(startIndex);
+    });
+}
+
+@end
+
+@interface SX274PrewarmInstaller : NSObject
+@end
+
+@implementation SX274PrewarmInstaller
+
++ (void)load {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        dispatch_async(dispatch_get_main_queue(), ^{
+            Class cls = NSClassFromString(@"NativeProfileViewController");
+            if (!cls) return;
+
+            SEL postSEL = @selector(postViewForPost:);
+            Method postMethod = class_getInstanceMethod(cls, postSEL);
+            if (postMethod) {
+                IMP current = method_getImplementation(postMethod);
+                if (current != (IMP)SX274PostView) {
+                    SX274PreviousPostIMP = (SX274PostIMP)current;
+                    class_replaceMethod(cls, postSEL, (IMP)SX274PostView, method_getTypeEncoding(postMethod));
+                }
+            }
+
+            SEL reloadSEL = NSSelectorFromString(@"sx223_reloadPostsStack:");
+            Method reloadMethod = class_getInstanceMethod(cls, reloadSEL);
+            if (reloadMethod) {
+                IMP current = method_getImplementation(reloadMethod);
+                if (current != (IMP)SX274ReloadPostsStack) {
+                    SX274PreviousReloadIMP = (SX274ReloadIMP)current;
+                    class_replaceMethod(cls, reloadSEL, (IMP)SX274ReloadPostsStack, method_getTypeEncoding(reloadMethod));
+                }
+            }
+        });
     });
 }
 
