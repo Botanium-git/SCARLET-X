@@ -69,7 +69,7 @@ static BOOL SX252NearBottom(UIScrollView *scrollView) {
     if (![scrollView isKindOfClass:UIScrollView.class]) return NO;
     CGFloat visibleBottom = scrollView.contentOffset.y + CGRectGetHeight(scrollView.bounds);
     CGFloat distance = scrollView.contentSize.height - visibleBottom;
-    CGFloat threshold = MAX(420.0, CGRectGetHeight(scrollView.bounds) * 0.65);
+    CGFloat threshold = MAX(1400.0, CGRectGetHeight(scrollView.bounds) * 2.0);
     return distance <= threshold;
 }
 
