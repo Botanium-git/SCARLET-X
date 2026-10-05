@@ -55,18 +55,26 @@ static void SX247RemoveTrailingFooter(UIStackView *stack) {
     }
 }
 
+static NSUInteger SX247RenderLimit(NativeProfileViewController *profile, NSInteger selected, NSUInteger itemCount) {
+    SEL stagedSEL = NSSelectorFromString(@"sx271_displayLimitForTab:");
+    if ([profile respondsToSelector:stagedSEL]) {
+        NSInteger (*msg)(id, SEL, NSInteger) = (NSInteger (*)(id, SEL, NSInteger))objc_msgSend;
+        NSInteger limit = msg(profile, stagedSEL, selected);
+        if (limit > 0) return MIN(itemCount, (NSUInteger)limit);
+    }
+    if (selected == 2) return MIN(itemCount, (NSUInteger)[profile sx237_repostDisplayLimit]);
+    return itemCount;
+}
+
 static void SX247InstallFooter(NativeProfileViewController *profile,
                                UIStackView *stack,
                                NSInteger selected,
                                NSArray *items,
                                BOOL moreLoading,
                                BOOL hasMore) {
-    NSUInteger renderCount = items.count;
-    if (selected == 2) {
-        renderCount = MIN(items.count, (NSUInteger)[profile sx237_repostDisplayLimit]);
-    }
+    NSUInteger renderCount = SX247RenderLimit(profile, selected, items.count);
 
-    if (selected == 2 && renderCount < items.count) {
+    if (renderCount < items.count) {
         UIButton *button = [profile sx238_moreButtonWithTitle:@"さらに表示"
                                                        action:NSSelectorFromString(@"sx237_showMoreReposts:")
                                                       enabled:YES];
@@ -119,13 +127,8 @@ static BOOL SX247TryIncrementalPaginationUpdate(NativeProfileViewController *pro
     profile.profileData = [newData copy];
     SX247RemoveTrailingFooter(stack);
 
-    NSUInteger oldRendered = oldItems.count;
-    NSUInteger newRendered = newItems.count;
-    if (selected == 2) {
-        NSUInteger limit = (NSUInteger)[profile sx237_repostDisplayLimit];
-        oldRendered = MIN(oldItems.count, limit);
-        newRendered = MIN(newItems.count, limit);
-    }
+    NSUInteger oldRendered = SX247RenderLimit(profile, selected, oldItems.count);
+    NSUInteger newRendered = SX247RenderLimit(profile, selected, newItems.count);
 
     if (newRendered > oldRendered) {
         for (NSUInteger idx = oldRendered; idx < newRendered; idx++) {
