@@ -438,7 +438,7 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
     NSInteger tab = [self selectedTab];
     if (tab < 0 || tab > 2) return;
     NSArray *items = [self itemsForTab:tab];
-    if (items.count == 0 || row < (NSInteger)items.count - 8 || ![self hasMore:tab items:items] || [self moreLoading:tab]) return;
+    if (items.count == 0 || [self initialLoading:tab] || row < (NSInteger)items.count - 20 || ![self hasMore:tab items:items] || [self moreLoading:tab]) return;
     NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
     NSNumber *last = objc_getAssociatedObject(self.profile, &SX278LastRequestKey);
     if (last && now - last.doubleValue < 1.0) return;
