@@ -20,6 +20,55 @@ static SX251ViewDidLayoutIMP SX251PreviousViewDidLayoutIMP = NULL;
 - (void)sx238_loadMoreTimeline:(UIButton *)sender;
 @end
 
+static NSString *SX251StringValue(id value) {
+    if ([value isKindOfClass:NSString.class]) return value;
+    if ([value isKindOfClass:NSNumber.class]) return [(NSNumber *)value stringValue];
+    return @"";
+}
+
+static CGFloat SX251BodyHeight(NSString *text, CGFloat width) {
+    if (text.length == 0) return 0.0;
+    UIFont *font = [UIFont systemFontOfSize:15.0];
+    CGRect rect = [text boundingRectWithSize:CGSizeMake(MAX(1.0, width), CGFLOAT_MAX)
+                                     options:(NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading)
+                                  attributes:@{ NSFontAttributeName: font }
+                                     context:nil];
+    return ceil(MAX(font.lineHeight, rect.size.height));
+}
+
+static CGFloat SX251PostRowHeight(NSDictionary *post, CGFloat tableWidth) {
+    CGFloat contentWidth = MAX(1.0, tableWidth - 76.0); // row margins 24 + avatar 40 + spacing 12
+    UIFont *headerFont = [UIFont systemFontOfSize:15.0];
+    CGFloat headerHeight = MAX(18.0, ceil(headerFont.lineHeight));
+    CGFloat contentHeight = headerHeight;
+
+    NSString *text = SX251StringValue(post[@"text"]);
+    if (text.length > 0) {
+        contentHeight += 5.0 + SX251BodyHeight(text, contentWidth);
+    }
+
+    NSArray *media = [post[@"media"] isKindOfClass:NSArray.class] ? post[@"media"] : @[];
+    NSUInteger mediaCount = MIN((NSUInteger)4, media.count);
+    if (mediaCount == 0 && SX251StringValue(post[@"mediaURL"]).length > 0) mediaCount = 1;
+    if (mediaCount > 0) {
+        CGFloat mediaHeight = 220.0;
+        if (mediaCount == 3) mediaHeight = 240.0;
+        else if (mediaCount >= 4) mediaHeight = 260.0;
+        contentHeight += 9.0 + mediaHeight;
+    }
+
+    contentHeight += 5.0 + 28.0; // actions spacing + fixed action row
+    CGFloat rowHeight = 11.0 + MAX(40.0, contentHeight) + 8.0;
+
+    CGFloat repostHeight = 0.0;
+    if ([post[@"isRepost"] respondsToSelector:@selector(boolValue)] && [post[@"isRepost"] boolValue]) {
+        UIFont *repostFont = [UIFont systemFontOfSize:12.0 weight:UIFontWeightSemibold];
+        repostHeight = 8.0 + MAX(14.0, ceil(repostFont.lineHeight));
+    }
+
+    return ceil(repostHeight + rowHeight + 0.5); // separator
+}
+
 @interface SX251TimelineAdapter : NSObject <UITableViewDataSource, UITableViewDelegate>
 @property(nonatomic, weak) NativeProfileViewController *profile;
 @property(nonatomic, weak) UITableView *tableView;
@@ -138,16 +187,20 @@ static SX251ViewDidLayoutIMP SX251PreviousViewDidLayoutIMP = NULL;
     return [self stateCellForTable:tableView text:(loading ? @"読み込み中…" : @"さらに読み込む")];
 }
 
-- (CGFloat)tableView:(UITableView *)tableView estimatedHeightForRowAtIndexPath:(NSIndexPath *)indexPath {
-    return 240.0;
-}
-
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
     NSInteger tab = [self selectedTab];
     NSDictionary *data = [self data];
     NSArray *items = [self itemsForTab:tab data:data];
     if (tab == 3 || items.count == 0 || (NSUInteger)indexPath.row >= items.count) return 64.0;
-    return UITableViewAutomaticDimension;
+    id item = items[(NSUInteger)indexPath.row];
+    if (![item isKindOfClass:NSDictionary.class]) return 64.0;
+    CGFloat width = CGRectGetWidth(tableView.bounds);
+    if (width <= 0.0) width = CGRectGetWidth(self.profile.view.bounds);
+    return SX251PostRowHeight((NSDictionary *)item, width);
+}
+
+- (CGFloat)tableView:(UITableView *)tableView estimatedHeightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return [self tableView:tableView heightForRowAtIndexPath:indexPath];
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
