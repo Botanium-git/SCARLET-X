@@ -1,5 +1,6 @@
 #import "NativeProfileViewController.h"
 #import <objc/runtime.h>
+#import <objc/message.h>
 
 typedef void (*SX247ApplyProfileDataIMP)(id, SEL, NSDictionary *);
 static SX247ApplyProfileDataIMP SX247PreviousApplyProfileDataIMP = NULL;
