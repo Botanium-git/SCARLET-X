@@ -1,6 +1,8 @@
 #import "NativeProfileViewController.h"
 #import <UIKit/UIKit.h>
 #import <objc/runtime.h>
+#import <objc/message.h>
+#import <math.h>
 
 @interface NativeProfileViewController (SX269MeasuredHeightPrivate)
 - (UIView *)postViewForPost:(NSDictionary *)post;
@@ -98,14 +100,11 @@ static NSDictionary *SX269PostForIndexPath(id adapter, NSIndexPath *indexPath) {
     NSInteger tab = -1;
     NSDictionary *data = nil;
     NSArray *items = nil;
-    @try {
-        tab = [[adapter valueForKey:@"selectedTab"] integerValue];
-    } @catch (__unused NSException *exception) {
-        SEL selectedTabSEL = NSSelectorFromString(@"selectedTab");
-        if ([adapter respondsToSelector:selectedTabSEL]) {
-            NSInteger (*msg)(id, SEL) = (NSInteger (*)(id, SEL))objc_msgSend;
-            tab = msg(adapter, selectedTabSEL);
-        }
+
+    SEL selectedTabSEL = NSSelectorFromString(@"selectedTab");
+    if ([adapter respondsToSelector:selectedTabSEL]) {
+        NSInteger (*msg)(id, SEL) = (NSInteger (*)(id, SEL))objc_msgSend;
+        tab = msg(adapter, selectedTabSEL);
     }
 
     SEL dataSEL = NSSelectorFromString(@"data");
