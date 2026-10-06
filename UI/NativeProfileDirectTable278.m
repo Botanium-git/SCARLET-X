@@ -165,11 +165,12 @@ static CGFloat SX278PostHeight(NSDictionary *post, CGFloat width) {
     BOOL repost = [post[@"isRepost"] respondsToSelector:@selector(boolValue)] && [post[@"isRepost"] boolValue];
     CGFloat h = repost ? SX278SocialProofHeight(width) : 0.0;
     CGFloat contentWidth = MAX(80.0, width - 56.0 - 12.0);
-    CGFloat row = 8.0 + 17.0;
+    CGFloat headerHeight = ceil(MAX(SX278XFont(UIFontWeightBold).lineHeight, SX278XFont(UIFontWeightRegular).lineHeight));
+    CGFloat row = 8.0 + headerHeight;
     NSString *text = SX278String(post[@"text"]);
     CGFloat textH = SX278TextHeight(text, contentWidth);
     CGFloat mediaH = SX278MediaSize(post, contentWidth, width).height;
-    if (textH > 0.0) row += 3.0 + textH;
+    if (textH > 0.0) row += textH;
     if (mediaH > 0.0) row += 6.0 + mediaH;
     row += 4.0 + 28.0 + 8.0;
     h += MAX(59.0, row) + 0.5;
@@ -455,23 +456,23 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
     CGFloat x = 56.0;
     CGFloat cw = MAX(80.0, w - x - 12.0);
     CGFloat headerY = y + 8.0;
+    CGFloat headerHeight = ceil(MAX(self.nameLabel.font.lineHeight, self.metaLabel.font.lineHeight));
     CGFloat moreW = 18.0;
-    self.moreView.frame = CGRectMake(x + cw - moreW, headerY, moreW, 17.0);
+    self.moreView.frame = CGRectMake(x + cw - moreW, headerY, moreW, headerHeight);
     CGFloat textAvail = MAX(20.0, cw - moreW - 12.0);
-    CGFloat nameNatural = ceil([self.nameLabel sizeThatFits:CGSizeMake(CGFLOAT_MAX, 17.0)].width);
-    CGFloat metaNatural = ceil([self.metaLabel sizeThatFits:CGSizeMake(CGFLOAT_MAX, 17.0)].width);
+    CGFloat nameNatural = ceil([self.nameLabel sizeThatFits:CGSizeMake(CGFLOAT_MAX, headerHeight)].width);
+    CGFloat metaNatural = ceil([self.metaLabel sizeThatFits:CGSizeMake(CGFLOAT_MAX, headerHeight)].width);
     CGFloat nameW = MIN(nameNatural, textAvail);
     CGFloat metaW = MIN(metaNatural, MAX(0.0, textAvail - nameW - 4.0));
     if (nameNatural + 4.0 + metaNatural > textAvail) {
         nameW = MIN(nameNatural, floor(textAvail * 0.42));
         metaW = MAX(0.0, textAvail - nameW - 4.0);
     }
-    self.nameLabel.frame = CGRectMake(x, headerY, nameW, 17.0);
-    self.metaLabel.frame = CGRectMake(x + nameW + 4.0, headerY, metaW, 17.0);
+    self.nameLabel.frame = CGRectMake(x, headerY, nameW, headerHeight);
+    self.metaLabel.frame = CGRectMake(x + nameW + 4.0, headerY, metaW, headerHeight);
 
-    CGFloat cy = headerY + 17.0;
+    CGFloat cy = headerY + headerHeight;
     if (self.bodyLabel.text.length) {
-        cy += 3.0;
         CGFloat bodyH = SX278TextHeight(self.bodyLabel.text, cw);
         self.bodyLabel.frame = CGRectMake(x, cy, cw, bodyH);
         cy += bodyH;
