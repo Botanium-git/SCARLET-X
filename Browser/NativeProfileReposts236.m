@@ -7,6 +7,7 @@
 @interface BrowserViewController (NativeProfileReposts236Private)
 - (NSString *)sx_211_jsonLiteral:(NSString *)value;
 - (void)sx_229_startReplyLoadForUserId:(NSString *)userId profile:(NativeProfileViewController *)profile sourceWebView:(WKWebView *)sourceWebView;
+- (void)sx287_startMediaLoadForUserId:(NSString *)userId profile:(NativeProfileViewController *)profile sourceWebView:(WKWebView *)sourceWebView;
 @end
 
 @implementation BrowserViewController (NativeProfileReposts236)
@@ -89,6 +90,7 @@
 - (void)sx236_startReplyLoadForUserId:(NSString *)userId profile:(NativeProfileViewController *)profile sourceWebView:(WKWebView *)sourceWebView {
     [self sx236_startReplyLoadForUserId:userId profile:profile sourceWebView:sourceWebView];
     [self sx236_startRepostLoadForUserId:userId profile:profile sourceWebView:sourceWebView];
+    [self sx287_startMediaLoadForUserId:userId profile:profile sourceWebView:sourceWebView];
 }
 
 @end
