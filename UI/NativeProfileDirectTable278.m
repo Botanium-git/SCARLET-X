@@ -225,7 +225,7 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
         _nameLabel.lineBreakMode = NSLineBreakByTruncatingTail;
         [self.contentView addSubview:_nameLabel];
         _metaLabel = [UILabel new];
-        _metaLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightMedium];
+        _metaLabel.font = [UIFont systemFontOfSize:14];
         _metaLabel.textColor = UIColor.secondaryLabelColor;
         _metaLabel.lineBreakMode = NSLineBreakByTruncatingTail;
         [self.contentView addSubview:_metaLabel];
