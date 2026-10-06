@@ -43,6 +43,18 @@ static NSString *SX278CompactCount(NSInteger value) {
     return [NSString stringWithFormat:@"%.1f%@", rounded, suffix];
 }
 
+static CGFloat SX278SocialProofFontSize(CGFloat width) {
+    if (width <= 320.0) return 12.0;
+    if (width <= 375.0) return 13.0;
+    if (width <= 414.0) return 14.0;
+    return 15.0;
+}
+
+static CGFloat SX278SocialProofHeight(CGFloat width) {
+    UIFont *font = [UIFont systemFontOfSize:SX278SocialProofFontSize(width)];
+    return ceil(font.lineHeight) + 3.0;
+}
+
 static NSString *SX278Date(NSString *raw) {
     if (raw.length == 0) return @"";
     static NSDateFormatter *input;
@@ -101,7 +113,7 @@ static CGFloat SX278TextHeight(NSString *text, CGFloat width) {
 
 static CGFloat SX278PostHeight(NSDictionary *post, CGFloat width) {
     BOOL repost = [post[@"isRepost"] respondsToSelector:@selector(boolValue)] && [post[@"isRepost"] boolValue];
-    CGFloat h = repost ? 17.0 : 0.0;
+    CGFloat h = repost ? SX278SocialProofHeight(width) : 0.0;
     CGFloat contentWidth = MAX(80.0, width - 56.0 - 12.0);
     CGFloat row = 8.0 + 17.0;
     NSString *text = SX278String(post[@"text"]);
@@ -197,7 +209,7 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
         _repostIcon.contentMode = UIViewContentModeScaleAspectFit;
         [self.contentView addSubview:_repostIcon];
         _repostLabel = [UILabel new];
-        _repostLabel.font = [UIFont systemFontOfSize:12 weight:UIFontWeightMedium];
+        _repostLabel.font = [UIFont systemFontOfSize:14];
         _repostLabel.textColor = UIColor.secondaryLabelColor;
         [self.contentView addSubview:_repostLabel];
 
@@ -302,7 +314,25 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
     NSString *profileName = SX278String(pd[@"name"]);
     self.repostIcon.hidden = !repost;
     self.repostLabel.hidden = !repost;
-    self.repostLabel.text = repost ? (profileName.length ? [NSString stringWithFormat:@"%@さんがリポスト", profileName] : @"リポスト") : @"";
+    if (repost) {
+        CGFloat proofSize = SX278SocialProofFontSize(CGRectGetWidth(profile.view.bounds));
+        UIFont *regular = [UIFont systemFontOfSize:proofSize];
+        UIFont *bold = [UIFont systemFontOfSize:proofSize weight:UIFontWeightBold];
+        NSString *suffix = profileName.length ? @"さんがリポスト" : @"リポスト";
+        NSString *full = profileName.length ? [profileName stringByAppendingString:suffix] : suffix;
+        NSMutableAttributedString *attributed = [[NSMutableAttributedString alloc] initWithString:full
+                                                                                       attributes:@{
+            NSFontAttributeName: regular,
+            NSForegroundColorAttributeName: UIColor.secondaryLabelColor
+        }];
+        if (profileName.length) {
+            [attributed addAttribute:NSFontAttributeName value:bold range:NSMakeRange(0, profileName.length)];
+        }
+        self.repostLabel.attributedText = attributed;
+    } else {
+        self.repostLabel.attributedText = nil;
+        self.repostLabel.text = @"";
+    }
 
     self.avatar.image = [UIImage systemImageNamed:@"person.crop.circle.fill"];
     if (avatarURL.length) [profile loadImageURLString:avatarURL into:self.avatar];
@@ -357,9 +387,15 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
     BOOL repost = !self.repostLabel.hidden;
     CGFloat y = 0.0;
     if (repost) {
-        self.repostIcon.frame = CGRectMake(36.0, 5.0, 12.0, 12.0);
-        self.repostLabel.frame = CGRectMake(56.0, 3.0, MAX(0.0, w - 68.0), 16.0);
-        y = 17.0;
+        CGFloat proofHeight = SX278SocialProofHeight(w);
+        CGFloat proofFontSize = SX278SocialProofFontSize(w);
+        self.repostLabel.font = [UIFont systemFontOfSize:proofFontSize];
+        CGFloat labelHeight = ceil(self.repostLabel.font.lineHeight);
+        CGFloat iconY = MAX(3.0, floor((proofHeight - 12.0) * 0.5));
+        CGFloat labelY = MAX(1.0, floor((proofHeight - labelHeight) * 0.5));
+        self.repostIcon.frame = CGRectMake(36.0, iconY, 12.0, 12.0);
+        self.repostLabel.frame = CGRectMake(56.0, labelY, MAX(0.0, w - 68.0), labelHeight);
+        y = proofHeight;
     } else {
         self.repostIcon.frame = CGRectZero;
         self.repostLabel.frame = CGRectZero;
