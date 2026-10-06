@@ -134,8 +134,8 @@ static CGFloat SX278PostHeight(NSDictionary *post, CGFloat width) {
     CGFloat textH = SX278TextHeight(text, contentWidth);
     CGFloat mediaH = SX278MediaSize(post, contentWidth, width).height;
     if (textH > 0.0) row += 3.0 + textH;
-    if (mediaH > 0.0) row += 9.0 + mediaH;
-    row += 5.0 + 28.0 + 8.0;
+    if (mediaH > 0.0) row += 6.0 + mediaH;
+    row += 4.0 + 28.0 + 8.0;
     h += MAX(59.0, row) + 0.5;
     return ceil(h);
 }
@@ -447,7 +447,7 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
     CGFloat mh = mediaSize.height;
     CGFloat mediaWidth = mediaSize.width;
     if (mh > 0.0 && mediaWidth > 0.0) {
-        cy += 9.0;
+        cy += 6.0;
         self.mediaContainer.frame = CGRectMake(x, cy, mediaWidth, mh);
         cy += mh;
         NSUInteger count = 0;
@@ -482,7 +482,7 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
         self.mediaContainer.frame = CGRectZero;
     }
 
-    cy += 5.0;
+    cy += 4.0;
     CGFloat itemWidths[6];
     CGFloat total = 0.0;
     for (NSUInteger i = 0; i < 6; i++) {
