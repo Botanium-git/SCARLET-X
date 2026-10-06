@@ -197,7 +197,7 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
         _repostIcon.contentMode = UIViewContentModeScaleAspectFit;
         [self.contentView addSubview:_repostIcon];
         _repostLabel = [UILabel new];
-        _repostLabel.font = [UIFont systemFontOfSize:11 weight:UIFontWeightSemibold];
+        _repostLabel.font = [UIFont systemFontOfSize:12 weight:UIFontWeightRegular];
         _repostLabel.textColor = UIColor.secondaryLabelColor;
         [self.contentView addSubview:_repostLabel];
 
@@ -209,7 +209,7 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
         [self.contentView addSubview:_avatar];
 
         _nameLabel = [UILabel new];
-        _nameLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightSemibold];
+        _nameLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightBold];
         _nameLabel.lineBreakMode = NSLineBreakByTruncatingTail;
         [self.contentView addSubview:_nameLabel];
         _metaLabel = [UILabel new];
