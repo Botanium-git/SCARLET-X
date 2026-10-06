@@ -8,6 +8,7 @@ typedef NSString *(*SX245PageScriptIMP)(id, SEL, NSInteger, NSString *, NSString
 static SX245StringOneArgIMP SX245PostsIMP = NULL;
 static SX245StringOneArgIMP SX245RepliesIMP = NULL;
 static SX245StringOneArgIMP SX245RepostsIMP = NULL;
+static SX245StringOneArgIMP SX245MediaIMP = NULL;
 static SX245PageScriptIMP SX245PageIMP = NULL;
 static SX245StringOneArgIMP SX245FetchIMP = NULL;
 static SX245StringNoArgIMP SX245RecoveryIMP = NULL;
@@ -50,6 +51,11 @@ static NSString *SX245Replies(id self, SEL _cmd, NSString *userId) {
 
 static NSString *SX245Reposts(id self, SEL _cmd, NSString *userId) {
     NSString *script = SX245RepostsIMP ? SX245RepostsIMP(self, _cmd, userId) : nil;
+    return SX245PatchEndpointFactory(script);
+}
+
+static NSString *SX245Media(id self, SEL _cmd, NSString *userId) {
+    NSString *script = SX245MediaIMP ? SX245MediaIMP(self, _cmd, userId) : nil;
     return SX245PatchEndpointFactory(script);
 }
 
@@ -97,6 +103,11 @@ static void SX245ReplaceOneArg(Class cls, SEL sel, IMP replacement, SX245StringO
                           NSSelectorFromString(@"sx236_repostsScriptForUserId:"),
                           (IMP)SX245Reposts,
                           &SX245RepostsIMP);
+
+        SX245ReplaceOneArg(cls,
+                          NSSelectorFromString(@"sx287_mediaScriptForUserId:"),
+                          (IMP)SX245Media,
+                          &SX245MediaIMP);
 
         Method pageMethod = class_getInstanceMethod(cls, NSSelectorFromString(@"sx238_pageScriptForTab:userId:cursor:"));
         if (pageMethod) {
