@@ -7,6 +7,7 @@ typedef NSString *(*SX255ScriptIMP)(id, SEL, NSString *);
 static SX255ScriptIMP SX255PostsIMP = NULL;
 static SX255ScriptIMP SX255RepliesIMP = NULL;
 static SX255ScriptIMP SX255RepostsIMP = NULL;
+static SX255ScriptIMP SX255MediaIMP = NULL;
 
 static NSString *SX255PatchInitialCount(NSString *script) {
     if (![script isKindOfClass:NSString.class] || script.length == 0) return script;
@@ -26,6 +27,11 @@ static NSString *SX255Replies(id selfObject, SEL _cmd, NSString *userId) {
 
 static NSString *SX255Reposts(id selfObject, SEL _cmd, NSString *userId) {
     NSString *script = SX255RepostsIMP ? SX255RepostsIMP(selfObject, _cmd, userId) : nil;
+    return SX255PatchInitialCount(script);
+}
+
+static NSString *SX255Media(id selfObject, SEL _cmd, NSString *userId) {
+    NSString *script = SX255MediaIMP ? SX255MediaIMP(selfObject, _cmd, userId) : nil;
     return SX255PatchInitialCount(script);
 }
 
@@ -59,8 +65,13 @@ static void SX255Replace(Class cls, SEL selector, IMP replacement, SX255ScriptIM
                      (IMP)SX255Reposts,
                      &SX255RepostsIMP);
 
+        SX255Replace(cls,
+                     NSSelectorFromString(@"sx287_mediaScriptForUserId:"),
+                     (IMP)SX255Media,
+                     &SX255MediaIMP);
+
         [[DiagnosticsStore shared] addEvent:@"Native profile initial count configured"
-                                     detail:@"initialCount=50 tabs=posts,replies,reposts paginationCount=20"
+                                     detail:@"initialCount=50 tabs=posts,replies,reposts,media paginationCount=20"
                                         url:nil];
     });
 }
