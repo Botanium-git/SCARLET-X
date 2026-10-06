@@ -237,6 +237,8 @@
     NSString *following=[self stringValue:data[@"following"]];
     NSString *followers=[self stringValue:data[@"followers"]];
     NSString *joined=[self joinedTextForRaw:[self stringValue:data[@"createdAt"]]];
+    BOOL verified=[data[@"verified"] respondsToSelector:@selector(boolValue)]?[data[@"verified"] boolValue]:NO;
+    BOOL protectedAccount=[data[@"protected"] respondsToSelector:@selector(boolValue)]?[data[@"protected"] boolValue]:NO;
     if(following.length==0)following=[self stringValue:counts[@"friends_count"]];
     if(following.length==0)following=[self stringValue:counts[@"legacy.friends_count"]];
     if(followers.length==0)followers=[self stringValue:counts[@"followers_count"]];
@@ -284,7 +286,34 @@
     nameLabel.font=[UIFont systemFontOfSize:20 weight:UIFontWeightBold];
     nameLabel.text=name;
     nameLabel.lineBreakMode=NSLineBreakByTruncatingTail;
-    [self.contentView addSubview:nameLabel];
+    [nameLabel setContentCompressionResistancePriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal];
+
+    UIStackView *nameRow=[UIStackView new];
+    nameRow.translatesAutoresizingMaskIntoConstraints=NO;
+    nameRow.axis=UILayoutConstraintAxisHorizontal;
+    nameRow.alignment=UIStackViewAlignmentCenter;
+    nameRow.spacing=4;
+    [nameRow addArrangedSubview:nameLabel];
+
+    if(verified){
+        UIImageSymbolConfiguration *verifiedConfig=[UIImageSymbolConfiguration configurationWithPointSize:17 weight:UIImageSymbolWeightSemibold];
+        UIImageView *verifiedBadge=[[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"checkmark.seal.fill" withConfiguration:verifiedConfig]];
+        verifiedBadge.translatesAutoresizingMaskIntoConstraints=NO;
+        verifiedBadge.tintColor=UIColor.systemBlueColor;
+        [nameRow addArrangedSubview:verifiedBadge];
+        [verifiedBadge.widthAnchor constraintEqualToConstant:18].active=YES;
+        [verifiedBadge.heightAnchor constraintEqualToConstant:18].active=YES;
+    }
+    if(protectedAccount){
+        UIImageSymbolConfiguration *protectedConfig=[UIImageSymbolConfiguration configurationWithPointSize:13 weight:UIImageSymbolWeightSemibold];
+        UIImageView *protectedBadge=[[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"lock.fill" withConfiguration:protectedConfig]];
+        protectedBadge.translatesAutoresizingMaskIntoConstraints=NO;
+        protectedBadge.tintColor=UIColor.secondaryLabelColor;
+        [nameRow addArrangedSubview:protectedBadge];
+        [protectedBadge.widthAnchor constraintEqualToConstant:14].active=YES;
+        [protectedBadge.heightAnchor constraintEqualToConstant:14].active=YES;
+    }
+    [self.contentView addSubview:nameRow];
 
     UIButton *verify=[UIButton buttonWithType:UIButtonTypeSystem];
     verify.translatesAutoresizingMaskIntoConstraints=NO;
@@ -426,27 +455,27 @@
         [avatar.widthAnchor constraintEqualToConstant:76],
         [avatar.heightAnchor constraintEqualToConstant:76],
 
-        [nameLabel.topAnchor constraintEqualToAnchor:avatar.bottomAnchor constant:14],
-        [nameLabel.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:16],
-        [nameLabel.trailingAnchor constraintLessThanOrEqualToAnchor:verify.leadingAnchor constant:-8],
+        [nameRow.topAnchor constraintEqualToAnchor:avatar.bottomAnchor constant:14],
+        [nameRow.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:16],
+        [nameRow.trailingAnchor constraintLessThanOrEqualToAnchor:verify.leadingAnchor constant:-8],
         [verify.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
-        [verify.centerYAnchor constraintEqualToAnchor:nameLabel.centerYAnchor],
+        [verify.centerYAnchor constraintEqualToAnchor:nameRow.centerYAnchor],
         [verify.heightAnchor constraintEqualToConstant:30],
 
-        [handleLabel.topAnchor constraintEqualToAnchor:nameLabel.bottomAnchor constant:3],
-        [handleLabel.leadingAnchor constraintEqualToAnchor:nameLabel.leadingAnchor],
+        [handleLabel.topAnchor constraintEqualToAnchor:nameRow.bottomAnchor constant:3],
+        [handleLabel.leadingAnchor constraintEqualToAnchor:nameRow.leadingAnchor],
         [handleLabel.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
 
         [bioLabel.topAnchor constraintEqualToAnchor:handleLabel.bottomAnchor constant:16],
-        [bioLabel.leadingAnchor constraintEqualToAnchor:nameLabel.leadingAnchor],
+        [bioLabel.leadingAnchor constraintEqualToAnchor:nameRow.leadingAnchor],
         [bioLabel.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
 
         [joinedContainer.topAnchor constraintEqualToAnchor:bioLabel.bottomAnchor constant:12],
-        [joinedContainer.leadingAnchor constraintEqualToAnchor:nameLabel.leadingAnchor],
+        [joinedContainer.leadingAnchor constraintEqualToAnchor:nameRow.leadingAnchor],
         [joinedContainer.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
 
         [countsLabel.topAnchor constraintEqualToAnchor:joinedContainer.bottomAnchor constant:10],
-        [countsLabel.leadingAnchor constraintEqualToAnchor:nameLabel.leadingAnchor],
+        [countsLabel.leadingAnchor constraintEqualToAnchor:nameRow.leadingAnchor],
         [countsLabel.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
 
         [actions.topAnchor constraintEqualToAnchor:countsLabel.bottomAnchor constant:18],

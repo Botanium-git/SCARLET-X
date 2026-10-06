@@ -88,7 +88,7 @@ static CGFloat SX278SocialProofFontSize(CGFloat width) {
 
 static CGFloat SX278SocialProofHeight(CGFloat width) {
     UIFont *font = [UIFont systemFontOfSize:SX278SocialProofFontSize(width)];
-    return ceil(font.lineHeight) + 3.0;
+    return ceil(font.lineHeight);
 }
 
 static NSString *SX278Date(NSString *raw) {
@@ -169,7 +169,7 @@ static CGFloat SX278PostHeight(NSDictionary *post, CGFloat width) {
     CGFloat row = 8.0 + headerHeight;
     NSString *text = SX278String(post[@"text"]);
     CGFloat textH = SX278TextHeight(text, contentWidth);
-    CGFloat mediaH = SX278MediaSize(post, contentWidth, width).height;
+    CGFloat mediaH = SX278MediaSize(post, MAX(1.0, contentWidth - 4.0), MAX(1.0, width - 4.0)).height;
     if (textH > 0.0) row += 2.0 + textH;
     if (mediaH > 0.0) row += 6.0 + mediaH;
     row += 4.0 + 28.0 + 8.0;
@@ -238,6 +238,8 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
 @property(nonatomic,strong) UIImageView *avatar;
 @property(nonatomic,strong) UILabel *nameLabel;
 @property(nonatomic,strong) UILabel *metaLabel;
+@property(nonatomic,strong) UIImageView *verifiedBadge;
+@property(nonatomic,strong) UIImageView *protectedBadge;
 @property(nonatomic,strong) UIImageView *moreView;
 @property(nonatomic,strong) UILabel *bodyLabel;
 @property(nonatomic,strong) UIScrollView *mediaContainer;
@@ -280,6 +282,18 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
         _metaLabel.textColor = UIColor.secondaryLabelColor;
         _metaLabel.lineBreakMode = NSLineBreakByTruncatingTail;
         [self.contentView addSubview:_metaLabel];
+        UIImageSymbolConfiguration *verifiedConfig = [UIImageSymbolConfiguration configurationWithPointSize:14.0 weight:UIImageSymbolWeightSemibold];
+        _verifiedBadge = [[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"checkmark.seal.fill" withConfiguration:verifiedConfig]];
+        _verifiedBadge.tintColor = UIColor.systemBlueColor;
+        _verifiedBadge.contentMode = UIViewContentModeScaleAspectFit;
+        _verifiedBadge.hidden = YES;
+        [self.contentView addSubview:_verifiedBadge];
+        UIImageSymbolConfiguration *protectedConfig = [UIImageSymbolConfiguration configurationWithPointSize:11.0 weight:UIImageSymbolWeightSemibold];
+        _protectedBadge = [[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"lock.fill" withConfiguration:protectedConfig]];
+        _protectedBadge.tintColor = UIColor.secondaryLabelColor;
+        _protectedBadge.contentMode = UIViewContentModeScaleAspectFit;
+        _protectedBadge.hidden = YES;
+        [self.contentView addSubview:_protectedBadge];
         _moreView = [[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"ellipsis"]];
         _moreView.tintColor = UIColor.secondaryLabelColor;
         _moreView.contentMode = UIViewContentModeScaleAspectFit;
@@ -360,6 +374,11 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
     NSString *date = SX278Date(SX278String(post[@"createdAt"]));
     self.metaLabel.text = (handle.length && date.length) ? [NSString stringWithFormat:@"%@ · %@", handle, date] : (handle.length ? handle : date);
     self.bodyLabel.text = SX278String(post[@"text"]);
+    BOOL hasAuthorIdentity = SX278String(post[@"authorName"]).length || SX278String(post[@"authorHandle"]).length;
+    BOOL verified = [post[@"authorVerified"] respondsToSelector:@selector(boolValue)] ? [post[@"authorVerified"] boolValue] : (!hasAuthorIdentity && [pd[@"verified"] respondsToSelector:@selector(boolValue)] ? [pd[@"verified"] boolValue] : NO);
+    BOOL protectedAccount = [post[@"authorProtected"] respondsToSelector:@selector(boolValue)] ? [post[@"authorProtected"] boolValue] : (!hasAuthorIdentity && [pd[@"protected"] respondsToSelector:@selector(boolValue)] ? [pd[@"protected"] boolValue] : NO);
+    self.verifiedBadge.hidden = !verified;
+    self.protectedBadge.hidden = !protectedAccount;
 
     BOOL repost = [post[@"isRepost"] respondsToSelector:@selector(boolValue)] && [post[@"isRepost"] boolValue];
     NSString *profileName = SX278String(pd[@"name"]);
@@ -369,14 +388,21 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
         CGFloat proofSize = SX278SocialProofFontSize(CGRectGetWidth(profile.view.bounds));
         UIFont *regular = [UIFont systemFontOfSize:proofSize];
         UIFont *bold = [UIFont systemFontOfSize:proofSize weight:UIFontWeightBold];
+        NSDictionary *probe = [pd[@"followerProbe"] isKindOfClass:NSDictionary.class] ? pd[@"followerProbe"] : @{};
+        NSString *currentUserId = SX278String(probe[@"currentUserId"]);
+        NSString *displayedUserId = SX278String(pd[@"userId"]);
+        NSString *currentScreen = SX278String(probe[@"currentScreen"]);
+        NSString *displayedHandle = SX278String(pd[@"handle"]);
+        if ([displayedHandle hasPrefix:@"@"]) displayedHandle = [displayedHandle substringFromIndex:1];
+        BOOL isOwnProfile = (currentUserId.length && displayedUserId.length && [currentUserId isEqualToString:displayedUserId]) || (currentScreen.length && displayedHandle.length && [currentScreen caseInsensitiveCompare:displayedHandle] == NSOrderedSame);
         NSString *suffix = profileName.length ? @"さんがリポスト" : @"リポスト";
-        NSString *full = profileName.length ? [profileName stringByAppendingString:suffix] : suffix;
+        NSString *full = isOwnProfile ? @"あなたがリポストしました" : (profileName.length ? [profileName stringByAppendingString:suffix] : suffix);
         NSMutableAttributedString *attributed = [[NSMutableAttributedString alloc] initWithString:full
                                                                                        attributes:@{
             NSFontAttributeName: regular,
             NSForegroundColorAttributeName: UIColor.secondaryLabelColor
         }];
-        if (profileName.length) {
+        if (!isOwnProfile && profileName.length) {
             [attributed addAttribute:NSFontAttributeName value:bold range:NSMakeRange(0, profileName.length)];
         }
         self.repostLabel.attributedText = attributed;
@@ -452,7 +478,8 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
         self.repostLabel.frame = CGRectZero;
     }
 
-    self.avatar.frame = CGRectMake(10.0, y + 8.0, 40.0, 40.0);
+    self.avatar.layer.cornerRadius = 19.0;
+    self.avatar.frame = CGRectMake(11.0, y + 8.0, 38.0, 38.0);
     CGFloat x = 56.0;
     CGFloat cw = MAX(80.0, w - x - 12.0);
     CGFloat headerY = y + 8.0;
@@ -460,16 +487,36 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
     CGFloat moreW = 18.0;
     self.moreView.frame = CGRectMake(x + cw - moreW, headerY, moreW, headerHeight);
     CGFloat textAvail = MAX(20.0, cw - moreW - 12.0);
+    CGFloat verifiedW = self.verifiedBadge.hidden ? 0.0 : 15.0;
+    CGFloat protectedW = self.protectedBadge.hidden ? 0.0 : 12.0;
+    CGFloat accessoryW = 0.0;
+    if (verifiedW > 0.0) accessoryW += 3.0 + verifiedW;
+    if (protectedW > 0.0) accessoryW += 3.0 + protectedW;
     CGFloat nameNatural = ceil([self.nameLabel sizeThatFits:CGSizeMake(CGFLOAT_MAX, headerHeight)].width);
     CGFloat metaNatural = ceil([self.metaLabel sizeThatFits:CGSizeMake(CGFLOAT_MAX, headerHeight)].width);
-    CGFloat nameW = MIN(nameNatural, textAvail);
-    CGFloat metaW = MIN(metaNatural, MAX(0.0, textAvail - nameW - 4.0));
-    if (nameNatural + 4.0 + metaNatural > textAvail) {
-        nameW = MIN(nameNatural, floor(textAvail * 0.42));
-        metaW = MAX(0.0, textAvail - nameW - 4.0);
+    CGFloat nameW = MIN(nameNatural, MAX(20.0, textAvail - accessoryW));
+    CGFloat metaW = MIN(metaNatural, MAX(0.0, textAvail - nameW - accessoryW - 4.0));
+    if (nameNatural + accessoryW + 4.0 + metaNatural > textAvail) {
+        nameW = MIN(nameNatural, floor(MAX(20.0, textAvail - accessoryW) * 0.42));
+        metaW = MAX(0.0, textAvail - nameW - accessoryW - 4.0);
     }
     self.nameLabel.frame = CGRectMake(x, headerY, nameW, headerHeight);
-    self.metaLabel.frame = CGRectMake(x + nameW + 4.0, headerY, metaW, headerHeight);
+    CGFloat accessoryX = x + nameW;
+    if (verifiedW > 0.0) {
+        accessoryX += 3.0;
+        self.verifiedBadge.frame = CGRectMake(accessoryX, headerY + floor((headerHeight - 15.0) * 0.5), 15.0, 15.0);
+        accessoryX += 15.0;
+    } else {
+        self.verifiedBadge.frame = CGRectZero;
+    }
+    if (protectedW > 0.0) {
+        accessoryX += 3.0;
+        self.protectedBadge.frame = CGRectMake(accessoryX, headerY + floor((headerHeight - 12.0) * 0.5), 12.0, 12.0);
+        accessoryX += 12.0;
+    } else {
+        self.protectedBadge.frame = CGRectZero;
+    }
+    self.metaLabel.frame = CGRectMake(accessoryX + 4.0, headerY, metaW, headerHeight);
 
     CGFloat cy = headerY + headerHeight;
     if (self.bodyLabel.text.length) {
@@ -481,7 +528,7 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
         self.bodyLabel.frame = CGRectZero;
     }
 
-    CGSize mediaSize = SX278MediaSize(self.post, cw, w);
+    CGSize mediaSize = SX278MediaSize(self.post, MAX(1.0, cw - 4.0), MAX(1.0, w - 4.0));
     CGFloat mh = mediaSize.height;
     CGFloat mediaWidth = mediaSize.width;
     if (mh > 0.0 && mediaWidth > 0.0) {
@@ -526,16 +573,16 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
     for (NSUInteger i = 0; i < 6; i++) {
         NSString *text = self.actionLabels[i].text ?: @"";
         CGFloat labelW = text.length ? ceil([self.actionLabels[i] sizeThatFits:CGSizeMake(CGFLOAT_MAX, 23.0)].width) : 0.0;
-        itemWidths[i] = 17.0 + (labelW > 0.0 ? 5.0 + labelW : 0.0);
+        itemWidths[i] = 16.0 + (labelW > 0.0 ? 5.0 + labelW : 0.0);
         total += itemWidths[i];
     }
     CGFloat gap = MAX(0.0, (cw - total) / 5.0);
     CGFloat ax = x;
     for (NSUInteger i = 0; i < 6; i++) {
         NSString *text = self.actionLabels[i].text ?: @"";
-        CGFloat labelW = text.length ? MAX(0.0, itemWidths[i] - 22.0) : 0.0;
-        self.actionIcons[i].frame = CGRectMake(ax, cy + 5.0, 17.0, 17.0);
-        self.actionLabels[i].frame = labelW > 0.0 ? CGRectMake(ax + 22.0, cy + 2.0, labelW, 23.0) : CGRectZero;
+        CGFloat labelW = text.length ? MAX(0.0, itemWidths[i] - 21.0) : 0.0;
+        self.actionIcons[i].frame = CGRectMake(ax, cy + 5.5, 16.0, 16.0);
+        self.actionLabels[i].frame = labelW > 0.0 ? CGRectMake(ax + 21.0, cy + 2.0, labelW, 23.0) : CGRectZero;
         ax += itemWidths[i] + gap;
     }
 
