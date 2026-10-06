@@ -69,7 +69,21 @@ static NSString *SX278Date(NSString *raw) {
         output.dateFormat = @"yyyy/MM/dd";
     });
     NSDate *date = [input dateFromString:raw];
-    return date ? [output stringFromDate:date] : @"";
+    if (!date) return @"";
+
+    NSTimeInterval delta = [[NSDate date] timeIntervalSinceDate:date];
+    if (delta >= 0.0 && delta < 7.0 * 24.0 * 60.0 * 60.0) {
+        NSInteger seconds = (NSInteger)floor(delta);
+        if (seconds < 60) return @"今";
+        NSInteger minutes = MAX(1, seconds / 60);
+        if (minutes < 60) return [NSString stringWithFormat:@"%ld分", (long)minutes];
+        NSInteger hours = minutes / 60;
+        if (hours < 24) return [NSString stringWithFormat:@"%ld時間", (long)hours];
+        NSInteger days = hours / 24;
+        return [NSString stringWithFormat:@"%ld日", (long)MAX(1, days)];
+    }
+
+    return [output stringFromDate:date];
 }
 
 static CGSize SX278MediaSize(NSDictionary *post, CGFloat contentWidth, CGFloat rowWidth) {
