@@ -78,8 +78,8 @@ static CGFloat SX278PostHeight(NSDictionary *post, CGFloat width) {
 }
 
 static NSArray *SX278ItemsForTab(NSDictionary *data, NSInteger tab) {
-    if (tab < 0 || tab > 2) return @[];
-    NSArray *keys = @[@"posts", @"replies", @"reposts"];
+    if (tab < 0 || tab > 3) return @[];
+    NSArray *keys = @[@"posts", @"replies", @"reposts", @"media"];
     id value = data[keys[(NSUInteger)tab]];
     return [value isKindOfClass:NSArray.class] ? value : @[];
 }
@@ -417,26 +417,26 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
 - (NSDictionary *)data { return [self.profile.profileData isKindOfClass:NSDictionary.class] ? self.profile.profileData : @{}; }
 - (NSArray *)itemsForTab:(NSInteger)tab { return SX278ItemsForTab([self data], tab); }
 - (BOOL)hasMore:(NSInteger)tab items:(NSArray *)items {
-    if (tab < 0 || tab > 2) return NO;
-    NSArray *keys = @[@"postsHasMore", @"repliesHasMore", @"repostsHasMore"];
+    if (tab < 0 || tab > 3) return NO;
+    NSArray *keys = @[@"postsHasMore", @"repliesHasMore", @"repostsHasMore", @"mediaHasMore"];
     id value = [self data][keys[(NSUInteger)tab]];
     return [value respondsToSelector:@selector(boolValue)] ? [value boolValue] : (items.count > 0);
 }
 - (BOOL)moreLoading:(NSInteger)tab {
-    if (tab < 0 || tab > 2) return NO;
-    NSArray *keys = @[@"postsMoreLoading", @"repliesMoreLoading", @"repostsMoreLoading"];
+    if (tab < 0 || tab > 3) return NO;
+    NSArray *keys = @[@"postsMoreLoading", @"repliesMoreLoading", @"repostsMoreLoading", @"mediaMoreLoading"];
     id value = [self data][keys[(NSUInteger)tab]];
     return [value respondsToSelector:@selector(boolValue)] ? [value boolValue] : NO;
 }
 - (BOOL)initialLoading:(NSInteger)tab {
-    if (tab < 0 || tab > 2) return NO;
-    NSArray *keys = @[@"postsLoading", @"repliesLoading", @"repostsLoading"];
+    if (tab < 0 || tab > 3) return NO;
+    NSArray *keys = @[@"postsLoading", @"repliesLoading", @"repostsLoading", @"mediaLoading"];
     id value = [self data][keys[(NSUInteger)tab]];
     return [value respondsToSelector:@selector(boolValue)] ? [value boolValue] : NO;
 }
 - (void)requestMoreIfNeededForRow:(NSInteger)row {
     NSInteger tab = [self selectedTab];
-    if (tab < 0 || tab > 2) return;
+    if (tab < 0 || tab > 3) return;
     NSArray *items = [self itemsForTab:tab];
     if (items.count == 0 || [self initialLoading:tab] || row < (NSInteger)items.count - 20 || ![self hasMore:tab items:items] || [self moreLoading:tab]) return;
     NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
@@ -447,7 +447,6 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
 }
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
     NSInteger tab = [self selectedTab];
-    if (tab == 3) return 1;
     NSArray *items = [self itemsForTab:tab];
     return items.count ? (NSInteger)items.count : 1;
 }
@@ -466,11 +465,10 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
 }
 - (UITableViewCell *)tableView:(UITableView *)table cellForRowAtIndexPath:(NSIndexPath *)ip {
     NSInteger tab = [self selectedTab];
-    if (tab == 3) return [self stateCell:table text:@"メディアはまだ接続していません"];
     NSArray *items = [self itemsForTab:tab];
     if (items.count == 0) {
-        NSArray *loading = @[@"Xからポストを読み込み中…", @"Xから返信を読み込み中…", @"Xからリポストを読み込み中…"];
-        NSArray *empty = @[@"通常ポストはありません", @"返信はありません", @"リポストはありません"];
+        NSArray *loading = @[@"Xからポストを読み込み中…", @"Xから返信を読み込み中…", @"Xからリポストを読み込み中…", @"Xからメディアを読み込み中…"];
+        NSArray *empty = @[@"通常ポストはありません", @"返信はありません", @"リポストはありません", @"メディアはありません"];
         return [self stateCell:table text:[self initialLoading:tab] ? loading[(NSUInteger)tab] : empty[(NSUInteger)tab]];
     }
     static NSString *rid = @"SX278Post";
@@ -483,7 +481,7 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
 - (CGFloat)tableView:(UITableView *)table heightForRowAtIndexPath:(NSIndexPath *)ip {
     NSInteger tab = [self selectedTab];
     NSArray *items = [self itemsForTab:tab];
-    if (tab < 0 || tab > 2 || items.count == 0 || (NSUInteger)ip.row >= items.count) return 80.0;
+    if (tab < 0 || tab > 3 || items.count == 0 || (NSUInteger)ip.row >= items.count) return 80.0;
     return SX278PostHeight(items[(NSUInteger)ip.row], CGRectGetWidth(table.bounds));
 }
 - (void)tableView:(UITableView *)table prefetchRowsAtIndexPaths:(NSArray<NSIndexPath *> *)paths {
@@ -631,7 +629,7 @@ static void SX278SetProfileData(id obj, SEL cmd, NSDictionary *data) {
         UITableView *table = objc_getAssociatedObject(strong, &SX278TableKey);
         if (!table) return;
 
-        if (oldTab == newTab && oldTab >= 0 && oldTab <= 2 && oldItems.count > 0 && newItems.count > oldItems.count && SX278SamePrefix(oldItems, newItems)) {
+        if (oldTab == newTab && oldTab >= 0 && oldTab <= 3 && oldItems.count > 0 && newItems.count > oldItems.count && SX278SamePrefix(oldItems, newItems)) {
             NSMutableArray<NSIndexPath *> *paths = [NSMutableArray array];
             for (NSUInteger idx = oldItems.count; idx < newItems.count; idx++) {
                 [paths addObject:[NSIndexPath indexPathForRow:(NSInteger)idx inSection:0]];
