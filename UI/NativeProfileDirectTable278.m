@@ -26,6 +26,14 @@ static NSString *SX278String(id value) {
     return @"";
 }
 
+static UIFont *SX278ScaledFont(CGFloat size, UIFontWeight weight) {
+    UIFont *base = [UIFont systemFontOfSize:size weight:weight];
+    if (@available(iOS 11.0, *)) {
+        return [[UIFontMetrics defaultMetrics] scaledFontForFont:base];
+    }
+    return base;
+}
+
 static NSString *SX278CompactCount(NSInteger value) {
     if (value <= 0) return @"";
     if (value < 10000) return [NSString stringWithFormat:@"%ld", (long)value];
@@ -120,7 +128,7 @@ static CGFloat SX278TextHeight(NSString *text, CGFloat width) {
     if (text.length == 0) return 0.0;
     CGRect rect = [text boundingRectWithSize:CGSizeMake(MAX(1.0, width), CGFLOAT_MAX)
                                     options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading
-                                 attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:14]}
+                                 attributes:@{NSFontAttributeName:SX278ScaledFont(14.0, UIFontWeightRegular)}
                                     context:nil];
     return ceil(rect.size.height);
 }
@@ -235,11 +243,11 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
         [self.contentView addSubview:_avatar];
 
         _nameLabel = [UILabel new];
-        _nameLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightBold];
+        _nameLabel.font = SX278ScaledFont(14.0, UIFontWeightBold);
         _nameLabel.lineBreakMode = NSLineBreakByTruncatingTail;
         [self.contentView addSubview:_nameLabel];
         _metaLabel = [UILabel new];
-        _metaLabel.font = [UIFont systemFontOfSize:14];
+        _metaLabel.font = SX278ScaledFont(14.0, UIFontWeightRegular);
         _metaLabel.textColor = UIColor.secondaryLabelColor;
         _metaLabel.lineBreakMode = NSLineBreakByTruncatingTail;
         [self.contentView addSubview:_metaLabel];
@@ -249,7 +257,7 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
         [self.contentView addSubview:_moreView];
 
         _bodyLabel = [UILabel new];
-        _bodyLabel.font = [UIFont systemFontOfSize:14];
+        _bodyLabel.font = SX278ScaledFont(14.0, UIFontWeightRegular);
         _bodyLabel.numberOfLines = 0;
         _bodyLabel.lineBreakMode = NSLineBreakByWordWrapping;
         [self.contentView addSubview:_bodyLabel];
