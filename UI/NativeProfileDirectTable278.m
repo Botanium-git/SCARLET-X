@@ -26,12 +26,40 @@ static NSString *SX278String(id value) {
     return @"";
 }
 
-static UIFont *SX278ScaledFont(CGFloat size, UIFontWeight weight) {
-    UIFont *base = [UIFont systemFontOfSize:size weight:weight];
-    if (@available(iOS 11.0, *)) {
-        return [[UIFontMetrics defaultMetrics] scaledFontForFont:base];
-    }
-    return base;
+static NSInteger SX278XContentSizeCategoryOffset(UIContentSizeCategory category) {
+    if ([category isEqualToString:UIContentSizeCategoryExtraSmall]) return -2;
+    if ([category isEqualToString:UIContentSizeCategorySmall]) return -1;
+    if ([category isEqualToString:UIContentSizeCategoryMedium]) return 0;
+    if ([category isEqualToString:UIContentSizeCategoryLarge]) return 0;
+    if ([category isEqualToString:UIContentSizeCategoryExtraLarge]) return 1;
+    if ([category isEqualToString:UIContentSizeCategoryExtraExtraLarge]) return 3;
+    if ([category isEqualToString:UIContentSizeCategoryExtraExtraExtraLarge]) return 6;
+    if ([category isEqualToString:UIContentSizeCategoryAccessibilityMedium]) return 10;
+    if ([category isEqualToString:UIContentSizeCategoryAccessibilityLarge]) return 15;
+    if ([category isEqualToString:UIContentSizeCategoryAccessibilityExtraLarge]) return 20;
+    if ([category isEqualToString:UIContentSizeCategoryAccessibilityExtraExtraLarge]) return 25;
+    if ([category isEqualToString:UIContentSizeCategoryAccessibilityExtraExtraExtraLarge]) return 30;
+    return 0;
+}
+
+static NSInteger SX278XWindowSizeClass(CGSize size) {
+    CGFloat shortSide = MIN(fabs(size.width), fabs(size.height));
+    if (shortSide < 376.0) return 0;
+    if (shortSide < 401.0) return 1;
+    if (shortSide < 513.0) return 2;
+    return 3;
+}
+
+static CGFloat SX278XContentFontSize(void) {
+    UIContentSizeCategory category = UIScreen.mainScreen.traitCollection.preferredContentSizeCategory;
+    NSInteger categoryOffset = SX278XContentSizeCategoryOffset(category);
+    NSInteger contentSizeModifier = [[NSUserDefaults standardUserDefaults] integerForKey:@"TweetieContentSizeModifierPreferencesKey"];
+    NSInteger windowSizeClass = SX278XWindowSizeClass(UIScreen.mainScreen.bounds.size);
+    return nearbyint(14.0 + (CGFloat)categoryOffset + (CGFloat)contentSizeModifier + (CGFloat)windowSizeClass);
+}
+
+static UIFont *SX278XFont(UIFontWeight weight) {
+    return [UIFont systemFontOfSize:SX278XContentFontSize() weight:weight];
 }
 
 static NSString *SX278CompactCount(NSInteger value) {
@@ -128,7 +156,7 @@ static CGFloat SX278TextHeight(NSString *text, CGFloat width) {
     if (text.length == 0) return 0.0;
     CGRect rect = [text boundingRectWithSize:CGSizeMake(MAX(1.0, width), CGFLOAT_MAX)
                                     options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading
-                                 attributes:@{NSFontAttributeName:SX278ScaledFont(14.0, UIFontWeightRegular)}
+                                 attributes:@{NSFontAttributeName:SX278XFont(UIFontWeightRegular)}
                                     context:nil];
     return ceil(rect.size.height);
 }
@@ -243,11 +271,11 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
         [self.contentView addSubview:_avatar];
 
         _nameLabel = [UILabel new];
-        _nameLabel.font = SX278ScaledFont(14.0, UIFontWeightBold);
+        _nameLabel.font = SX278XFont(UIFontWeightBold);
         _nameLabel.lineBreakMode = NSLineBreakByTruncatingTail;
         [self.contentView addSubview:_nameLabel];
         _metaLabel = [UILabel new];
-        _metaLabel.font = SX278ScaledFont(14.0, UIFontWeightRegular);
+        _metaLabel.font = SX278XFont(UIFontWeightRegular);
         _metaLabel.textColor = UIColor.secondaryLabelColor;
         _metaLabel.lineBreakMode = NSLineBreakByTruncatingTail;
         [self.contentView addSubview:_metaLabel];
@@ -257,7 +285,7 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
         [self.contentView addSubview:_moreView];
 
         _bodyLabel = [UILabel new];
-        _bodyLabel.font = SX278ScaledFont(14.0, UIFontWeightRegular);
+        _bodyLabel.font = SX278XFont(UIFontWeightRegular);
         _bodyLabel.numberOfLines = 0;
         _bodyLabel.lineBreakMode = NSLineBreakByWordWrapping;
         [self.contentView addSubview:_bodyLabel];
