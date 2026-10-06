@@ -43,25 +43,36 @@ static NSString *SX278Date(NSString *raw) {
     return date ? [output stringFromDate:date] : @"";
 }
 
-static CGFloat SX278MediaHeight(NSDictionary *post, CGFloat contentWidth) {
+static CGSize SX278MediaSize(NSDictionary *post, CGFloat contentWidth) {
     NSArray *media = [post[@"media"] isKindOfClass:NSArray.class] ? post[@"media"] : @[];
-    if (media.count == 0 && SX278String(post[@"mediaURL"]).length) return 220.0;
+    if (media.count == 0 && SX278String(post[@"mediaURL"]).length) return CGSizeMake(contentWidth, 220.0);
     NSUInteger count = MIN(media.count, (NSUInteger)4);
-    if (count == 0) return 0.0;
+    if (count == 0) return CGSizeZero;
     if (count == 1) {
         NSDictionary *item = [media.firstObject isKindOfClass:NSDictionary.class] ? media.firstObject : @{};
         CGFloat sourceW = [item[@"width"] respondsToSelector:@selector(doubleValue)] ? [item[@"width"] doubleValue] : 0.0;
         CGFloat sourceH = [item[@"height"] respondsToSelector:@selector(doubleValue)] ? [item[@"height"] doubleValue] : 0.0;
         if (sourceW > 0.0 && sourceH > 0.0) {
-            CGFloat ratio = sourceH / sourceW;
-            ratio = MAX(9.0 / 16.0, MIN(5.0 / 4.0, ratio));
-            return ceil(MAX(1.0, contentWidth) * ratio);
+            CGFloat width = MAX(1.0, contentWidth);
+            CGFloat aspect = sourceW / sourceH;
+            if (aspect > 0.0 && aspect < 1.0) {
+                const CGFloat baseWidthRatio = 0.7;
+                const CGFloat videoAspect = 1.7778;
+                const CGFloat minimumDisplayAspect = 0.46153846153846156;
+                CGFloat height = MIN(width / aspect, width * baseWidthRatio * videoAspect);
+                CGFloat mediaWidth = aspect * height;
+                mediaWidth = MAX(mediaWidth, height * minimumDisplayAspect);
+                mediaWidth = MIN(width, mediaWidth);
+                return CGSizeMake(ceil(mediaWidth), ceil(height));
+            }
+            CGFloat clampedAspect = MAX(0.75, MIN(5.0, aspect));
+            return CGSizeMake(width, ceil(width / clampedAspect));
         }
-        return 220.0;
+        return CGSizeMake(contentWidth, 220.0);
     }
-    if (count == 2) return 220.0;
-    if (count == 3) return 240.0;
-    return 260.0;
+    if (count == 2) return CGSizeMake(contentWidth, 220.0);
+    if (count == 3) return CGSizeMake(contentWidth, 240.0);
+    return CGSizeMake(contentWidth, 260.0);
 }
 
 static CGFloat SX278TextHeight(NSString *text, CGFloat width) {
@@ -80,7 +91,7 @@ static CGFloat SX278PostHeight(NSDictionary *post, CGFloat width) {
     CGFloat row = 11.0 + 18.0;
     NSString *text = SX278String(post[@"text"]);
     CGFloat textH = SX278TextHeight(text, contentWidth);
-    CGFloat mediaH = SX278MediaHeight(post, contentWidth);
+    CGFloat mediaH = SX278MediaSize(post, contentWidth).height;
     if (textH > 0.0) row += 5.0 + textH;
     if (mediaH > 0.0) row += 9.0 + mediaH;
     row += 5.0 + 28.0 + 8.0;
@@ -363,10 +374,12 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
         self.bodyLabel.frame = CGRectZero;
     }
 
-    CGFloat mh = SX278MediaHeight(self.post, cw);
-    if (mh > 0.0) {
+    CGSize mediaSize = SX278MediaSize(self.post, cw);
+    CGFloat mh = mediaSize.height;
+    CGFloat mediaWidth = mediaSize.width;
+    if (mh > 0.0 && mediaWidth > 0.0) {
         cy += 9.0;
-        self.mediaContainer.frame = CGRectMake(x, cy, cw, mh);
+        self.mediaContainer.frame = CGRectMake(x, cy, mediaWidth, mh);
         cy += mh;
         NSUInteger count = 0;
         for (SX278MediaTile *tile in self.tiles) if (!tile.hidden) count++;
@@ -374,17 +387,17 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
         if (count == 1) {
             self.tiles[0].frame = self.mediaContainer.bounds;
         } else if (count == 2) {
-            CGFloat half = (cw - gap) / 2.0;
+            CGFloat half = (mediaWidth - gap) / 2.0;
             self.tiles[0].frame = CGRectMake(0, 0, half, mh);
             self.tiles[1].frame = CGRectMake(half + gap, 0, half, mh);
         } else if (count == 3) {
-            CGFloat half = (cw - gap) / 2.0;
+            CGFloat half = (mediaWidth - gap) / 2.0;
             CGFloat halfH = (mh - gap) / 2.0;
             self.tiles[0].frame = CGRectMake(0, 0, half, mh);
             self.tiles[1].frame = CGRectMake(half + gap, 0, half, halfH);
             self.tiles[2].frame = CGRectMake(half + gap, halfH + gap, half, halfH);
         } else if (count >= 4) {
-            CGFloat half = (cw - gap) / 2.0;
+            CGFloat half = (mediaWidth - gap) / 2.0;
             CGFloat halfH = (mh - gap) / 2.0;
             for (NSUInteger i = 0; i < 4; i++) {
                 self.tiles[i].frame = CGRectMake((i % 2) * (half + gap), (i / 2) * (halfH + gap), half, halfH);
