@@ -96,6 +96,9 @@
 
 - (void)sx_229_startReplyLoadForUserId:(NSString *)userId profile:(NativeProfileViewController *)profile sourceWebView:(WKWebView *)sourceWebView {
     if(userId.length==0||![sourceWebView isKindOfClass:WKWebView.class]||!profile)return;
+    NSMutableDictionary *replyInitial=[profile.profileData mutableCopy]?:[NSMutableDictionary dictionary];
+    replyInitial[@"repliesLoading"]=@YES;
+    dispatch_async(dispatch_get_main_queue(),^{ [profile applyProfileData:replyInitial]; });
     NSString *script=[self sx_229_internalRepliesScriptForUserId:userId];
     __weak NativeProfileViewController *weakProfile=profile;
     __weak WKWebView *weakWebView=sourceWebView;
@@ -151,6 +154,11 @@
         [self sx_211_startOfficialProfilePostLoadForScreenName:screenName userId:userId base:base profile:profile sourceWebView:sourceWebView];
         return;
     }
+
+    NSMutableDictionary *postInitial=[profile.profileData mutableCopy]?:[NSMutableDictionary dictionary];
+    if(postInitial.count==0&&base) [postInitial addEntriesFromDictionary:base];
+    postInitial[@"postsLoading"]=@YES;
+    dispatch_async(dispatch_get_main_queue(),^{ [profile applyProfileData:postInitial]; });
 
     [self sx_229_startReplyLoadForUserId:userId profile:profile sourceWebView:sourceWebView];
 
