@@ -94,20 +94,20 @@ static CGFloat SX278TextHeight(NSString *text, CGFloat width) {
     if (text.length == 0) return 0.0;
     CGRect rect = [text boundingRectWithSize:CGSizeMake(MAX(1.0, width), CGFLOAT_MAX)
                                     options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading
-                                 attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:15]}
+                                 attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:14]}
                                     context:nil];
     return ceil(rect.size.height);
 }
 
 static CGFloat SX278PostHeight(NSDictionary *post, CGFloat width) {
     BOOL repost = [post[@"isRepost"] respondsToSelector:@selector(boolValue)] && [post[@"isRepost"] boolValue];
-    CGFloat h = repost ? 22.0 : 0.0;
-    CGFloat contentWidth = MAX(80.0, width - 64.0 - 12.0);
-    CGFloat row = 11.0 + 18.0;
+    CGFloat h = repost ? 17.0 : 0.0;
+    CGFloat contentWidth = MAX(80.0, width - 56.0 - 12.0);
+    CGFloat row = 8.0 + 17.0;
     NSString *text = SX278String(post[@"text"]);
     CGFloat textH = SX278TextHeight(text, contentWidth);
     CGFloat mediaH = SX278MediaSize(post, contentWidth, width).height;
-    if (textH > 0.0) row += 5.0 + textH;
+    if (textH > 0.0) row += 3.0 + textH;
     if (mediaH > 0.0) row += 9.0 + mediaH;
     row += 5.0 + 28.0 + 8.0;
     h += MAX(59.0, row) + 0.5;
@@ -197,7 +197,7 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
         _repostIcon.contentMode = UIViewContentModeScaleAspectFit;
         [self.contentView addSubview:_repostIcon];
         _repostLabel = [UILabel new];
-        _repostLabel.font = [UIFont systemFontOfSize:12 weight:UIFontWeightSemibold];
+        _repostLabel.font = [UIFont systemFontOfSize:11 weight:UIFontWeightSemibold];
         _repostLabel.textColor = UIColor.secondaryLabelColor;
         [self.contentView addSubview:_repostLabel];
 
@@ -209,11 +209,11 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
         [self.contentView addSubview:_avatar];
 
         _nameLabel = [UILabel new];
-        _nameLabel.font = [UIFont systemFontOfSize:15 weight:UIFontWeightSemibold];
+        _nameLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightSemibold];
         _nameLabel.lineBreakMode = NSLineBreakByTruncatingTail;
         [self.contentView addSubview:_nameLabel];
         _metaLabel = [UILabel new];
-        _metaLabel.font = [UIFont systemFontOfSize:15];
+        _metaLabel.font = [UIFont systemFontOfSize:14];
         _metaLabel.textColor = UIColor.secondaryLabelColor;
         _metaLabel.lineBreakMode = NSLineBreakByTruncatingTail;
         [self.contentView addSubview:_metaLabel];
@@ -223,7 +223,7 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
         [self.contentView addSubview:_moreView];
 
         _bodyLabel = [UILabel new];
-        _bodyLabel.font = [UIFont systemFontOfSize:15];
+        _bodyLabel.font = [UIFont systemFontOfSize:14];
         _bodyLabel.numberOfLines = 0;
         _bodyLabel.lineBreakMode = NSLineBreakByWordWrapping;
         [self.contentView addSubview:_bodyLabel];
@@ -357,35 +357,35 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
     BOOL repost = !self.repostLabel.hidden;
     CGFloat y = 0.0;
     if (repost) {
-        self.repostIcon.frame = CGRectMake(64.0, 8.0, 14.0, 14.0);
-        self.repostLabel.frame = CGRectMake(84.0, 6.0, MAX(0.0, w - 96.0), 18.0);
-        y = 22.0;
+        self.repostIcon.frame = CGRectMake(36.0, 5.0, 12.0, 12.0);
+        self.repostLabel.frame = CGRectMake(56.0, 3.0, MAX(0.0, w - 68.0), 16.0);
+        y = 17.0;
     } else {
         self.repostIcon.frame = CGRectZero;
         self.repostLabel.frame = CGRectZero;
     }
 
-    self.avatar.frame = CGRectMake(12.0, y + 11.0, 40.0, 40.0);
-    CGFloat x = 64.0;
+    self.avatar.frame = CGRectMake(10.0, y + 8.0, 40.0, 40.0);
+    CGFloat x = 56.0;
     CGFloat cw = MAX(80.0, w - x - 12.0);
-    CGFloat headerY = y + 11.0;
+    CGFloat headerY = y + 8.0;
     CGFloat moreW = 18.0;
-    self.moreView.frame = CGRectMake(x + cw - moreW, headerY, moreW, 18.0);
+    self.moreView.frame = CGRectMake(x + cw - moreW, headerY, moreW, 17.0);
     CGFloat textAvail = MAX(20.0, cw - moreW - 12.0);
-    CGFloat nameNatural = ceil([self.nameLabel sizeThatFits:CGSizeMake(CGFLOAT_MAX, 18.0)].width);
-    CGFloat metaNatural = ceil([self.metaLabel sizeThatFits:CGSizeMake(CGFLOAT_MAX, 18.0)].width);
+    CGFloat nameNatural = ceil([self.nameLabel sizeThatFits:CGSizeMake(CGFLOAT_MAX, 17.0)].width);
+    CGFloat metaNatural = ceil([self.metaLabel sizeThatFits:CGSizeMake(CGFLOAT_MAX, 17.0)].width);
     CGFloat nameW = MIN(nameNatural, textAvail);
     CGFloat metaW = MIN(metaNatural, MAX(0.0, textAvail - nameW - 4.0));
     if (nameNatural + 4.0 + metaNatural > textAvail) {
         nameW = MIN(nameNatural, floor(textAvail * 0.42));
         metaW = MAX(0.0, textAvail - nameW - 4.0);
     }
-    self.nameLabel.frame = CGRectMake(x, headerY, nameW, 18.0);
-    self.metaLabel.frame = CGRectMake(x + nameW + 4.0, headerY, metaW, 18.0);
+    self.nameLabel.frame = CGRectMake(x, headerY, nameW, 17.0);
+    self.metaLabel.frame = CGRectMake(x + nameW + 4.0, headerY, metaW, 17.0);
 
-    CGFloat cy = headerY + 18.0;
+    CGFloat cy = headerY + 17.0;
     if (self.bodyLabel.text.length) {
-        cy += 5.0;
+        cy += 3.0;
         CGFloat bodyH = SX278TextHeight(self.bodyLabel.text, cw);
         self.bodyLabel.frame = CGRectMake(x, cy, cw, bodyH);
         cy += bodyH;
