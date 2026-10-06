@@ -26,6 +26,23 @@ static NSString *SX278String(id value) {
     return @"";
 }
 
+static NSString *SX278CompactCount(NSInteger value) {
+    if (value <= 0) return @"";
+    if (value < 10000) return [NSString stringWithFormat:@"%ld", (long)value];
+    double unit = 10000.0;
+    NSString *suffix = @"万";
+    if (value >= 100000000) {
+        unit = 100000000.0;
+        suffix = @"億";
+    }
+    double scaled = (double)value / unit;
+    double rounded = round(scaled * 10.0) / 10.0;
+    if (fabs(rounded - round(rounded)) < 0.0001) {
+        return [NSString stringWithFormat:@"%.0f%@", rounded, suffix];
+    }
+    return [NSString stringWithFormat:@"%.1f%@", rounded, suffix];
+}
+
 static NSString *SX278Date(NSString *raw) {
     if (raw.length == 0) return @"";
     static NSDateFormatter *input;
@@ -43,7 +60,7 @@ static NSString *SX278Date(NSString *raw) {
     return date ? [output stringFromDate:date] : @"";
 }
 
-static CGSize SX278MediaSize(NSDictionary *post, CGFloat contentWidth) {
+static CGSize SX278MediaSize(NSDictionary *post, CGFloat contentWidth, CGFloat rowWidth) {
     NSArray *media = [post[@"media"] isKindOfClass:NSArray.class] ? post[@"media"] : @[];
     if (media.count == 0 && SX278String(post[@"mediaURL"]).length) return CGSizeMake(contentWidth, 220.0);
     NSUInteger count = MIN(media.count, (NSUInteger)4);
@@ -70,7 +87,7 @@ static CGSize SX278MediaSize(NSDictionary *post, CGFloat contentWidth) {
         }
         return CGSizeMake(contentWidth, 220.0);
     }
-    return CGSizeMake(contentWidth, ceil(MAX(1.0, contentWidth) * 0.68));
+    return CGSizeMake(contentWidth, ceil(MAX(1.0, rowWidth) * 0.68));
 }
 
 static CGFloat SX278TextHeight(NSString *text, CGFloat width) {
@@ -89,7 +106,7 @@ static CGFloat SX278PostHeight(NSDictionary *post, CGFloat width) {
     CGFloat row = 11.0 + 18.0;
     NSString *text = SX278String(post[@"text"]);
     CGFloat textH = SX278TextHeight(text, contentWidth);
-    CGFloat mediaH = SX278MediaSize(post, contentWidth).height;
+    CGFloat mediaH = SX278MediaSize(post, contentWidth, width).height;
     if (textH > 0.0) row += 5.0 + textH;
     if (mediaH > 0.0) row += 9.0 + mediaH;
     row += 5.0 + 28.0 + 8.0;
@@ -318,7 +335,7 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
     NSArray *counts = @[post[@"replyCount"] ?: @0, post[@"retweetCount"] ?: @0, post[@"favoriteCount"] ?: @0, @0, @0, @0];
     for (NSUInteger i = 0; i < 6; i++) {
         NSInteger v = [counts[i] respondsToSelector:@selector(integerValue)] ? [counts[i] integerValue] : 0;
-        self.actionLabels[i].text = v > 0 ? [NSString stringWithFormat:@"%ld", (long)v] : @"";
+        self.actionLabels[i].text = SX278CompactCount(v);
     }
     [self setNeedsLayout];
 }
@@ -376,7 +393,7 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
         self.bodyLabel.frame = CGRectZero;
     }
 
-    CGSize mediaSize = SX278MediaSize(self.post, cw);
+    CGSize mediaSize = SX278MediaSize(self.post, cw, w);
     CGFloat mh = mediaSize.height;
     CGFloat mediaWidth = mediaSize.width;
     if (mh > 0.0 && mediaWidth > 0.0) {
