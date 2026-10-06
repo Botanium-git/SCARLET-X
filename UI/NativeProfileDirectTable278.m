@@ -43,12 +43,23 @@ static NSString *SX278Date(NSString *raw) {
     return date ? [output stringFromDate:date] : @"";
 }
 
-static CGFloat SX278MediaHeight(NSDictionary *post) {
+static CGFloat SX278MediaHeight(NSDictionary *post, CGFloat contentWidth) {
     NSArray *media = [post[@"media"] isKindOfClass:NSArray.class] ? post[@"media"] : @[];
     if (media.count == 0 && SX278String(post[@"mediaURL"]).length) return 220.0;
     NSUInteger count = MIN(media.count, (NSUInteger)4);
     if (count == 0) return 0.0;
-    if (count <= 2) return 220.0;
+    if (count == 1) {
+        NSDictionary *item = [media.firstObject isKindOfClass:NSDictionary.class] ? media.firstObject : @{};
+        CGFloat sourceW = [item[@"width"] respondsToSelector:@selector(doubleValue)] ? [item[@"width"] doubleValue] : 0.0;
+        CGFloat sourceH = [item[@"height"] respondsToSelector:@selector(doubleValue)] ? [item[@"height"] doubleValue] : 0.0;
+        if (sourceW > 0.0 && sourceH > 0.0) {
+            CGFloat ratio = sourceH / sourceW;
+            ratio = MAX(9.0 / 16.0, MIN(5.0 / 4.0, ratio));
+            return ceil(MAX(1.0, contentWidth) * ratio);
+        }
+        return 220.0;
+    }
+    if (count == 2) return 220.0;
     if (count == 3) return 240.0;
     return 260.0;
 }
@@ -69,7 +80,7 @@ static CGFloat SX278PostHeight(NSDictionary *post, CGFloat width) {
     CGFloat row = 11.0 + 18.0;
     NSString *text = SX278String(post[@"text"]);
     CGFloat textH = SX278TextHeight(text, contentWidth);
-    CGFloat mediaH = SX278MediaHeight(post);
+    CGFloat mediaH = SX278MediaHeight(post, contentWidth);
     if (textH > 0.0) row += 5.0 + textH;
     if (mediaH > 0.0) row += 9.0 + mediaH;
     row += 5.0 + 28.0 + 8.0;
@@ -352,7 +363,7 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
         self.bodyLabel.frame = CGRectZero;
     }
 
-    CGFloat mh = SX278MediaHeight(self.post);
+    CGFloat mh = SX278MediaHeight(self.post, cw);
     if (mh > 0.0) {
         cy += 9.0;
         self.mediaContainer.frame = CGRectMake(x, cy, cw, mh);
