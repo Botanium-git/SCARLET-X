@@ -170,7 +170,7 @@ static CGFloat SX278PostHeight(NSDictionary *post, CGFloat width) {
     NSString *text = SX278String(post[@"text"]);
     CGFloat textH = SX278TextHeight(text, contentWidth);
     CGFloat mediaH = SX278MediaSize(post, contentWidth, width).height;
-    if (textH > 0.0) row += textH;
+    if (textH > 0.0) row += 2.0 + textH;
     if (mediaH > 0.0) row += 6.0 + mediaH;
     row += 4.0 + 28.0 + 8.0;
     h += MAX(59.0, row) + 0.5;
@@ -473,6 +473,7 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
 
     CGFloat cy = headerY + headerHeight;
     if (self.bodyLabel.text.length) {
+        cy += 2.0;
         CGFloat bodyH = SX278TextHeight(self.bodyLabel.text, cw);
         self.bodyLabel.frame = CGRectMake(x, cy, cw, bodyH);
         cy += bodyH;
