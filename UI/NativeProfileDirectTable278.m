@@ -70,9 +70,7 @@ static CGSize SX278MediaSize(NSDictionary *post, CGFloat contentWidth) {
         }
         return CGSizeMake(contentWidth, 220.0);
     }
-    if (count == 2) return CGSizeMake(contentWidth, 220.0);
-    if (count == 3) return CGSizeMake(contentWidth, 240.0);
-    return CGSizeMake(contentWidth, 260.0);
+    return CGSizeMake(contentWidth, ceil(MAX(1.0, contentWidth) * 0.68));
 }
 
 static CGFloat SX278TextHeight(NSString *text, CGFloat width) {
@@ -162,7 +160,7 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
 @property(nonatomic,strong) UILabel *metaLabel;
 @property(nonatomic,strong) UIImageView *moreView;
 @property(nonatomic,strong) UILabel *bodyLabel;
-@property(nonatomic,strong) UIView *mediaContainer;
+@property(nonatomic,strong) UIScrollView *mediaContainer;
 @property(nonatomic,strong) NSArray<SX278MediaTile *> *tiles;
 @property(nonatomic,strong) NSArray<UIImageView *> *actionIcons;
 @property(nonatomic,strong) NSArray<UILabel *> *actionLabels;
@@ -213,9 +211,13 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
         _bodyLabel.lineBreakMode = NSLineBreakByWordWrapping;
         [self.contentView addSubview:_bodyLabel];
 
-        _mediaContainer = [UIView new];
+        _mediaContainer = [UIScrollView new];
         _mediaContainer.clipsToBounds = YES;
         _mediaContainer.layer.cornerRadius = 12.0;
+        _mediaContainer.showsHorizontalScrollIndicator = NO;
+        _mediaContainer.showsVerticalScrollIndicator = NO;
+        _mediaContainer.alwaysBounceHorizontal = NO;
+        _mediaContainer.alwaysBounceVertical = NO;
         [self.contentView addSubview:_mediaContainer];
         NSMutableArray *tiles = [NSMutableArray array];
         for (int i = 0; i < 4; i++) {
@@ -385,23 +387,29 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
         for (SX278MediaTile *tile in self.tiles) if (!tile.hidden) count++;
         CGFloat gap = 2.0;
         if (count == 1) {
+            self.mediaContainer.scrollEnabled = NO;
+            self.mediaContainer.contentSize = self.mediaContainer.bounds.size;
+            self.tiles[0].layer.cornerRadius = 0.0;
             self.tiles[0].frame = self.mediaContainer.bounds;
-        } else if (count == 2) {
-            CGFloat half = (mediaWidth - gap) / 2.0;
-            self.tiles[0].frame = CGRectMake(0, 0, half, mh);
-            self.tiles[1].frame = CGRectMake(half + gap, 0, half, mh);
-        } else if (count == 3) {
-            CGFloat half = (mediaWidth - gap) / 2.0;
-            CGFloat halfH = (mh - gap) / 2.0;
-            self.tiles[0].frame = CGRectMake(0, 0, half, mh);
-            self.tiles[1].frame = CGRectMake(half + gap, 0, half, halfH);
-            self.tiles[2].frame = CGRectMake(half + gap, halfH + gap, half, halfH);
-        } else if (count >= 4) {
-            CGFloat half = (mediaWidth - gap) / 2.0;
-            CGFloat halfH = (mh - gap) / 2.0;
-            for (NSUInteger i = 0; i < 4; i++) {
-                self.tiles[i].frame = CGRectMake((i % 2) * (half + gap), (i / 2) * (halfH + gap), half, halfH);
+        } else {
+            self.mediaContainer.scrollEnabled = YES;
+            CGFloat maxItemWidth = mediaWidth * 0.8;
+            CGFloat offsetX = 0.0;
+            NSArray *media = [self.post[@"media"] isKindOfClass:NSArray.class] ? self.post[@"media"] : @[];
+            for (NSUInteger i = 0; i < count; i++) {
+                NSDictionary *item = (i < media.count && [media[i] isKindOfClass:NSDictionary.class]) ? media[i] : @{};
+                CGFloat sourceW = [item[@"width"] respondsToSelector:@selector(doubleValue)] ? [item[@"width"] doubleValue] : 0.0;
+                CGFloat sourceH = [item[@"height"] respondsToSelector:@selector(doubleValue)] ? [item[@"height"] doubleValue] : 0.0;
+                CGFloat aspect = (sourceW > 0.0 && sourceH > 0.0) ? (sourceW / sourceH) : 1.0;
+                CGFloat itemWidth = MIN(round(mh * aspect), maxItemWidth);
+                if (itemWidth <= 0.0) itemWidth = MIN(mh, maxItemWidth);
+                SX278MediaTile *tile = self.tiles[i];
+                tile.layer.cornerRadius = 12.0;
+                tile.clipsToBounds = YES;
+                tile.frame = CGRectMake(offsetX, 0.0, itemWidth, mh);
+                offsetX += itemWidth + gap;
             }
+            self.mediaContainer.contentSize = CGSizeMake(MAX(mediaWidth, offsetX > 0.0 ? offsetX - gap : 0.0), mh);
         }
     } else {
         self.mediaContainer.frame = CGRectZero;
