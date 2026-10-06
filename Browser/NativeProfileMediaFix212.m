@@ -30,7 +30,7 @@
 - (NSString *)sx_212_internalPostsScriptForUserId:(NSString *)userId {
     NSString *uid = [self sx_212_jsonLiteral:userId];
     return [NSString stringWithFormat:@"(function(){"
-        "var uid=%@;"
+        "var uid=%@,KEY=\'__scarletXProfilePosts212\';"
         "function val(o,k){try{var v=o&&o[k];return(v===null||v===undefined)?'':v;}catch(_){return '';}}"
         "function normalizeMedia(legacy){"
           "var raw=legacy&&legacy.extended_entities&&Array.isArray(legacy.extended_entities.media)?legacy.extended_entities.media:(legacy&&legacy.entities&&Array.isArray(legacy.entities.media)?legacy.entities.media:[]);"
@@ -83,8 +83,8 @@
           "return out;"
         "}"
         "try{"
-          "var slot=window.__scarletXProfilePosts212;"
-          "if(slot&&slot.userId===String(uid))return slot;"
+          "var slot=window[KEY];"
+          "if(slot&&slot.userId===String(uid)){if(slot.state==='success'||slot.state==='error')return slot;if(slot.state==='loading'&&Date.now()-Number(slot.startedAt||0)<7000)return slot;delete window[KEY];}"
           "var api=window.__scarletXAPI;"
           "if(!api||typeof api.withEndpoint!=='function')return {state:'waiting-api',userId:String(uid)};"
           "var q=window.webpackChunk_twitter_responsive_web,req=null;"
@@ -95,11 +95,12 @@
           "if(typeof factory!=='function')return {state:'error',stage:'endpoint-factory',userId:String(uid)};"
           "var endpoint=api.withEndpoint(factory);"
           "if(!endpoint||typeof endpoint.fetchUserOriginals!=='function')return {state:'error',stage:'endpoint',userId:String(uid)};"
-          "window.__scarletXProfilePosts212={state:'loading',userId:String(uid)};"
-          "Promise.resolve(endpoint.fetchUserOriginals({userId:String(uid),count:20,cursor:void 0,isPaymentsEnrolled:false,sortByMostLiked:false})).then(function(result){"
-            "try{window.__scarletXProfilePosts212={state:'success',userId:String(uid),posts:normalize(result)};}catch(e){window.__scarletXProfilePosts212={state:'error',stage:'normalize',userId:String(uid),message:String(e&&e.stack||e)};}"
-          "}).catch(function(e){window.__scarletXProfilePosts212={state:'error',stage:'request',userId:String(uid),message:String(e&&e.stack||e)};});"
-          "return window.__scarletXProfilePosts212;"
+          "function timed(p,ms){return Promise.race([Promise.resolve(p),new Promise(function(_,reject){setTimeout(function(){reject(new Error('fetchUserOriginals-timeout'));},ms);})]);}"
+          "window[KEY]={state:'loading',userId:String(uid),startedAt:Date.now()};"
+          "timed(endpoint.fetchUserOriginals({userId:String(uid),count:20,cursor:void 0,isPaymentsEnrolled:false,sortByMostLiked:false}),5000).then(function(result){"
+            "try{window[KEY]={state:'success',userId:String(uid),posts:normalize(result),finishedAt:Date.now()};}catch(e){window[KEY]={state:'error',stage:'normalize',userId:String(uid),message:String(e&&e.stack||e),finishedAt:Date.now()};}"
+          "}).catch(function(e){window[KEY]={state:'error',stage:'request',userId:String(uid),message:String(e&&e.stack||e),finishedAt:Date.now()};});"
+          "return window[KEY];"
         "}catch(e){return {state:'error',stage:'exception',userId:String(uid),message:String(e&&e.stack||e)};}"
       "})()", uid];
 }
