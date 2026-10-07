@@ -413,7 +413,14 @@
     countsLabel.textColor=UIColor.secondaryLabelColor;
     NSString *safeFollowing=following.length?following:@"—";
     NSString *safeFollowers=followers.length?followers:@"—";
-    countsLabel.text=[NSString stringWithFormat:@"%@ フォロー中    %@ フォロワー",safeFollowing,safeFollowers];
+    NSString *countsText=[NSString stringWithFormat:@"%@ フォロー中    %@ フォロワー",safeFollowing,safeFollowers];
+    NSMutableAttributedString *countsAttributed=[[NSMutableAttributedString alloc] initWithString:countsText attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:14],NSForegroundColorAttributeName:UIColor.secondaryLabelColor}];
+    NSRange followingRange=[countsText rangeOfString:safeFollowing];
+    NSRange followersRange=[countsText rangeOfString:safeFollowers options:0 range:NSMakeRange(NSMaxRange(followingRange),countsText.length-NSMaxRange(followingRange))];
+    NSDictionary *numberAttrs=@{NSFontAttributeName:[UIFont systemFontOfSize:14 weight:UIFontWeightSemibold],NSForegroundColorAttributeName:UIColor.labelColor};
+    if(followingRange.location!=NSNotFound)[countsAttributed addAttributes:numberAttrs range:followingRange];
+    if(followersRange.location!=NSNotFound)[countsAttributed addAttributes:numberAttrs range:followersRange];
+    countsLabel.attributedText=countsAttributed;
     [self.contentView addSubview:countsLabel];
 
     UIStackView *actions=[UIStackView new];
@@ -500,24 +507,24 @@
         [handleLabel.leadingAnchor constraintEqualToAnchor:nameRow.leadingAnchor],
         [handleLabel.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
 
-        [bioLabel.topAnchor constraintEqualToAnchor:handleLabel.bottomAnchor constant:16],
+        [bioLabel.topAnchor constraintEqualToAnchor:handleLabel.bottomAnchor constant:12],
         [bioLabel.leadingAnchor constraintEqualToAnchor:nameRow.leadingAnchor],
         [bioLabel.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
 
-        [joinedContainer.topAnchor constraintEqualToAnchor:bioLabel.bottomAnchor constant:12],
+        [joinedContainer.topAnchor constraintEqualToAnchor:bioLabel.bottomAnchor constant:8],
         [joinedContainer.leadingAnchor constraintEqualToAnchor:nameRow.leadingAnchor],
         [joinedContainer.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
 
-        [countsLabel.topAnchor constraintEqualToAnchor:joinedContainer.bottomAnchor constant:10],
+        [countsLabel.topAnchor constraintEqualToAnchor:joinedContainer.bottomAnchor constant:8],
         [countsLabel.leadingAnchor constraintEqualToAnchor:nameRow.leadingAnchor],
         [countsLabel.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
 
-        [actions.topAnchor constraintEqualToAnchor:countsLabel.bottomAnchor constant:18],
+        [actions.topAnchor constraintEqualToAnchor:countsLabel.bottomAnchor constant:12],
         [actions.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:16],
         [actions.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
         [actions.heightAnchor constraintEqualToConstant:42],
 
-        [separator.topAnchor constraintEqualToAnchor:actions.bottomAnchor constant:14],
+        [separator.topAnchor constraintEqualToAnchor:actions.bottomAnchor constant:12],
         [separator.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor],
         [separator.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor],
         [separator.heightAnchor constraintEqualToConstant:.5],
