@@ -37,7 +37,7 @@
         "var entity=null,keys=[];try{keys=Object.keys(map);}catch(_){}"
         "if(screen){for(var i=0;i<keys.length;i++){var e=map[keys[i]],l=e&&e.legacy;var sn=(l&&l.screen_name)||(e&&e.screen_name)||'';if(sn===screen){entity=e;uid=String((e&&e.rest_id)||(l&&l.id_str)||keys[i]||uid||'');break;}}}"
         "if(!entity&&uid&&map[uid])entity=map[uid];"
-        "if(!entity)return {};"
+        "if(!entity)return {};for(var uw=0;uw<5&&entity&&typeof entity==='object'&&!(entity.legacy||entity.core||entity.privacy);uw++){if(entity.result&&typeof entity.result==='object'){entity=entity.result;continue;}if(entity.user&&typeof entity.user==='object'){entity=entity.user;continue;}if(entity.user_results&&entity.user_results.result&&typeof entity.user_results.result==='object'){entity=entity.user_results.result;continue;}break;}"
         "var l=entity.legacy&&typeof entity.legacy==='object'?entity.legacy:entity;"
         "var resolvedId=String((entity&&entity.rest_id)||(l&&l.id_str)||uid||'');"
         "var sn=(l&&l.screen_name)||(entity&&entity.screen_name)||screen||'';"

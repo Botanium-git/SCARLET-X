@@ -316,8 +316,6 @@
         [protectedBadge.widthAnchor constraintEqualToConstant:18].active=YES;
         [protectedBadge.heightAnchor constraintEqualToConstant:18].active=YES;
     }
-    [self.contentView addSubview:nameRow];
-
     UIButton *verify=[UIButton buttonWithType:UIButtonTypeSystem];
     verify.translatesAutoresizingMaskIntoConstraints=NO;
     verify.accessibilityIdentifier=@"sx.profile.verify";
@@ -329,7 +327,12 @@
     verify.layer.cornerRadius=15;
     verify.layer.borderWidth=1;
     verify.layer.borderColor=UIColor.separatorColor.CGColor;
-    [self.contentView addSubview:verify];
+    [verify setContentCompressionResistancePriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
+    [verify setContentHuggingPriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
+    [nameRow addArrangedSubview:verify];
+    [verify.heightAnchor constraintEqualToConstant:30].active=YES;
+
+    [self.contentView addSubview:nameRow];
 
     UILabel *handleLabel=[UILabel new];
     handleLabel.translatesAutoresizingMaskIntoConstraints=NO;
@@ -476,10 +479,7 @@
 
         [nameRow.topAnchor constraintEqualToAnchor:avatar.bottomAnchor constant:14],
         [nameRow.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:16],
-        [nameRow.trailingAnchor constraintLessThanOrEqualToAnchor:verify.leadingAnchor constant:-8],
-        [verify.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
-        [verify.centerYAnchor constraintEqualToAnchor:nameRow.centerYAnchor],
-        [verify.heightAnchor constraintEqualToConstant:30],
+        [nameRow.trailingAnchor constraintLessThanOrEqualToAnchor:self.contentView.trailingAnchor constant:-16],
 
         [handleLabel.topAnchor constraintEqualToAnchor:nameRow.bottomAnchor constant:3],
         [handleLabel.leadingAnchor constraintEqualToAnchor:nameRow.leadingAnchor],
