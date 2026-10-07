@@ -343,7 +343,7 @@
     handleLabel.translatesAutoresizingMaskIntoConstraints=NO;
     handleLabel.accessibilityIdentifier=@"sx.profile.handle";
     // X profile appearance: usernameFont -> xds_spoofingResistantUsername_body.
-    handleLabel.font=[UIFont systemFontOfSize:15];
+    handleLabel.font=[UIFont systemFontOfSize:14];
     handleLabel.textColor=UIColor.secondaryLabelColor;
     handleLabel.text=handle;
     [self.contentView addSubview:handleLabel];
@@ -352,7 +352,7 @@
     bioLabel.translatesAutoresizingMaskIntoConstraints=NO;
     bioLabel.accessibilityIdentifier=@"sx.profile.bio";
     // X profile appearance: bioFont -> UIFont.xds_body.
-    bioLabel.font=[UIFont systemFontOfSize:15];
+    bioLabel.font=[UIFont systemFontOfSize:14];
     bioLabel.numberOfLines=0;
     bioLabel.text=bio;
     [self.contentView addSubview:bioLabel];
@@ -369,7 +369,7 @@
     UILabel *joinedLabel=[UILabel new];
     joinedLabel.translatesAutoresizingMaskIntoConstraints=NO;
     joinedLabel.accessibilityIdentifier=@"sx.profile.joined.label";
-    joinedLabel.font=[UIFont systemFontOfSize:14];
+    joinedLabel.font=[UIFont systemFontOfSize:13];
     joinedLabel.textColor=UIColor.secondaryLabelColor;
     joinedLabel.text=joined;
     [joinedContainer addSubview:joinedLabel];
@@ -399,15 +399,15 @@
     UILabel *countsLabel=[UILabel new];
     countsLabel.translatesAutoresizingMaskIntoConstraints=NO;
     countsLabel.accessibilityIdentifier=@"sx.profile.counts";
-    countsLabel.font=[UIFont systemFontOfSize:14];
+    countsLabel.font=[UIFont systemFontOfSize:13];
     countsLabel.textColor=UIColor.secondaryLabelColor;
     NSString *safeFollowing=following.length?following:@"—";
     NSString *safeFollowers=followers.length?followers:@"—";
     NSString *countsText=[NSString stringWithFormat:@"%@ フォロー中    %@ フォロワー",safeFollowing,safeFollowers];
-    NSMutableAttributedString *countsAttributed=[[NSMutableAttributedString alloc] initWithString:countsText attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:14],NSForegroundColorAttributeName:UIColor.secondaryLabelColor}];
+    NSMutableAttributedString *countsAttributed=[[NSMutableAttributedString alloc] initWithString:countsText attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:13],NSForegroundColorAttributeName:UIColor.secondaryLabelColor}];
     NSRange followingRange=[countsText rangeOfString:safeFollowing];
     NSRange followersRange=[countsText rangeOfString:safeFollowers options:0 range:NSMakeRange(NSMaxRange(followingRange),countsText.length-NSMaxRange(followingRange))];
-    NSDictionary *numberAttrs=@{NSFontAttributeName:[UIFont systemFontOfSize:14 weight:UIFontWeightSemibold],NSForegroundColorAttributeName:UIColor.labelColor};
+    NSDictionary *numberAttrs=@{NSFontAttributeName:[UIFont systemFontOfSize:13 weight:UIFontWeightSemibold],NSForegroundColorAttributeName:UIColor.labelColor};
     if(followingRange.location!=NSNotFound)[countsAttributed addAttributes:numberAttrs range:followingRange];
     if(followersRange.location!=NSNotFound)[countsAttributed addAttributes:numberAttrs range:followersRange];
     countsLabel.attributedText=countsAttributed;
@@ -482,10 +482,10 @@
 
         [nameRow.topAnchor constraintEqualToAnchor:avatar.bottomAnchor constant:14],
         [nameRow.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:16],
-        [nameRow.trailingAnchor constraintLessThanOrEqualToAnchor:editProfile.leadingAnchor constant:-8],
+        [nameRow.trailingAnchor constraintLessThanOrEqualToAnchor:self.contentView.trailingAnchor constant:-16],
 
         [editProfile.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
-        [editProfile.topAnchor constraintEqualToAnchor:nameRow.topAnchor constant:-4],
+        [editProfile.centerYAnchor constraintEqualToAnchor:banner.bottomAnchor constant:18],
         [editProfile.heightAnchor constraintEqualToConstant:34],
         [editProfile.widthAnchor constraintGreaterThanOrEqualToConstant:126],
 
