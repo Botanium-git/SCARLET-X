@@ -295,7 +295,7 @@
     nameLabel.translatesAutoresizingMaskIntoConstraints=NO;
     nameLabel.accessibilityIdentifier=@"sx.profile.name";
     // X profile appearance: fullNameFont -> UIFont.xds_bodyBold.
-    nameLabel.font=[UIFont systemFontOfSize:16 weight:UIFontWeightBold];
+    nameLabel.font=[UIFont systemFontOfSize:16 weight:UIFontWeightSemibold];
     nameLabel.text=name;
     nameLabel.lineBreakMode=NSLineBreakByTruncatingTail;
     [nameLabel setContentCompressionResistancePriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal];
@@ -343,7 +343,7 @@
     handleLabel.translatesAutoresizingMaskIntoConstraints=NO;
     handleLabel.accessibilityIdentifier=@"sx.profile.handle";
     // X profile appearance: usernameFont -> xds_spoofingResistantUsername_body.
-    handleLabel.font=[UIFont systemFontOfSize:13];
+    handleLabel.font=[UIFont systemFontOfSize:12];
     handleLabel.textColor=UIColor.secondaryLabelColor;
     handleLabel.text=handle;
     [self.contentView addSubview:handleLabel];
@@ -352,7 +352,7 @@
     bioLabel.translatesAutoresizingMaskIntoConstraints=NO;
     bioLabel.accessibilityIdentifier=@"sx.profile.bio";
     // X profile appearance: bioFont -> UIFont.xds_body.
-    bioLabel.font=[UIFont systemFontOfSize:13];
+    bioLabel.font=[UIFont systemFontOfSize:12];
     bioLabel.numberOfLines=0;
     bioLabel.text=bio;
     [self.contentView addSubview:bioLabel];
@@ -369,7 +369,7 @@
     UILabel *joinedLabel=[UILabel new];
     joinedLabel.translatesAutoresizingMaskIntoConstraints=NO;
     joinedLabel.accessibilityIdentifier=@"sx.profile.joined.label";
-    joinedLabel.font=[UIFont systemFontOfSize:12];
+    joinedLabel.font=[UIFont systemFontOfSize:11];
     joinedLabel.textColor=UIColor.secondaryLabelColor;
     joinedLabel.text=joined;
     [joinedContainer addSubview:joinedLabel];
@@ -399,15 +399,15 @@
     UILabel *countsLabel=[UILabel new];
     countsLabel.translatesAutoresizingMaskIntoConstraints=NO;
     countsLabel.accessibilityIdentifier=@"sx.profile.counts";
-    countsLabel.font=[UIFont systemFontOfSize:12];
+    countsLabel.font=[UIFont systemFontOfSize:11];
     countsLabel.textColor=UIColor.secondaryLabelColor;
     NSString *safeFollowing=following.length?following:@"—";
     NSString *safeFollowers=followers.length?followers:@"—";
     NSString *countsText=[NSString stringWithFormat:@"%@ フォロー中    %@ フォロワー",safeFollowing,safeFollowers];
-    NSMutableAttributedString *countsAttributed=[[NSMutableAttributedString alloc] initWithString:countsText attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:12],NSForegroundColorAttributeName:UIColor.secondaryLabelColor}];
+    NSMutableAttributedString *countsAttributed=[[NSMutableAttributedString alloc] initWithString:countsText attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:11],NSForegroundColorAttributeName:UIColor.secondaryLabelColor}];
     NSRange followingRange=[countsText rangeOfString:safeFollowing];
     NSRange followersRange=[countsText rangeOfString:safeFollowers options:0 range:NSMakeRange(NSMaxRange(followingRange),countsText.length-NSMaxRange(followingRange))];
-    NSDictionary *numberAttrs=@{NSFontAttributeName:[UIFont systemFontOfSize:12 weight:UIFontWeightSemibold],NSForegroundColorAttributeName:UIColor.labelColor};
+    NSDictionary *numberAttrs=@{NSFontAttributeName:[UIFont systemFontOfSize:11 weight:UIFontWeightSemibold],NSForegroundColorAttributeName:UIColor.labelColor};
     if(followingRange.location!=NSNotFound)[countsAttributed addAttributes:numberAttrs range:followingRange];
     if(followersRange.location!=NSNotFound)[countsAttributed addAttributes:numberAttrs range:followersRange];
     countsLabel.attributedText=countsAttributed;
@@ -487,7 +487,7 @@
         [editProfile.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
         [editProfile.centerYAnchor constraintEqualToAnchor:avatar.centerYAnchor],
         [editProfile.heightAnchor constraintEqualToConstant:34],
-        [editProfile.widthAnchor constraintGreaterThanOrEqualToConstant:126],
+        [editProfile.widthAnchor constraintGreaterThanOrEqualToConstant:142],
 
         [handleLabel.topAnchor constraintEqualToAnchor:nameRow.bottomAnchor constant:3],
         [handleLabel.leadingAnchor constraintEqualToAnchor:nameRow.leadingAnchor],
