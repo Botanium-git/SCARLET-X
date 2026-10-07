@@ -206,6 +206,9 @@
                                                   url:webView.URL];
                 dispatch_async(dispatch_get_main_queue(), ^{ [strongProfile applyProfileData:merged]; });
                 poll = nil;
+                if(profileCreatedAt.length==0 || ![profileMeta[@"protected"] respondsToSelector:@selector(boolValue)]){
+                    [self sx_211_startOfficialProfilePostLoadForScreenName:screenName userId:userId base:merged profile:strongProfile sourceWebView:webView];
+                }
                 return;
             }
 
