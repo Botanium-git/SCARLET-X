@@ -283,6 +283,7 @@
 
     UILabel *nameLabel=[UILabel new];
     nameLabel.translatesAutoresizingMaskIntoConstraints=NO;
+    nameLabel.accessibilityIdentifier=@"sx.profile.name";
     // X profile appearance: fullNameFont -> UIFont.xds_bodyBold.
     nameLabel.font=[UIFont systemFontOfSize:14 weight:UIFontWeightBold];
     nameLabel.text=name;
@@ -291,6 +292,7 @@
 
     UIStackView *nameRow=[UIStackView new];
     nameRow.translatesAutoresizingMaskIntoConstraints=NO;
+    nameRow.accessibilityIdentifier=@"sx.profile.name.row";
     nameRow.axis=UILayoutConstraintAxisHorizontal;
     nameRow.alignment=UIStackViewAlignmentCenter;
     nameRow.spacing=2.5;
@@ -309,7 +311,7 @@
         UIImageSymbolConfiguration *protectedConfig=[UIImageSymbolConfiguration configurationWithPointSize:14 weight:UIImageSymbolWeightSemibold];
         UIImageView *protectedBadge=[[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"lock.fill" withConfiguration:protectedConfig]];
         protectedBadge.translatesAutoresizingMaskIntoConstraints=NO;
-        protectedBadge.tintColor=UIColor.secondaryLabelColor;
+        protectedBadge.tintColor=UIColor.labelColor;
         [nameRow addArrangedSubview:protectedBadge];
         [protectedBadge.widthAnchor constraintEqualToConstant:18].active=YES;
         [protectedBadge.heightAnchor constraintEqualToConstant:18].active=YES;
@@ -318,6 +320,7 @@
 
     UIButton *verify=[UIButton buttonWithType:UIButtonTypeSystem];
     verify.translatesAutoresizingMaskIntoConstraints=NO;
+    verify.accessibilityIdentifier=@"sx.profile.verify";
     [verify setTitle:@"認証を受ける" forState:UIControlStateNormal];
     [verify setImage:[UIImage systemImageNamed:@"checkmark.seal.fill"] forState:UIControlStateNormal];
     verify.tintColor=UIColor.systemBlueColor;
@@ -330,6 +333,7 @@
 
     UILabel *handleLabel=[UILabel new];
     handleLabel.translatesAutoresizingMaskIntoConstraints=NO;
+    handleLabel.accessibilityIdentifier=@"sx.profile.handle";
     // X profile appearance: usernameFont -> xds_spoofingResistantUsername_body.
     handleLabel.font=[UIFont systemFontOfSize:14];
     handleLabel.textColor=UIColor.secondaryLabelColor;
@@ -338,6 +342,7 @@
 
     UILabel *bioLabel=[UILabel new];
     bioLabel.translatesAutoresizingMaskIntoConstraints=NO;
+    bioLabel.accessibilityIdentifier=@"sx.profile.bio";
     // X profile appearance: bioFont -> UIFont.xds_body.
     bioLabel.font=[UIFont systemFontOfSize:14];
     bioLabel.numberOfLines=0;
@@ -356,10 +361,16 @@
     UILabel *joinedLabel=[UILabel new];
     joinedLabel.translatesAutoresizingMaskIntoConstraints=NO;
     joinedLabel.accessibilityIdentifier=@"sx.profile.joined.label";
-    joinedLabel.font=[UIFont systemFontOfSize:14];
+    joinedLabel.font=[UIFont systemFontOfSize:13];
     joinedLabel.textColor=UIColor.secondaryLabelColor;
     joinedLabel.text=joined;
     [joinedContainer addSubview:joinedLabel];
+    UIImageView *joinedChevron=[UIImageView new];
+    joinedChevron.translatesAutoresizingMaskIntoConstraints=NO;
+    joinedChevron.image=[UIImage systemImageNamed:@"chevron.right"];
+    joinedChevron.tintColor=UIColor.tertiaryLabelColor;
+    joinedChevron.contentMode=UIViewContentModeScaleAspectFit;
+    [joinedContainer addSubview:joinedChevron];
     [NSLayoutConstraint activateConstraints:@[
         [calendar.leadingAnchor constraintEqualToAnchor:joinedContainer.leadingAnchor],
         [calendar.centerYAnchor constraintEqualToAnchor:joinedContainer.centerYAnchor],
@@ -367,7 +378,11 @@
         [calendar.heightAnchor constraintEqualToConstant:16],
         [joinedLabel.leadingAnchor constraintEqualToAnchor:calendar.trailingAnchor constant:6],
         [joinedLabel.centerYAnchor constraintEqualToAnchor:joinedContainer.centerYAnchor],
-        [joinedLabel.trailingAnchor constraintLessThanOrEqualToAnchor:joinedContainer.trailingAnchor]
+        [joinedChevron.leadingAnchor constraintEqualToAnchor:joinedLabel.trailingAnchor constant:4],
+        [joinedChevron.centerYAnchor constraintEqualToAnchor:joinedContainer.centerYAnchor],
+        [joinedChevron.widthAnchor constraintEqualToConstant:8],
+        [joinedChevron.heightAnchor constraintEqualToConstant:12],
+        [joinedChevron.trailingAnchor constraintLessThanOrEqualToAnchor:joinedContainer.trailingAnchor]
     ]];
     NSLayoutConstraint *joinedHeight=[joinedContainer.heightAnchor constraintEqualToConstant:(joined.length?20:0)];
     joinedHeight.identifier=@"sx.profile.joined.height";
@@ -375,6 +390,7 @@
 
     UILabel *countsLabel=[UILabel new];
     countsLabel.translatesAutoresizingMaskIntoConstraints=NO;
+    countsLabel.accessibilityIdentifier=@"sx.profile.counts";
     countsLabel.font=[UIFont systemFontOfSize:14];
     countsLabel.textColor=UIColor.secondaryLabelColor;
     NSString *safeFollowing=following.length?following:@"—";
@@ -494,7 +510,7 @@
         [tabBar.topAnchor constraintEqualToAnchor:separator.bottomAnchor],
         [tabBar.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor],
         [tabBar.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor],
-        [tabBar.heightAnchor constraintEqualToConstant:58],
+        [tabBar.heightAnchor constraintEqualToConstant:52],
 
         [tabsBottomBorder.topAnchor constraintEqualToAnchor:tabBar.bottomAnchor],
         [tabsBottomBorder.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor],

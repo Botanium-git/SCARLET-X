@@ -469,9 +469,9 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
         CGFloat proofFontSize = SX278SocialProofFontSize(w);
         self.repostLabel.font = [UIFont systemFontOfSize:proofFontSize weight:UIFontWeightRegular];
         CGFloat labelHeight = ceil(self.repostLabel.font.lineHeight);
-        CGFloat iconY = y + MAX(3.0, floor((proofHeight - 12.0) * 0.5));
         CGFloat labelY = y + MAX(1.0, floor((proofHeight - labelHeight) * 0.5));
-        self.repostIcon.frame = CGRectMake(36.0, iconY, 12.0, 12.0);
+        CGFloat iconY = labelY + floor((labelHeight - 12.0) * 0.5);
+        self.repostIcon.frame = CGRectMake(38.0, iconY, 12.0, 12.0);
         self.repostLabel.frame = CGRectMake(56.0, labelY, MAX(0.0, w - 68.0), labelHeight);
         y += proofHeight;
     } else {

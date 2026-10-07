@@ -66,113 +66,43 @@
     UIView *content=[self sx230_contentView];
     if(!content)return;
 
-    NSMutableArray<UILabel *> *labels=[NSMutableArray array];
-    NSMutableArray<UIImageView *> *images=[NSMutableArray array];
-    UIButton *verify=nil;
-    UIStackView *actions=nil;
-    UIStackView *tabs=nil;
-
-    for(UIView *view in content.subviews){
-        if([view isKindOfClass:UILabel.class]){
-            [labels addObject:(UILabel *)view];
-        } else if([view isKindOfClass:UIImageView.class]){
-            [images addObject:(UIImageView *)view];
-        } else if([view isKindOfClass:UIButton.class]){
-            UIButton *button=(UIButton *)view;
-            NSString *title=[button titleForState:UIControlStateNormal]?:@"";
-            if([title isEqualToString:@"認証を受ける"])verify=button;
-        } else if([view isKindOfClass:UIStackView.class]){
-            UIStackView *stack=(UIStackView *)view;
-            if(stack.axis==UILayoutConstraintAxisHorizontal&&stack.arrangedSubviews.count==2)actions=stack;
-            else if(stack.axis==UILayoutConstraintAxisHorizontal&&stack.arrangedSubviews.count==4)tabs=stack;
-        }
-    }
-
-    UILabel *nameLabel=labels.count>0?labels[0]:nil;
-    UILabel *handleLabel=labels.count>1?labels[1]:nil;
-    UILabel *bioLabel=labels.count>2?labels[2]:nil;
-    UILabel *countsLabel=labels.count>3?labels[3]:nil;
-    UIImageView *banner=images.count>0?images[0]:nil;
-    UIImageView *avatar=images.count>1?images[1]:nil;
-
-    nameLabel.font=[UIFont systemFontOfSize:19 weight:UIFontWeightBold];
-    handleLabel.font=[UIFont systemFontOfSize:14];
-    bioLabel.font=[UIFont systemFontOfSize:14];
-    countsLabel.font=[UIFont systemFontOfSize:13];
-
+    UILabel *nameLabel=(UILabel *)[self sx230_findAccessibilityIdentifier:@"sx.profile.name" inView:content];
+    UIStackView *nameRow=(UIStackView *)[self sx230_findAccessibilityIdentifier:@"sx.profile.name.row" inView:content];
+    UILabel *handleLabel=(UILabel *)[self sx230_findAccessibilityIdentifier:@"sx.profile.handle" inView:content];
+    UILabel *bioLabel=(UILabel *)[self sx230_findAccessibilityIdentifier:@"sx.profile.bio" inView:content];
+    UILabel *countsLabel=(UILabel *)[self sx230_findAccessibilityIdentifier:@"sx.profile.counts" inView:content];
     UIView *joinedContainer=[self sx230_findAccessibilityIdentifier:@"sx.profile.joined.container" inView:content];
     UILabel *joinedLabel=(UILabel *)[self sx230_findAccessibilityIdentifier:@"sx.profile.joined.label" inView:content];
-    if([joinedLabel isKindOfClass:UILabel.class])joinedLabel.font=[UIFont systemFontOfSize:13];
-    if([joinedContainer isKindOfClass:UIView.class])joinedContainer.hidden=(joinedLabel.text.length==0);
+    UIButton *verify=(UIButton *)[self sx230_findAccessibilityIdentifier:@"sx.profile.verify" inView:content];
 
-    if(verify){
-        verify.titleLabel.font=[UIFont systemFontOfSize:12.5 weight:UIFontWeightSemibold];
-        verify.layer.cornerRadius=14;
-        for(NSLayoutConstraint *constraint in [content.constraints copy]){
-            BOOL trailing=(constraint.firstItem==verify&&constraint.firstAttribute==NSLayoutAttributeTrailing&&constraint.secondItem==content);
-            BOOL nameToVerify=(constraint.firstItem==nameLabel&&constraint.firstAttribute==NSLayoutAttributeTrailing&&constraint.secondItem==verify&&constraint.secondAttribute==NSLayoutAttributeLeading);
-            if(trailing||nameToVerify)constraint.active=NO;
-        }
-        for(NSLayoutConstraint *constraint in verify.constraints){
-            if(constraint.firstAttribute==NSLayoutAttributeHeight&&constraint.secondItem==nil)constraint.constant=28;
-        }
-        if(nameLabel){
-            [NSLayoutConstraint activateConstraints:@[
-                [verify.leadingAnchor constraintEqualToAnchor:nameLabel.trailingAnchor constant:8],
-                [verify.trailingAnchor constraintLessThanOrEqualToAnchor:content.trailingAnchor constant:-16]
-            ]];
-            [nameLabel setContentCompressionResistancePriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal];
-            [verify setContentCompressionResistancePriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
-        }
+    if([nameLabel isKindOfClass:UILabel.class]) nameLabel.font=[UIFont systemFontOfSize:14 weight:UIFontWeightBold];
+    if([handleLabel isKindOfClass:UILabel.class]) handleLabel.font=[UIFont systemFontOfSize:14];
+    if([bioLabel isKindOfClass:UILabel.class]) bioLabel.font=[UIFont systemFontOfSize:14];
+    if([countsLabel isKindOfClass:UILabel.class]) countsLabel.font=[UIFont systemFontOfSize:14];
+    if([joinedLabel isKindOfClass:UILabel.class]) joinedLabel.font=[UIFont systemFontOfSize:13];
+    if([joinedContainer isKindOfClass:UIView.class]) joinedContainer.hidden=(joinedLabel.text.length==0);
+
+    if([verify isKindOfClass:UIButton.class]){
+        verify.titleLabel.font=[UIFont systemFontOfSize:13 weight:UIFontWeightSemibold];
+        verify.layer.cornerRadius=15;
+        [verify setContentCompressionResistancePriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
+        [verify setContentHuggingPriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
+    }
+    if([nameRow isKindOfClass:UIStackView.class]){
+        nameRow.spacing=2.5;
+        [nameRow setContentCompressionResistancePriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal];
     }
 
-    for(NSLayoutConstraint *constraint in content.constraints){
-        if(constraint.firstItem==nameLabel&&constraint.firstAttribute==NSLayoutAttributeTop&&constraint.secondItem==avatar&&constraint.secondAttribute==NSLayoutAttributeBottom)constraint.constant=10;
-        else if(constraint.firstItem==handleLabel&&constraint.firstAttribute==NSLayoutAttributeTop&&constraint.secondItem==nameLabel&&constraint.secondAttribute==NSLayoutAttributeBottom)constraint.constant=1;
-        else if(constraint.firstItem==bioLabel&&constraint.firstAttribute==NSLayoutAttributeTop&&constraint.secondItem==handleLabel&&constraint.secondAttribute==NSLayoutAttributeBottom)constraint.constant=12;
-        else if(constraint.firstItem==joinedContainer&&constraint.firstAttribute==NSLayoutAttributeTop&&constraint.secondItem==bioLabel&&constraint.secondAttribute==NSLayoutAttributeBottom)constraint.constant=8;
-        else if(constraint.firstItem==countsLabel&&constraint.firstAttribute==NSLayoutAttributeTop&&constraint.secondItem==joinedContainer&&constraint.secondAttribute==NSLayoutAttributeBottom)constraint.constant=8;
-    }
-
-    if(actions&&actions.arrangedSubviews.count>=2&&banner&&countsLabel){
-        UIButton *edit=[actions.arrangedSubviews[1] isKindOfClass:UIButton.class]?(UIButton *)actions.arrangedSubviews[1]:nil;
-        UIView *separator=nil;
-        NSMutableArray<NSLayoutConstraint *> *remove=[NSMutableArray array];
-        for(NSLayoutConstraint *constraint in content.constraints){
-            if(constraint.firstItem==actions||constraint.secondItem==actions){
-                if(constraint.firstItem!=actions&&constraint.firstAttribute==NSLayoutAttributeTop&&constraint.secondItem==actions&&constraint.secondAttribute==NSLayoutAttributeBottom)separator=constraint.firstItem;
-                [remove addObject:constraint];
-            }
-        }
-        [NSLayoutConstraint deactivateConstraints:remove];
-        if(edit){
-            [actions removeArrangedSubview:edit];
-            [edit removeFromSuperview];
-        }
-        [actions removeFromSuperview];
-
-        if(edit){
-            edit.translatesAutoresizingMaskIntoConstraints=NO;
-            edit.titleLabel.font=[UIFont systemFontOfSize:14 weight:UIFontWeightSemibold];
-            edit.layer.cornerRadius=18;
-            [content addSubview:edit];
-            [NSLayoutConstraint activateConstraints:@[
-                [edit.trailingAnchor constraintEqualToAnchor:content.trailingAnchor constant:-16],
-                [edit.topAnchor constraintEqualToAnchor:banner.bottomAnchor constant:12],
-                [edit.heightAnchor constraintEqualToConstant:36],
-                [edit.widthAnchor constraintGreaterThanOrEqualToConstant:156]
-            ]];
-        }
-        if(separator){
-            [NSLayoutConstraint activateConstraints:@[
-                [separator.topAnchor constraintEqualToAnchor:countsLabel.bottomAnchor constant:20]
-            ]];
+    UIStackView *tabs=nil;
+    for(UIView *view in content.subviews){
+        if([view isKindOfClass:UIStackView.class]){
+            UIStackView *stack=(UIStackView *)view;
+            if(stack.axis==UILayoutConstraintAxisHorizontal&&stack.arrangedSubviews.count==4){tabs=stack;break;}
         }
     }
-
     if(tabs){
-        for(NSLayoutConstraint *constraint in tabs.constraints){
-            if(constraint.firstAttribute==NSLayoutAttributeHeight&&constraint.secondItem==nil)constraint.constant=52;
+        for(NSLayoutConstraint *constraint in content.constraints){
+            if(constraint.firstItem==tabs&&constraint.firstAttribute==NSLayoutAttributeHeight&&constraint.secondItem==nil) constraint.constant=52;
         }
         UIImageSymbolConfiguration *config=[UIImageSymbolConfiguration configurationWithPointSize:18 weight:UIImageSymbolWeightRegular];
         for(UIView *container in tabs.arrangedSubviews){
@@ -207,5 +137,6 @@
     [content setNeedsLayout];
     [content layoutIfNeeded];
 }
+
 
 @end
