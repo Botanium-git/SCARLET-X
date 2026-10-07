@@ -328,7 +328,6 @@
     verify.layer.cornerRadius=15;
     verify.layer.borderWidth=1;
     verify.layer.borderColor=UIColor.separatorColor.CGColor;
-    verify.contentEdgeInsets=UIEdgeInsetsMake(0,9,0,9);
     [verify setContentCompressionResistancePriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
     [verify setContentHuggingPriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
     [nameRow addArrangedSubview:verify];
