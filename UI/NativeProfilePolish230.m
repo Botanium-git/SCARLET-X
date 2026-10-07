@@ -75,11 +75,11 @@
     UILabel *joinedLabel=(UILabel *)[self sx230_findAccessibilityIdentifier:@"sx.profile.joined.label" inView:content];
     UIButton *edit=(UIButton *)[self sx230_findAccessibilityIdentifier:@"sx.profile.edit" inView:content];
 
-    if([nameLabel isKindOfClass:UILabel.class]) nameLabel.font=[UIFont systemFontOfSize:16 weight:UIFontWeightBold];
-    if([handleLabel isKindOfClass:UILabel.class]) handleLabel.font=[UIFont systemFontOfSize:13];
-    if([bioLabel isKindOfClass:UILabel.class]) bioLabel.font=[UIFont systemFontOfSize:13];
-    if([countsLabel isKindOfClass:UILabel.class]) countsLabel.font=[UIFont systemFontOfSize:12];
-    if([joinedLabel isKindOfClass:UILabel.class]) joinedLabel.font=[UIFont systemFontOfSize:12];
+    if([nameLabel isKindOfClass:UILabel.class]) nameLabel.font=[UIFont systemFontOfSize:16 weight:UIFontWeightSemibold];
+    if([handleLabel isKindOfClass:UILabel.class]) handleLabel.font=[UIFont systemFontOfSize:12];
+    if([bioLabel isKindOfClass:UILabel.class]) bioLabel.font=[UIFont systemFontOfSize:12];
+    if([countsLabel isKindOfClass:UILabel.class]) countsLabel.font=[UIFont systemFontOfSize:11];
+    if([joinedLabel isKindOfClass:UILabel.class]) joinedLabel.font=[UIFont systemFontOfSize:11];
     if([joinedContainer isKindOfClass:UIView.class]) joinedContainer.hidden=(joinedLabel.text.length==0);
 
     if([edit isKindOfClass:UIButton.class]){
