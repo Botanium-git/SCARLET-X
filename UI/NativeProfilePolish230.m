@@ -73,20 +73,20 @@
     UILabel *countsLabel=(UILabel *)[self sx230_findAccessibilityIdentifier:@"sx.profile.counts" inView:content];
     UIView *joinedContainer=[self sx230_findAccessibilityIdentifier:@"sx.profile.joined.container" inView:content];
     UILabel *joinedLabel=(UILabel *)[self sx230_findAccessibilityIdentifier:@"sx.profile.joined.label" inView:content];
-    UIButton *verify=(UIButton *)[self sx230_findAccessibilityIdentifier:@"sx.profile.verify" inView:content];
+    UIButton *edit=(UIButton *)[self sx230_findAccessibilityIdentifier:@"sx.profile.edit" inView:content];
 
-    if([nameLabel isKindOfClass:UILabel.class]) nameLabel.font=[UIFont systemFontOfSize:14 weight:UIFontWeightBold];
-    if([handleLabel isKindOfClass:UILabel.class]) handleLabel.font=[UIFont systemFontOfSize:14];
-    if([bioLabel isKindOfClass:UILabel.class]) bioLabel.font=[UIFont systemFontOfSize:14];
+    if([nameLabel isKindOfClass:UILabel.class]) nameLabel.font=[UIFont systemFontOfSize:17 weight:UIFontWeightBold];
+    if([handleLabel isKindOfClass:UILabel.class]) handleLabel.font=[UIFont systemFontOfSize:15];
+    if([bioLabel isKindOfClass:UILabel.class]) bioLabel.font=[UIFont systemFontOfSize:15];
     if([countsLabel isKindOfClass:UILabel.class]) countsLabel.font=[UIFont systemFontOfSize:14];
-    if([joinedLabel isKindOfClass:UILabel.class]) joinedLabel.font=[UIFont systemFontOfSize:13];
+    if([joinedLabel isKindOfClass:UILabel.class]) joinedLabel.font=[UIFont systemFontOfSize:14];
     if([joinedContainer isKindOfClass:UIView.class]) joinedContainer.hidden=(joinedLabel.text.length==0);
 
-    if([verify isKindOfClass:UIButton.class]){
-        verify.titleLabel.font=[UIFont systemFontOfSize:13 weight:UIFontWeightSemibold];
-        verify.layer.cornerRadius=15;
-        [verify setContentCompressionResistancePriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
-        [verify setContentHuggingPriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
+    if([edit isKindOfClass:UIButton.class]){
+        edit.titleLabel.font=[UIFont systemFontOfSize:14 weight:UIFontWeightSemibold];
+        edit.layer.cornerRadius=17;
+        [edit setContentCompressionResistancePriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
+        [edit setContentHuggingPriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
     }
     if([nameRow isKindOfClass:UIStackView.class]){
         nameRow.spacing=2.5;
