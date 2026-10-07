@@ -292,7 +292,7 @@
     nameRow.translatesAutoresizingMaskIntoConstraints=NO;
     nameRow.axis=UILayoutConstraintAxisHorizontal;
     nameRow.alignment=UIStackViewAlignmentCenter;
-    nameRow.spacing=4;
+    nameRow.spacing=2.5;
     [nameRow addArrangedSubview:nameLabel];
 
     if(verified){
@@ -305,13 +305,13 @@
         [verifiedBadge.heightAnchor constraintEqualToConstant:18].active=YES;
     }
     if(protectedAccount){
-        UIImageSymbolConfiguration *protectedConfig=[UIImageSymbolConfiguration configurationWithPointSize:13 weight:UIImageSymbolWeightSemibold];
+        UIImageSymbolConfiguration *protectedConfig=[UIImageSymbolConfiguration configurationWithPointSize:14 weight:UIImageSymbolWeightSemibold];
         UIImageView *protectedBadge=[[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"lock.fill" withConfiguration:protectedConfig]];
         protectedBadge.translatesAutoresizingMaskIntoConstraints=NO;
         protectedBadge.tintColor=UIColor.secondaryLabelColor;
         [nameRow addArrangedSubview:protectedBadge];
-        [protectedBadge.widthAnchor constraintEqualToConstant:14].active=YES;
-        [protectedBadge.heightAnchor constraintEqualToConstant:14].active=YES;
+        [protectedBadge.widthAnchor constraintEqualToConstant:18].active=YES;
+        [protectedBadge.heightAnchor constraintEqualToConstant:18].active=YES;
     }
     [self.contentView addSubview:nameRow];
 
