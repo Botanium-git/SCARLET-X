@@ -317,13 +317,14 @@
         [verifiedBadge.widthAnchor constraintEqualToConstant:18].active=YES;
         [verifiedBadge.heightAnchor constraintEqualToConstant:18].active=YES;
     }
-    if(protectedAccount){
+    {
         UIImageSymbolConfiguration *protectedConfig=[UIImageSymbolConfiguration configurationWithPointSize:14 weight:UIImageSymbolWeightSemibold];
         UIImageView *protectedBadge=[[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"lock.fill" withConfiguration:protectedConfig]];
         protectedBadge.translatesAutoresizingMaskIntoConstraints=NO;
         protectedBadge.accessibilityIdentifier=@"sx.profile.protected";
         protectedBadge.tintColor=UIColor.labelColor;
         protectedBadge.contentMode=UIViewContentModeCenter;
+        protectedBadge.hidden=!protectedAccount;
         [protectedBadge setContentHuggingPriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
         [protectedBadge setContentCompressionResistancePriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
         [nameRow addArrangedSubview:protectedBadge];
