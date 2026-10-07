@@ -711,6 +711,69 @@ static void SX278ResizeHeader(NativeProfileViewController *profile) {
     table.tableHeaderView = header;
 }
 
+static UIView *SX278FindIdentifier(UIView *root, NSString *identifier) {
+    if (!root || identifier.length == 0) return nil;
+    if ([root.accessibilityIdentifier isEqualToString:identifier]) return root;
+    for (UIView *sub in root.subviews) {
+        UIView *found = SX278FindIdentifier(sub, identifier);
+        if (found) return found;
+    }
+    return nil;
+}
+
+static NSString *SX278JoinedText(NSString *raw) {
+    if (raw.length == 0) return @"";
+    NSDate *date = nil;
+    NSDateFormatter *legacy = [NSDateFormatter new];
+    legacy.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
+    legacy.dateFormat = @"EEE MMM dd HH:mm:ss Z yyyy";
+    date = [legacy dateFromString:raw];
+    if (!date) {
+        NSISO8601DateFormatter *iso = [NSISO8601DateFormatter new];
+        iso.formatOptions = NSISO8601DateFormatWithInternetDateTime | NSISO8601DateFormatWithFractionalSeconds;
+        date = [iso dateFromString:raw];
+        if (!date) {
+            iso.formatOptions = NSISO8601DateFormatWithInternetDateTime;
+            date = [iso dateFromString:raw];
+        }
+    }
+    if (!date) return @"";
+    NSDateFormatter *out = [NSDateFormatter new];
+    out.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"ja_JP"];
+    out.dateFormat = @"yyyy年M月";
+    return [NSString stringWithFormat:@"%@からXを利用しています", [out stringFromDate:date]];
+}
+
+static void SX278RefreshHeaderMetadata(NativeProfileViewController *profile) {
+    UITableView *table = objc_getAssociatedObject(profile, &SX278TableKey);
+    UIView *header = table.tableHeaderView;
+    NSDictionary *data = [profile.profileData isKindOfClass:NSDictionary.class] ? profile.profileData : @{};
+    if (!header) return;
+
+    UIImageView *lock = (UIImageView *)SX278FindIdentifier(header, @"sx.profile.protected");
+    if ([lock isKindOfClass:UIImageView.class]) {
+        BOOL protectedAccount = [data[@"protected"] respondsToSelector:@selector(boolValue)] && [data[@"protected"] boolValue];
+        lock.hidden = !protectedAccount;
+    }
+
+    UILabel *joinedLabel = (UILabel *)SX278FindIdentifier(header, @"sx.profile.joined.label");
+    UIView *joinedContainer = SX278FindIdentifier(header, @"sx.profile.joined.container");
+    NSString *joined = [data[@"joinedText"] isKindOfClass:NSString.class] ? data[@"joinedText"] : @"";
+    if (joined.length == 0) {
+        NSString *raw = [data[@"createdAt"] isKindOfClass:NSString.class] ? data[@"createdAt"] : @"";
+        joined = SX278JoinedText(raw);
+    }
+    if ([joinedLabel isKindOfClass:UILabel.class]) joinedLabel.text = joined;
+    if ([joinedContainer isKindOfClass:UIView.class]) {
+        joinedContainer.hidden = (joined.length == 0);
+        for (NSLayoutConstraint *constraint in joinedContainer.constraints) {
+            if ([constraint.identifier isEqualToString:@"sx.profile.joined.height"]) constraint.constant = joined.length ? 20.0 : 0.0;
+        }
+    }
+    [header setNeedsLayout];
+    [header layoutIfNeeded];
+}
+
 static void SX278Reload(NativeProfileViewController *profile) {
     UITableView *table = objc_getAssociatedObject(profile, &SX278TableKey);
     if (!table) return;
@@ -826,6 +889,7 @@ static void SX278SetProfileData(id obj, SEL cmd, NSDictionary *data) {
         }
 
         if (oldTab == newTab && oldItems.count == newItems.count && [oldItems isEqual:newItems]) {
+            SX278RefreshHeaderMetadata(strong);
             SX278ResizeHeader(strong);
             return;
         }
