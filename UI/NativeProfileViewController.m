@@ -295,7 +295,7 @@
     nameLabel.translatesAutoresizingMaskIntoConstraints=NO;
     nameLabel.accessibilityIdentifier=@"sx.profile.name";
     // X profile appearance: fullNameFont -> UIFont.xds_bodyBold.
-    nameLabel.font=[UIFont systemFontOfSize:14 weight:UIFontWeightBold];
+    nameLabel.font=[UIFont systemFontOfSize:17 weight:UIFontWeightBold];
     nameLabel.text=name;
     nameLabel.lineBreakMode=NSLineBreakByTruncatingTail;
     [nameLabel setContentCompressionResistancePriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal];
@@ -331,21 +331,11 @@
         [[protectedBadge.widthAnchor constraintEqualToConstant:18] setActive:YES];
         [[protectedBadge.heightAnchor constraintEqualToConstant:18] setActive:YES];
     }
-    UIButton *verify=[UIButton buttonWithType:UIButtonTypeSystem];
-    verify.translatesAutoresizingMaskIntoConstraints=NO;
-    verify.accessibilityIdentifier=@"sx.profile.verify";
-    [verify setTitle:@"認証を受ける" forState:UIControlStateNormal];
-    [verify setImage:[UIImage systemImageNamed:@"checkmark.seal.fill"] forState:UIControlStateNormal];
-    verify.tintColor=UIColor.systemBlueColor;
-    [verify setTitleColor:UIColor.labelColor forState:UIControlStateNormal];
-    verify.titleLabel.font=[UIFont systemFontOfSize:13 weight:UIFontWeightSemibold];
-    verify.layer.cornerRadius=15;
-    verify.layer.borderWidth=1;
-    verify.layer.borderColor=UIColor.separatorColor.CGColor;
-    [verify setContentCompressionResistancePriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
-    [verify setContentHuggingPriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
-    [nameRow addArrangedSubview:verify];
-    [verify.heightAnchor constraintEqualToConstant:30].active=YES;
+    UIButton *editProfile=[self profileActionButtonWithTitle:@"プロフィールを編集"];
+    editProfile.accessibilityIdentifier=@"sx.profile.edit";
+    editProfile.titleLabel.font=[UIFont systemFontOfSize:14 weight:UIFontWeightSemibold];
+    editProfile.layer.cornerRadius=17;
+    [self.contentView addSubview:editProfile];
 
     [self.contentView addSubview:nameRow];
 
@@ -353,7 +343,7 @@
     handleLabel.translatesAutoresizingMaskIntoConstraints=NO;
     handleLabel.accessibilityIdentifier=@"sx.profile.handle";
     // X profile appearance: usernameFont -> xds_spoofingResistantUsername_body.
-    handleLabel.font=[UIFont systemFontOfSize:14];
+    handleLabel.font=[UIFont systemFontOfSize:15];
     handleLabel.textColor=UIColor.secondaryLabelColor;
     handleLabel.text=handle;
     [self.contentView addSubview:handleLabel];
@@ -362,7 +352,7 @@
     bioLabel.translatesAutoresizingMaskIntoConstraints=NO;
     bioLabel.accessibilityIdentifier=@"sx.profile.bio";
     // X profile appearance: bioFont -> UIFont.xds_body.
-    bioLabel.font=[UIFont systemFontOfSize:14];
+    bioLabel.font=[UIFont systemFontOfSize:15];
     bioLabel.numberOfLines=0;
     bioLabel.text=bio;
     [self.contentView addSubview:bioLabel];
@@ -379,7 +369,7 @@
     UILabel *joinedLabel=[UILabel new];
     joinedLabel.translatesAutoresizingMaskIntoConstraints=NO;
     joinedLabel.accessibilityIdentifier=@"sx.profile.joined.label";
-    joinedLabel.font=[UIFont systemFontOfSize:13];
+    joinedLabel.font=[UIFont systemFontOfSize:14];
     joinedLabel.textColor=UIColor.secondaryLabelColor;
     joinedLabel.text=joined;
     [joinedContainer addSubview:joinedLabel];
@@ -422,15 +412,6 @@
     if(followersRange.location!=NSNotFound)[countsAttributed addAttributes:numberAttrs range:followersRange];
     countsLabel.attributedText=countsAttributed;
     [self.contentView addSubview:countsLabel];
-
-    UIStackView *actions=[UIStackView new];
-    actions.translatesAutoresizingMaskIntoConstraints=NO;
-    actions.axis=UILayoutConstraintAxisHorizontal;
-    actions.spacing=8;
-    actions.distribution=UIStackViewDistributionFillEqually;
-    [actions addArrangedSubview:[self profileActionButtonWithTitle:@"プロフィールを共有"]];
-    [actions addArrangedSubview:[self profileActionButtonWithTitle:@"プロフィールを編集"]];
-    [self.contentView addSubview:actions];
 
     UIView *separator=[UIView new];
     separator.translatesAutoresizingMaskIntoConstraints=NO;
@@ -501,7 +482,12 @@
 
         [nameRow.topAnchor constraintEqualToAnchor:avatar.bottomAnchor constant:14],
         [nameRow.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:16],
-        [nameRow.trailingAnchor constraintLessThanOrEqualToAnchor:self.contentView.trailingAnchor constant:-16],
+        [nameRow.trailingAnchor constraintLessThanOrEqualToAnchor:editProfile.leadingAnchor constant:-8],
+
+        [editProfile.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
+        [editProfile.topAnchor constraintEqualToAnchor:nameRow.topAnchor constant:-4],
+        [editProfile.heightAnchor constraintEqualToConstant:34],
+        [editProfile.widthAnchor constraintGreaterThanOrEqualToConstant:126],
 
         [handleLabel.topAnchor constraintEqualToAnchor:nameRow.bottomAnchor constant:3],
         [handleLabel.leadingAnchor constraintEqualToAnchor:nameRow.leadingAnchor],
@@ -519,12 +505,7 @@
         [countsLabel.leadingAnchor constraintEqualToAnchor:nameRow.leadingAnchor],
         [countsLabel.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
 
-        [actions.topAnchor constraintEqualToAnchor:countsLabel.bottomAnchor constant:12],
-        [actions.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:16],
-        [actions.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
-        [actions.heightAnchor constraintEqualToConstant:42],
-
-        [separator.topAnchor constraintEqualToAnchor:actions.bottomAnchor constant:12],
+        [separator.topAnchor constraintEqualToAnchor:countsLabel.bottomAnchor constant:14],
         [separator.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor],
         [separator.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor],
         [separator.heightAnchor constraintEqualToConstant:.5],
