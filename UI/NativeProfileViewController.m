@@ -215,7 +215,7 @@
     button.translatesAutoresizingMaskIntoConstraints=NO;
     [button setTitle:title forState:UIControlStateNormal];
     [button setTitleColor:UIColor.labelColor forState:UIControlStateNormal];
-    button.titleLabel.font=[UIFont systemFontOfSize:15 weight:UIFontWeightSemibold];
+    button.titleLabel.font=[UIFont systemFontOfSize:14 weight:UIFontWeightSemibold];
     button.layer.cornerRadius=20;
     button.layer.borderWidth=1;
     button.layer.borderColor=UIColor.separatorColor.CGColor;
@@ -283,7 +283,8 @@
 
     UILabel *nameLabel=[UILabel new];
     nameLabel.translatesAutoresizingMaskIntoConstraints=NO;
-    nameLabel.font=[UIFont systemFontOfSize:20 weight:UIFontWeightBold];
+    // X profile appearance: fullNameFont -> UIFont.xds_bodyBold.
+    nameLabel.font=[UIFont systemFontOfSize:14 weight:UIFontWeightBold];
     nameLabel.text=name;
     nameLabel.lineBreakMode=NSLineBreakByTruncatingTail;
     [nameLabel setContentCompressionResistancePriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal];
@@ -329,14 +330,16 @@
 
     UILabel *handleLabel=[UILabel new];
     handleLabel.translatesAutoresizingMaskIntoConstraints=NO;
-    handleLabel.font=[UIFont systemFontOfSize:15];
+    // X profile appearance: usernameFont -> xds_spoofingResistantUsername_body.
+    handleLabel.font=[UIFont systemFontOfSize:14];
     handleLabel.textColor=UIColor.secondaryLabelColor;
     handleLabel.text=handle;
     [self.contentView addSubview:handleLabel];
 
     UILabel *bioLabel=[UILabel new];
     bioLabel.translatesAutoresizingMaskIntoConstraints=NO;
-    bioLabel.font=[UIFont systemFontOfSize:15];
+    // X profile appearance: bioFont -> UIFont.xds_body.
+    bioLabel.font=[UIFont systemFontOfSize:14];
     bioLabel.numberOfLines=0;
     bioLabel.text=bio;
     [self.contentView addSubview:bioLabel];

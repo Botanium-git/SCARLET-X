@@ -163,15 +163,15 @@ static CGFloat SX278TextHeight(NSString *text, CGFloat width) {
 
 static CGFloat SX278PostHeight(NSDictionary *post, CGFloat width) {
     BOOL repost = [post[@"isRepost"] respondsToSelector:@selector(boolValue)] && [post[@"isRepost"] boolValue];
-    CGFloat h = repost ? SX278SocialProofHeight(width) : 0.0;
-    CGFloat contentWidth = MAX(80.0, width - 56.0 - 12.0);
+    CGFloat h = repost ? (8.0 + SX278SocialProofHeight(width)) : 0.0;
+    CGFloat contentWidth = MAX(80.0, width - 55.0 - 10.0);
     CGFloat headerHeight = ceil(MAX(SX278XFont(UIFontWeightBold).lineHeight, SX278XFont(UIFontWeightRegular).lineHeight));
     CGFloat row = (repost ? 4.0 : 8.0) + headerHeight;
     NSString *text = SX278String(post[@"text"]);
     CGFloat textH = SX278TextHeight(text, contentWidth);
     CGFloat mediaH = SX278MediaSize(post, contentWidth, width).height;
     if (textH > 0.0) row += 2.0 + textH;
-    if (mediaH > 0.0) row += 6.0 + mediaH;
+    if (mediaH > 0.0) row += 8.0 + mediaH;
     row += 4.0 + 28.0 + 8.0;
     h += MAX(59.0, row) + 0.5;
     return ceil(h);
@@ -464,15 +464,16 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
     BOOL repost = !self.repostLabel.hidden;
     CGFloat y = 0.0;
     if (repost) {
+        y = 8.0;
         CGFloat proofHeight = SX278SocialProofHeight(w);
         CGFloat proofFontSize = SX278SocialProofFontSize(w);
         self.repostLabel.font = [UIFont systemFontOfSize:proofFontSize weight:UIFontWeightRegular];
         CGFloat labelHeight = ceil(self.repostLabel.font.lineHeight);
-        CGFloat iconY = MAX(3.0, floor((proofHeight - 12.0) * 0.5));
-        CGFloat labelY = MAX(1.0, floor((proofHeight - labelHeight) * 0.5));
+        CGFloat iconY = y + MAX(3.0, floor((proofHeight - 12.0) * 0.5));
+        CGFloat labelY = y + MAX(1.0, floor((proofHeight - labelHeight) * 0.5));
         self.repostIcon.frame = CGRectMake(36.0, iconY, 12.0, 12.0);
         self.repostLabel.frame = CGRectMake(56.0, labelY, MAX(0.0, w - 68.0), labelHeight);
-        y = proofHeight;
+        y += proofHeight;
     } else {
         self.repostIcon.frame = CGRectZero;
         self.repostLabel.frame = CGRectZero;
@@ -480,9 +481,9 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
 
     CGFloat authorTopInset = repost ? 4.0 : 8.0;
     self.avatar.layer.cornerRadius = 19.0;
-    self.avatar.frame = CGRectMake(11.0, y + authorTopInset, 38.0, 38.0);
-    CGFloat x = 56.0;
-    CGFloat cw = MAX(80.0, w - x - 12.0);
+    self.avatar.frame = CGRectMake(10.0, y + authorTopInset, 38.0, 38.0);
+    CGFloat x = 55.0;
+    CGFloat cw = MAX(80.0, w - x - 10.0);
     CGFloat headerY = y + authorTopInset;
     CGFloat headerHeight = ceil(MAX(self.nameLabel.font.lineHeight, self.metaLabel.font.lineHeight));
     CGFloat moreW = 18.0;
@@ -533,7 +534,7 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
     CGFloat mh = mediaSize.height;
     CGFloat mediaWidth = mediaSize.width;
     if (mh > 0.0 && mediaWidth > 0.0) {
-        cy += 6.0;
+        cy += 8.0;
         self.mediaContainer.frame = CGRectMake(x, cy, mediaWidth, mh);
         cy += mh;
         NSUInteger count = 0;
