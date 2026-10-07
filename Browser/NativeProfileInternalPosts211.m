@@ -149,6 +149,11 @@
     poll();
 }
 
+- (NSString *)sx_211_profileMetaFromReduxScriptForUserId:(NSString *)userId screenName:(NSString *)screenName {
+    NSString *uid=[self sx_211_jsonLiteral:userId?:@""], *sn=[self sx_211_jsonLiteral:screenName?:@""];
+    return [NSString stringWithFormat:@"(function(){try{var uid=%@,sn=%@,p=document.querySelector('[data-testid=\\\"DashButton_ProfileIcon_Link\\\"]');function fiberOf(n){if(!n)return null;var ks=Object.keys(n);for(var i=0;i<ks.length;i++)if(ks[i].indexOf('__reactFiber$')===0)return n[ks[i]];return null;}function asStore(v){if(!v||typeof v!=='object')return null;var s=(v.store&&typeof v.store==='object')?v.store:v;return(s&&typeof s.getState==='function'&&typeof s.dispatch==='function')?s:null;}function storeFromNode(n){var f=fiberOf(n);for(var d=0;f&&d<70;d++,f=f.return){var dep=f.dependencies&&f.dependencies.firstContext;for(var j=0;dep&&j<10;j++,dep=dep.next){var vals=[dep.memoizedValue,dep.context&&dep.context._currentValue2,dep.context&&dep.context._currentValue];for(var k=0;k<vals.length;k++){var s=asStore(vals[k]);if(s)return s;}}var direct=asStore(f.memoizedProps);if(direct)return direct;}return null;}var store=storeFromNode(p)||storeFromNode(document.querySelector('[data-testid=primaryColumn]'))||storeFromNode(document.body);if(!store)return {found:false,stage:'no-store'};var st=store.getState(),eu=st&&st.entities&&st.entities.users,em=eu&&eu.entities;if(!em||typeof em!=='object')return {found:false,stage:'no-entities'};var hit=(uid&&em[uid]&&typeof em[uid]==='object')?em[uid]:null;if(!hit&&sn){var keys=Object.keys(em);for(var i=0;i<keys.length;i++){var v=em[keys[i]],lg=v&&v.legacy;if(v&&((v.screen_name===sn)||(lg&&lg.screen_name===sn))){hit=v;break;}}}for(var w=0;w<5&&hit&&typeof hit==='object'&&!(hit.legacy||hit.core||hit.privacy);w++){if(hit.result&&typeof hit.result==='object')hit=hit.result;else if(hit.user&&typeof hit.user==='object')hit=hit.user;else if(hit.user_results&&hit.user_results.result)hit=hit.user_results.result;else break;}if(!hit)return {found:false,stage:'no-user'};var lg=hit.legacy||{},co=hit.core||{},pr=hit.privacy||{};var hasProtected=(Object.prototype.hasOwnProperty.call(pr,'protected')||Object.prototype.hasOwnProperty.call(lg,'protected')||Object.prototype.hasOwnProperty.call(hit,'protected'));return {found:true,createdAt:String(co.created_at||lg.created_at||hit.created_at||''),hasProtected:hasProtected,protected:!!(pr.protected||lg.protected||hit.protected),verified:!!(hit.is_blue_verified||hit.verified||lg.verified)};}catch(e){return {found:false,stage:'exception',message:String(e)}}})()",uid,sn];
+}
+
 - (void)sx_211_startOfficialProfilePostLoadForScreenName:(NSString *)screenName
                                                   userId:(NSString *)userId
                                                     base:(NSDictionary *)base
@@ -207,7 +212,22 @@
                 dispatch_async(dispatch_get_main_queue(), ^{ [strongProfile applyProfileData:merged]; });
                 poll = nil;
                 if(profileCreatedAt.length==0 || ![profileMeta[@"protected"] respondsToSelector:@selector(boolValue)]){
-                    [self sx_211_startOfficialProfilePostLoadForScreenName:screenName userId:userId base:merged profile:strongProfile sourceWebView:webView];
+                    NSString *metaScript=[self sx_211_profileMetaFromReduxScriptForUserId:userId screenName:screenName];
+                    [webView evaluateJavaScript:metaScript completionHandler:^(id metaResult,NSError *metaError){
+                        NSDictionary *md=[metaResult isKindOfClass:NSDictionary.class]?(NSDictionary *)metaResult:nil;
+                        if(!metaError&&[md[@"found"] boolValue]){
+                            NSMutableDictionary *finalData=[strongProfile.profileData mutableCopy]?:[NSMutableDictionary dictionary];
+                            NSString *ca=[md[@"createdAt"] isKindOfClass:NSString.class]?md[@"createdAt"]:@"";
+                            if(ca.length)finalData[@"createdAt"]=ca;
+                            if([md[@"hasProtected"] boolValue])finalData[@"protected"]=@([md[@"protected"] boolValue]);
+                            if([md[@"verified"] respondsToSelector:@selector(boolValue)])finalData[@"verified"]=@([md[@"verified"] boolValue]);
+                            finalData[@"profileMetaProbe"]=md;
+                            dispatch_async(dispatch_get_main_queue(),^{[strongProfile applyProfileData:finalData];});
+                            [[DiagnosticsStore shared] addEvent:@"Native profile Redux metadata applied" detail:[md description] url:webView.URL];
+                        } else {
+                            [[DiagnosticsStore shared] addEvent:@"Native profile Redux metadata missing" detail:[md description]?:@"" url:webView.URL];
+                        }
+                    }];
                 }
                 return;
             }
