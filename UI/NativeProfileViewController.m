@@ -79,6 +79,15 @@
     input.locale=[[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
     input.dateFormat=@"EEE MMM dd HH:mm:ss Z yyyy";
     NSDate *date=[input dateFromString:raw];
+    if(!date){
+        NSISO8601DateFormatter *iso=[NSISO8601DateFormatter new];
+        iso.formatOptions=NSISO8601DateFormatWithInternetDateTime|NSISO8601DateFormatWithFractionalSeconds;
+        date=[iso dateFromString:raw];
+        if(!date){
+            iso.formatOptions=NSISO8601DateFormatWithInternetDateTime;
+            date=[iso dateFromString:raw];
+        }
+    }
     if(!date)return @"";
     NSDateFormatter *output=[NSDateFormatter new];
     output.locale=[[NSLocale alloc] initWithLocaleIdentifier:@"ja_JP"];
@@ -312,10 +321,14 @@
         UIImageSymbolConfiguration *protectedConfig=[UIImageSymbolConfiguration configurationWithPointSize:14 weight:UIImageSymbolWeightSemibold];
         UIImageView *protectedBadge=[[UIImageView alloc] initWithImage:[UIImage systemImageNamed:@"lock.fill" withConfiguration:protectedConfig]];
         protectedBadge.translatesAutoresizingMaskIntoConstraints=NO;
+        protectedBadge.accessibilityIdentifier=@"sx.profile.protected";
         protectedBadge.tintColor=UIColor.labelColor;
+        protectedBadge.contentMode=UIViewContentModeCenter;
+        [protectedBadge setContentHuggingPriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
+        [protectedBadge setContentCompressionResistancePriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
         [nameRow addArrangedSubview:protectedBadge];
-        [protectedBadge.widthAnchor constraintEqualToConstant:18].active=YES;
-        [protectedBadge.heightAnchor constraintEqualToConstant:18].active=YES;
+        [[protectedBadge.widthAnchor constraintEqualToConstant:18] setActive:YES];
+        [[protectedBadge.heightAnchor constraintEqualToConstant:18] setActive:YES];
     }
     UIButton *verify=[UIButton buttonWithType:UIButtonTypeSystem];
     verify.translatesAutoresizingMaskIntoConstraints=NO;
