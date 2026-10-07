@@ -236,7 +236,8 @@
     NSString *bannerURL=[self stringValue:data[@"bannerURL"]];
     NSString *following=[self stringValue:data[@"following"]];
     NSString *followers=[self stringValue:data[@"followers"]];
-    NSString *joined=[self joinedTextForRaw:[self stringValue:data[@"createdAt"]]];
+    NSString *joined=[self stringValue:data[@"joinedText"]];
+    if(joined.length==0)joined=[self joinedTextForRaw:[self stringValue:data[@"createdAt"]]];
     BOOL verified=[data[@"verified"] respondsToSelector:@selector(boolValue)]?[data[@"verified"] boolValue]:NO;
     BOOL protectedAccount=[data[@"protected"] respondsToSelector:@selector(boolValue)]?[data[@"protected"] boolValue]:NO;
     if(following.length==0)following=[self stringValue:counts[@"friends_count"]];
@@ -327,6 +328,7 @@
     verify.layer.cornerRadius=15;
     verify.layer.borderWidth=1;
     verify.layer.borderColor=UIColor.separatorColor.CGColor;
+    verify.contentEdgeInsets=UIEdgeInsetsMake(0,9,0,9);
     [verify setContentCompressionResistancePriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
     [verify setContentHuggingPriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
     [nameRow addArrangedSubview:verify];
