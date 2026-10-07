@@ -80,14 +80,14 @@ static NSString *SX278CompactCount(NSInteger value) {
 }
 
 static CGFloat SX278SocialProofFontSize(CGFloat width) {
-    if (width <= 320.0) return 12.0;
-    if (width <= 375.0) return 13.0;
-    if (width <= 414.0) return 14.0;
-    return 15.0;
+    (void)width;
+    // X uses UIFont.xds_subtext2 here. In this IPA that maps to the
+    // dynamic Twitter font size with a -2pt offset from content text.
+    return MAX(1.0, SX278XContentFontSize() - 2.0);
 }
 
 static CGFloat SX278SocialProofHeight(CGFloat width) {
-    UIFont *font = [UIFont systemFontOfSize:SX278SocialProofFontSize(width)];
+    UIFont *font = [UIFont systemFontOfSize:SX278SocialProofFontSize(width) weight:UIFontWeightRegular];
     return ceil(font.lineHeight);
 }
 
@@ -166,7 +166,7 @@ static CGFloat SX278PostHeight(NSDictionary *post, CGFloat width) {
     CGFloat h = repost ? SX278SocialProofHeight(width) : 0.0;
     CGFloat contentWidth = MAX(80.0, width - 56.0 - 12.0);
     CGFloat headerHeight = ceil(MAX(SX278XFont(UIFontWeightBold).lineHeight, SX278XFont(UIFontWeightRegular).lineHeight));
-    CGFloat row = 8.0 + headerHeight;
+    CGFloat row = (repost ? 4.0 : 8.0) + headerHeight;
     NSString *text = SX278String(post[@"text"]);
     CGFloat textH = SX278TextHeight(text, contentWidth);
     CGFloat mediaH = SX278MediaSize(post, contentWidth, width).height;
@@ -466,7 +466,7 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
     if (repost) {
         CGFloat proofHeight = SX278SocialProofHeight(w);
         CGFloat proofFontSize = SX278SocialProofFontSize(w);
-        self.repostLabel.font = [UIFont systemFontOfSize:proofFontSize];
+        self.repostLabel.font = [UIFont systemFontOfSize:proofFontSize weight:UIFontWeightRegular];
         CGFloat labelHeight = ceil(self.repostLabel.font.lineHeight);
         CGFloat iconY = MAX(3.0, floor((proofHeight - 12.0) * 0.5));
         CGFloat labelY = MAX(1.0, floor((proofHeight - labelHeight) * 0.5));
@@ -478,11 +478,12 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
         self.repostLabel.frame = CGRectZero;
     }
 
+    CGFloat authorTopInset = repost ? 4.0 : 8.0;
     self.avatar.layer.cornerRadius = 19.0;
-    self.avatar.frame = CGRectMake(11.0, y + 8.0, 38.0, 38.0);
+    self.avatar.frame = CGRectMake(11.0, y + authorTopInset, 38.0, 38.0);
     CGFloat x = 56.0;
     CGFloat cw = MAX(80.0, w - x - 12.0);
-    CGFloat headerY = y + 8.0;
+    CGFloat headerY = y + authorTopInset;
     CGFloat headerHeight = ceil(MAX(self.nameLabel.font.lineHeight, self.metaLabel.font.lineHeight));
     CGFloat moreW = 18.0;
     self.moreView.frame = CGRectMake(x + cw - moreW, headerY, moreW, headerHeight);
