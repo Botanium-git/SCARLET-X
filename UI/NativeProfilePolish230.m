@@ -75,7 +75,7 @@
     UILabel *joinedLabel=(UILabel *)[self sx230_findAccessibilityIdentifier:@"sx.profile.joined.label" inView:content];
     UIButton *edit=(UIButton *)[self sx230_findAccessibilityIdentifier:@"sx.profile.edit" inView:content];
 
-    if([nameLabel isKindOfClass:UILabel.class]) nameLabel.font=[UIFont systemFontOfSize:16 weight:UIFontWeightSemibold];
+    // The profile name font is owned by NativeProfileViewController.buildUI.
     if([handleLabel isKindOfClass:UILabel.class]) handleLabel.font=[UIFont systemFontOfSize:12];
     if([bioLabel isKindOfClass:UILabel.class]) bioLabel.font=[UIFont systemFontOfSize:12];
     if([countsLabel isKindOfClass:UILabel.class]) countsLabel.font=[UIFont systemFontOfSize:11];
