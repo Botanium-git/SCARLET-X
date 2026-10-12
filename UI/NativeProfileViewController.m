@@ -295,7 +295,7 @@
     nameLabel.translatesAutoresizingMaskIntoConstraints=NO;
     nameLabel.accessibilityIdentifier=@"sx.profile.name";
     // X profile appearance: fullNameFont -> UIFont.xds_bodyBold.
-    nameLabel.font=[UIFont systemFontOfSize:16 weight:UIFontWeightSemibold];
+    nameLabel.font=[UIFont systemFontOfSize:17 weight:UIFontWeightBold];
     nameLabel.text=name;
     nameLabel.lineBreakMode=NSLineBreakByTruncatingTail;
     [nameLabel setContentCompressionResistancePriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal];
