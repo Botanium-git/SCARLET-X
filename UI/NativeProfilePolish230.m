@@ -66,7 +66,6 @@
     UIView *content=[self sx230_contentView];
     if(!content)return;
 
-    UILabel *nameLabel=(UILabel *)[self sx230_findAccessibilityIdentifier:@"sx.profile.name" inView:content];
     UIStackView *nameRow=(UIStackView *)[self sx230_findAccessibilityIdentifier:@"sx.profile.name.row" inView:content];
     UILabel *handleLabel=(UILabel *)[self sx230_findAccessibilityIdentifier:@"sx.profile.handle" inView:content];
     UILabel *bioLabel=(UILabel *)[self sx230_findAccessibilityIdentifier:@"sx.profile.bio" inView:content];
