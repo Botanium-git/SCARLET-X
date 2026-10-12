@@ -343,7 +343,7 @@
     handleLabel.translatesAutoresizingMaskIntoConstraints=NO;
     handleLabel.accessibilityIdentifier=@"sx.profile.handle";
     // X profile appearance: usernameFont -> xds_spoofingResistantUsername_body.
-    handleLabel.font=[UIFont systemFontOfSize:12];
+    handleLabel.font=[UIFont systemFontOfSize:14];
     handleLabel.textColor=UIColor.secondaryLabelColor;
     handleLabel.text=handle;
     [self.contentView addSubview:handleLabel];
@@ -352,7 +352,7 @@
     bioLabel.translatesAutoresizingMaskIntoConstraints=NO;
     bioLabel.accessibilityIdentifier=@"sx.profile.bio";
     // X profile appearance: bioFont -> UIFont.xds_body.
-    bioLabel.font=[UIFont systemFontOfSize:12];
+    bioLabel.font=[UIFont systemFontOfSize:14];
     bioLabel.numberOfLines=0;
     bioLabel.text=bio;
     [self.contentView addSubview:bioLabel];
