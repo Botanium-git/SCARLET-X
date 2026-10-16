@@ -352,7 +352,7 @@
     bioLabel.translatesAutoresizingMaskIntoConstraints=NO;
     bioLabel.accessibilityIdentifier=@"sx.profile.bio";
     // X profile appearance: bioFont -> UIFont.xds_body.
-    bioLabel.font=[UIFont systemFontOfSize:14];
+    bioLabel.font=[UIFont systemFontOfSize:13];
     bioLabel.numberOfLines=0;
     bioLabel.text=bio;
     [self.contentView addSubview:bioLabel];
