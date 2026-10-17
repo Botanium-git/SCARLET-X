@@ -152,11 +152,11 @@ static CGSize SX278MediaSize(NSDictionary *post, CGFloat contentWidth, CGFloat r
     return CGSizeMake(contentWidth, ceil(MAX(1.0, rowWidth) * 0.68));
 }
 
-static CGFloat SX278TextHeight(NSString *text, CGFloat width) {
+static CGFloat SX278TextHeight(NSString *text, CGFloat width, UIFont *font) {
     if (text.length == 0) return 0.0;
     CGRect rect = [text boundingRectWithSize:CGSizeMake(MAX(1.0, width), CGFLOAT_MAX)
                                     options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading
-                                 attributes:@{NSFontAttributeName:SX278XFont(UIFontWeightRegular)}
+                                 attributes:@{NSFontAttributeName:font}
                                     context:nil];
     return ceil(rect.size.height);
 }
@@ -168,7 +168,7 @@ static CGFloat SX278PostHeight(NSDictionary *post, CGFloat width) {
     CGFloat headerHeight = ceil(MAX(SX278XFont(UIFontWeightBold).lineHeight, SX278XFont(UIFontWeightRegular).lineHeight));
     CGFloat row = (repost ? 4.0 : 8.0) + headerHeight;
     NSString *text = SX278String(post[@"text"]);
-    CGFloat textH = SX278TextHeight(text, contentWidth);
+    CGFloat textH = SX278TextHeight(text, contentWidth, SX278XFont(UIFontWeightRegular));
     CGFloat mediaH = SX278MediaSize(post, contentWidth, width).height;
     if (textH > 0.0) row += 2.0 + textH;
     if (mediaH > 0.0) row += 8.0 + mediaH;
@@ -523,7 +523,7 @@ static BOOL SX278SamePrefix(NSArray *oldItems, NSArray *newItems) {
     CGFloat cy = headerY + headerHeight;
     if (self.bodyLabel.text.length) {
         cy += 2.0;
-        CGFloat bodyH = SX278TextHeight(self.bodyLabel.text, cw);
+        CGFloat bodyH = SX278TextHeight(self.bodyLabel.text, cw, self.bodyLabel.font);
         self.bodyLabel.frame = CGRectMake(x, cy, cw, bodyH);
         cy += bodyH;
     } else {
