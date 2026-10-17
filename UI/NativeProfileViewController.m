@@ -343,7 +343,7 @@
     handleLabel.translatesAutoresizingMaskIntoConstraints=NO;
     handleLabel.accessibilityIdentifier=@"sx.profile.handle";
     // X profile appearance: usernameFont -> xds_spoofingResistantUsername_body.
-    handleLabel.font=[UIFont systemFontOfSize:14];
+    handleLabel.font=[UIFont systemFontOfSize:13];
     handleLabel.textColor=UIColor.secondaryLabelColor;
     handleLabel.text=handle;
     [self.contentView addSubview:handleLabel];
@@ -475,13 +475,13 @@
         [banner.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor],
         [banner.heightAnchor constraintEqualToConstant:156],
 
-        [avatar.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:16],
+        [avatar.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:10],
         [avatar.centerYAnchor constraintEqualToAnchor:banner.bottomAnchor constant:24],
         [avatar.widthAnchor constraintEqualToConstant:88],
         [avatar.heightAnchor constraintEqualToConstant:88],
 
         [nameRow.topAnchor constraintEqualToAnchor:avatar.bottomAnchor constant:14],
-        [nameRow.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:16],
+        [nameRow.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:10],
         [nameRow.trailingAnchor constraintLessThanOrEqualToAnchor:self.contentView.trailingAnchor constant:-16],
 
         [editProfile.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
