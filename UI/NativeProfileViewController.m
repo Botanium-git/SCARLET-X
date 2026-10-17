@@ -284,7 +284,7 @@
     avatar.backgroundColor=UIColor.secondarySystemBackgroundColor;
     avatar.contentMode=UIViewContentModeScaleAspectFill;
     avatar.clipsToBounds=YES;
-    avatar.layer.cornerRadius=38;
+    avatar.layer.cornerRadius=44;
     avatar.layer.borderWidth=4;
     avatar.layer.borderColor=UIColor.systemBackgroundColor.CGColor;
     avatar.image=[UIImage systemImageNamed:@"person.crop.circle.fill"];
@@ -295,7 +295,7 @@
     nameLabel.translatesAutoresizingMaskIntoConstraints=NO;
     nameLabel.accessibilityIdentifier=@"sx.profile.name";
     // X profile appearance: fullNameFont -> UIFont.xds_bodyBold.
-    nameLabel.font=[UIFont systemFontOfSize:20 weight:UIFontWeightBold];
+    nameLabel.font=[UIFont systemFontOfSize:20 weight:UIFontWeightHeavy];
     nameLabel.text=name;
     nameLabel.lineBreakMode=NSLineBreakByTruncatingTail;
     [nameLabel setContentCompressionResistancePriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal];
@@ -477,8 +477,8 @@
 
         [avatar.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:16],
         [avatar.centerYAnchor constraintEqualToAnchor:banner.bottomAnchor constant:24],
-        [avatar.widthAnchor constraintEqualToConstant:76],
-        [avatar.heightAnchor constraintEqualToConstant:76],
+        [avatar.widthAnchor constraintEqualToConstant:88],
+        [avatar.heightAnchor constraintEqualToConstant:88],
 
         [nameRow.topAnchor constraintEqualToAnchor:avatar.bottomAnchor constant:14],
         [nameRow.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:16],
