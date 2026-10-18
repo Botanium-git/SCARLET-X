@@ -80,6 +80,8 @@ void SXTextProbeCompare(NSString *text, CGFloat width, UIFont *font, CGFloat leg
                 NSMutableArray<NSString *> *lineMetrics = [NSMutableArray array];
                 NSMutableArray<NSString *> *lineFonts = [NSMutableArray array];
                 NSMutableArray<NSString *> *lineFlags = [NSMutableArray array];
+                NSUInteger emojiLineCount=0;
+                BOOL emojiFirst=NO,emojiLast=NO;
                 for (CFIndex i = 0; i < count; i++) {
                     CTLineRef line = (CTLineRef)CFArrayGetValueAtIndex(lines, i);
                     CGFloat ascent = 0.0, descent = 0.0, leading = 0.0;
@@ -105,6 +107,8 @@ void SXTextProbeCompare(NSString *text, CGFloat width, UIFont *font, CGFloat leg
                             fontSignature = (fontSignature ^ [fontName characterAtIndex:k]) * 16777619u;
                         }
                     }
+                    BOOL hasEmoji=[fontNames containsObject:@"AppleColorEmoji"];
+                    if(hasEmoji){emojiLineCount++;if(i==0)emojiFirst=YES;if(i==count-1)emojiLast=YES;}
                     CGFloat baselineGap = i > 0 ? origins[i-1].y - origins[i].y : 0.0;
                     [lineFonts addObject:fontNames.count?[[fontNames array] componentsJoinedByString:@","]:@"unknown"];
                     [lineFlags addObject:[NSString stringWithFormat:@"%lu",(unsigned long)SXProbeCharacterFlags(text,NSMakeRange((NSUInteger)range.location,(NSUInteger)range.length))]];
@@ -115,11 +119,12 @@ void SXTextProbeCompare(NSString *text, CGFloat width, UIFont *font, CGFloat leg
                 }
                 resultHeight = ceil(MAX(0.0, firstTop - lastBottom));
                 NSString *metrics = [lineMetrics componentsJoinedByString:@"|"];
-                NSString *summary = [NSString stringWithFormat:@"sample=%lu chars=%lu width=%.2f font=%.2f lines=%ld legacy=%.2f coreText=%.2f delta=%.2f metrics=%@ fontNames=%@ types=%@",
+                NSString *summary = [NSString stringWithFormat:@"sample=%lu chars=%lu width=%.2f font=%.2f lines=%ld legacy=%.2f coreText=%.2f delta=%.2f metrics=%@ fontNames=%@ types=%@ emojiLines=%lu emojiFirst=%u emojiLast=%u",
                     (unsigned long)sampleCount, (unsigned long)text.length, (double)width,
                     (double)font.pointSize, (long)count, (double)legacyHeight,
                     (double)resultHeight, (double)(resultHeight - legacyHeight), metrics,
-                    [lineFonts componentsJoinedByString:@"|"],[lineFlags componentsJoinedByString:@"|"]];
+                    [lineFonts componentsJoinedByString:@"|"],[lineFlags componentsJoinedByString:@"|"],
+                    (unsigned long)emojiLineCount,emojiFirst?1u:0u,emojiLast?1u:0u];
                 [[DiagnosticsStore shared] addEvent:@"Core Text本文高さ比較" detail:summary url:nil];
                 free(origins);
             }
