@@ -1,6 +1,7 @@
 #import <UIKit/UIKit.h>
 
 static NSString *const SXUpdateReleasesAPI = @"https://api.github.com/repos/Botanium-git/SCARLET-X/releases?per_page=30";
+static NSString *const SXUpdateSourceURL = @"https://raw.githubusercontent.com/Botanium-git/SCARLET-X/develop/source.json";
 
 @interface SXUpdateViewController : UITableViewController
 @property(nonatomic,copy) NSString *latestVersion;
@@ -8,6 +9,8 @@ static NSString *const SXUpdateReleasesAPI = @"https://api.github.com/repos/Bota
 @property(nonatomic,copy) NSString *status;
 @property(nonatomic,assign) BOOL checking;
 @property(nonatomic,copy) NSString *lastChecked;
+@property(nonatomic,copy) NSString *sourceLabel;
+@property(nonatomic,strong) NSDate *lastRequestDate;
 @end
 
 @implementation SXUpdateViewController
@@ -15,6 +18,7 @@ static NSString *const SXUpdateReleasesAPI = @"https://api.github.com/repos/Bota
     [super viewDidLoad];
     self.title = @"アップデート";
     self.status = @"未確認";
+    self.sourceLabel=@"未確認";
     [self.tableView registerClass:UITableViewCell.class forCellReuseIdentifier:@"update"];
     [self checkForUpdates];
 }
@@ -29,7 +33,7 @@ static NSString *const SXUpdateReleasesAPI = @"https://api.github.com/repos/Bota
     cell.textLabel.numberOfLines=0;
     NSString *current=NSBundle.mainBundle.infoDictionary[@"CFBundleShortVersionString"]?:@"?";
     if(indexPath.row==0) {
-        cell.textLabel.text=[NSString stringWithFormat:@"現在: v%@\n配布最新版: %@\n状態: %@\n取得元: GitHub Releases API\n最終確認: %@",current,self.latestVersion?[@"v" stringByAppendingString:self.latestVersion]:@"未取得",self.status?:@"",self.lastChecked?:@"未取得"];
+        cell.textLabel.text=[NSString stringWithFormat:@"現在: v%@\n配布最新版: %@\n状態: %@\n取得元: %@\n最終確認: %@",current,self.latestVersion?[@"v" stringByAppendingString:self.latestVersion]:@"未取得",self.status?:@"",self.sourceLabel?:@"未確認",self.lastChecked?:@"未取得"];
         cell.imageView.image=[UIImage systemImageNamed:@"info.circle"];
     } else if(indexPath.row==1) {
         cell.textLabel.text=@"最新版を再確認";
@@ -49,6 +53,11 @@ static NSString *const SXUpdateReleasesAPI = @"https://api.github.com/repos/Bota
 }
 - (void)checkForUpdates {
     if(self.checking)return;
+    if(self.lastRequestDate && [NSDate.date timeIntervalSinceDate:self.lastRequestDate]<60.0){
+        self.status=@"再確認は60秒後にできます（連続アクセス防止）";
+        [self.tableView reloadData];return;
+    }
+    self.lastRequestDate=NSDate.date;
     self.checking=YES;
     self.status=@"確認中…";
     [self.tableView reloadData];
@@ -98,16 +107,62 @@ static NSString *const SXUpdateReleasesAPI = @"https://api.github.com/repos/Bota
             formatter.dateFormat=@"yyyy-MM-dd HH:mm:ss";
             self.lastChecked=[formatter stringFromDate:NSDate.date];
             if(error || http!=200 || !found.length || !ipaURL.length) {
-                self.latestIPAURL=nil;
-                self.latestVersion=nil;
-                self.status=error.localizedDescription?:[NSString stringWithFormat:@"取得失敗 (HTTP %ld%@)",(long)http,jsonError?@", JSON不正":@""];
+                // REST API can return HTTP 403 on shared-IP rate limits; try public source JSON.
+                [self checkPublicSourceWithAPIStatus:http error:error];
+                return;
             } else {
+                self.sourceLabel=@"GitHub Releases API";
                 self.latestVersion=found;
                 self.latestIPAURL=ipaURL;
                 NSString *current=NSBundle.mainBundle.infoDictionary[@"CFBundleShortVersionString"]?:@"0";
                 NSComparisonResult order=[current compare:found options:NSNumericSearch];
                 self.status=order==NSOrderedAscending?@"新しいバージョンがあります":
                     (order==NSOrderedSame?@"最新版です":@"このアプリの方が新しいバージョンです");
+            }
+            [self.tableView reloadData];
+        });
+    }] resume];
+}
+- (void)checkPublicSourceWithAPIStatus:(NSInteger)apiStatus error:(NSError *)apiError {
+    NSURLComponents *components=[NSURLComponents componentsWithString:SXUpdateSourceURL];
+    components.queryItems=@[[NSURLQueryItem queryItemWithName:@"check" value:[NSString stringWithFormat:@"%.0f",NSDate.date.timeIntervalSince1970]]];
+    NSMutableURLRequest *request=[NSMutableURLRequest requestWithURL:components.URL];
+    request.cachePolicy=NSURLRequestReloadIgnoringLocalCacheData;
+    request.timeoutInterval=15;
+    __weak typeof(self) weakSelf=self;
+    [[[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData *data,NSURLResponse *response,NSError *error) {
+        NSHTTPURLResponse *httpResponse=[response isKindOfClass:NSHTTPURLResponse.class]?(NSHTTPURLResponse *)response:nil;
+        id payload=data.length?[NSJSONSerialization JSONObjectWithData:data options:0 error:nil]:nil;
+        NSArray *apps=[payload isKindOfClass:NSDictionary.class] && [payload[@"apps"] isKindOfClass:NSArray.class]?payload[@"apps"]:@[];
+        NSString *found=nil,*ipaURL=nil;
+        if(httpResponse.statusCode==200 && !error)for(id item in apps) {
+            if(![item isKindOfClass:NSDictionary.class])continue;
+            NSDictionary *app=item;
+            if(![app[@"bundleIdentifier"] isEqual:@"com.scarletx"])continue;
+            found=[app[@"version"] isKindOfClass:NSString.class]?app[@"version"]:nil;
+            ipaURL=[app[@"downloadURL"] isKindOfClass:NSString.class]?app[@"downloadURL"]:nil;
+            break;
+        }
+        NSURLComponents *url=[NSURLComponents componentsWithString:ipaURL];
+        NSString *expected=[NSString stringWithFormat:@"/Botanium-git/SCARLET-X/releases/download/v%@/ScarletX_v%@.ipa",found?:@"",found?:@""];
+        BOOL valid=found.length>0 && [url.scheme isEqualToString:@"https"] && [url.host isEqualToString:@"github.com"] && [url.path isEqualToString:expected];
+        dispatch_async(dispatch_get_main_queue(),^{
+            __strong typeof(weakSelf) self=weakSelf;
+            if(!self)return;
+            self.checking=NO;
+            NSDateFormatter *formatter=[NSDateFormatter new];formatter.dateFormat=@"yyyy-MM-dd HH:mm:ss";
+            self.lastChecked=[formatter stringFromDate:NSDate.date];
+            self.sourceLabel=@"公開Source（API失敗時の代替）";
+            if(valid) {
+                self.latestVersion=found;self.latestIPAURL=ipaURL;
+                NSString *current=NSBundle.mainBundle.infoDictionary[@"CFBundleShortVersionString"]?:@"0";
+                NSComparisonResult order=[current compare:found options:NSNumericSearch];
+                self.status=order==NSOrderedAscending?@"新しいバージョンがあります（代替取得）":
+                    (order==NSOrderedSame?@"最新版です（代替取得）":@"公開Sourceが現在のアプリより古い可能性があります");
+            } else {
+                self.latestVersion=nil;self.latestIPAURL=nil;
+                self.status=[NSString stringWithFormat:@"取得失敗（API HTTP %ld / Source HTTP %ld）",(long)apiStatus,(long)httpResponse.statusCode];
+                if(apiError)self.status=[NSString stringWithFormat:@"通信エラー: %@",apiError.localizedDescription];
             }
             [self.tableView reloadData];
         });
