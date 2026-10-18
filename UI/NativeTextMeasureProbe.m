@@ -54,22 +54,46 @@ void SXTextProbeCompare(NSString *text, CGFloat width, UIFont *font, CGFloat leg
                 CTFrameGetLineOrigins(frame, CFRangeMake(0, 0), origins);
                 CGFloat firstTop = -CGFLOAT_MAX;
                 CGFloat lastBottom = CGFLOAT_MAX;
+                NSMutableArray<NSString *> *lineMetrics = [NSMutableArray array];
                 for (CFIndex i = 0; i < count; i++) {
                     CTLineRef line = (CTLineRef)CFArrayGetValueAtIndex(lines, i);
                     CGFloat ascent = 0.0, descent = 0.0, leading = 0.0;
                     CTLineGetTypographicBounds(line, &ascent, &descent, &leading);
                     firstTop = MAX(firstTop, origins[i].y + ascent);
                     lastBottom = MIN(lastBottom, origins[i].y - descent);
+                    CFRange range = CTLineGetStringRange(line);
+                    CFArrayRef runs = CTLineGetGlyphRuns(line);
+                    CFIndex runCount = runs ? CFArrayGetCount(runs) : 0;
+                    NSUInteger fallbackRuns = 0;
+                    uint32_t fontSignature = 2166136261u;
+                    for (CFIndex j = 0; j < runCount; j++) {
+                        CTRunRef run = (CTRunRef)CFArrayGetValueAtIndex(runs, j);
+                        NSDictionary *attrs = (__bridge NSDictionary *)CTRunGetAttributes(run);
+                        CTFontRef runFont = (__bridge CTFontRef)attrs[(__bridge NSString *)kCTFontAttributeName];
+                        if (!runFont) continue;
+                        CFStringRef ps = CTFontCopyPostScriptName(runFont);
+                        NSString *fontName = CFBridgingRelease(ps);
+                        if (![fontName isEqualToString:font.fontName]) fallbackRuns++;
+                        for (NSUInteger k = 0; k < fontName.length; k++) {
+                            fontSignature = (fontSignature ^ [fontName characterAtIndex:k]) * 16777619u;
+                        }
+                    }
+                    CGFloat baselineGap = i > 0 ? origins[i-1].y - origins[i].y : 0.0;
+                    [lineMetrics addObject:[NSString stringWithFormat:@"%ld,%ld,%.2f,%.2f,%.2f,%.2f,%ld,%lu,%u",
+                        (long)range.location, (long)range.length, (double)ascent, (double)descent,
+                        (double)leading, (double)baselineGap, (long)runCount,
+                        (unsigned long)fallbackRuns, (unsigned int)fontSignature]];
                 }
                 resultHeight = ceil(MAX(0.0, firstTop - lastBottom));
+                NSString *metrics = [lineMetrics componentsJoinedByString:@"|"];
+                NSString *summary = [NSString stringWithFormat:@"sample=%lu chars=%lu width=%.2f font=%.2f lines=%ld legacy=%.2f coreText=%.2f delta=%.2f metrics=%@",
+                    (unsigned long)sampleCount, (unsigned long)text.length, (double)width,
+                    (double)font.pointSize, (long)count, (double)legacyHeight,
+                    (double)resultHeight, (double)(resultHeight - legacyHeight), metrics];
+                [[DiagnosticsStore shared] addEvent:@"Core Text本文高さ比較" detail:summary url:nil];
                 free(origins);
             }
         }
-        NSString *detail = [NSString stringWithFormat:@"sample=%lu chars=%lu width=%.2f font=%.2f lines=%ld legacy=%.2f coreText=%.2f delta=%.2f",
-              (unsigned long)sampleCount, (unsigned long)text.length, (double)width,
-              (double)font.pointSize, (long)count, (double)legacyHeight,
-              (double)resultHeight, (double)(resultHeight - legacyHeight)];
-        [[DiagnosticsStore shared] addEvent:@"Core Text本文高さ比較" detail:detail url:nil];
         CFRelease(frame);
     }
     CGPathRelease(path);
