@@ -4,6 +4,12 @@ run-name: ScarletX Build
 # Keep source changes and version bumps in one commit so one logical update creates one build.
 on:
   workflow_dispatch:
+    inputs:
+      publish_release:
+        description: 'Publish public IPA and update LiveContainer source (develop only)'
+        required: true
+        type: boolean
+        default: false
   push:
     branches:
       - main
@@ -22,6 +28,8 @@ env:
 jobs:
   build:
     runs-on: macos-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout
@@ -119,3 +127,62 @@ jobs:
           name: ScarletX_v${{ steps.app_version.outputs.version }}
           path: ScarletX_v*.ipa
           if-no-files-found: error
+
+      - name: Publish explicitly approved develop build
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.publish_release == 'true' && github.ref == 'refs/heads/develop' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.app_version.outputs.version }}"
+          BUILD="$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" Resources/Info.plist)"
+          TAG="v$VERSION"
+          IPA="ScarletX_v$VERSION.ipa"
+          test -f "$IPA"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::error::Release $TAG already exists; refusing to overwrite."
+            exit 1
+          fi
+          gh release create "$TAG" "$IPA" --target "$GITHUB_SHA" --title "Scarlet X $TAG" --notes "Manually approved develop build $BUILD."
+          python3 - "$VERSION" "$BUILD" "$IPA" "$TAG" <<'PY'
+          import json, pathlib, sys, datetime
+          version, build, ipa, tag = sys.argv[1:]
+          repo = "Botanium-git/SCARLET-X"
+          path = pathlib.Path("source.json")
+          source = json.loads(path.read_text()) if path.exists() else {
+              "name": "Scarlet X",
+              "identifier": "com.scarletx.source",
+              "sourceURL": f"https://raw.githubusercontent.com/{repo}/develop/source.json",
+              "apps": [{
+                  "name": "Scarlet X",
+                  "bundleIdentifier": "com.scarletx",
+                  "developerName": "Botanium-git",
+                  "subtitle": "Scarlet X for LiveContainer",
+                  "localizedDescription": "Scarlet X native X web wrapper",
+                  "iconURL": "https://github.com/Botanium-git.png",
+                  "tintColor": "D52B47",
+                  "versions": []
+              }]
+          }
+          app = source["apps"][0]
+          app["versions"] = [v for v in app["versions"] if v.get("version") != version]
+          app["versions"].insert(0, {
+              "version": version,
+              "buildVersion": build,
+              "date": datetime.datetime.now(datetime.timezone.utc).date().isoformat(),
+              "localizedDescription": "Approved develop release",
+              "downloadURL": f"https://github.com/{repo}/releases/download/{tag}/{ipa}",
+              "size": pathlib.Path(ipa).stat().st_size,
+              "minOSVersion": "15.0"
+          })
+          app["version"] = version
+          app["downloadURL"] = app["versions"][0]["downloadURL"]
+          path.write_text(json.dumps(source, ensure_ascii=False, indent=2) + "\n")
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add source.json
+          git commit -m "Update approved Scarlet X source to $TAG [skip ci]"
+          git pull --rebase origin develop
+          git push origin HEAD:develop
