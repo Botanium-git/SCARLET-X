@@ -1,0 +1,29 @@
+{
+  "name": "Scarlet X",
+  "identifier": "com.scarletx.source",
+  "sourceURL": "https://raw.githubusercontent.com/Botanium-git/SCARLET-X/develop/source.json",
+  "apps": [
+    {
+      "name": "Scarlet X",
+      "bundleIdentifier": "com.scarletx",
+      "developerName": "Botanium-git",
+      "subtitle": "Scarlet X for LiveContainer",
+      "localizedDescription": "Scarlet X native X web wrapper",
+      "iconURL": "https://github.com/Botanium-git.png",
+      "tintColor": "D52B47",
+      "versions": [
+        {
+          "version": "1.4.156",
+          "buildVersion": "338",
+          "date": "2026-10-18",
+          "localizedDescription": "Approved develop release",
+          "downloadURL": "https://github.com/Botanium-git/SCARLET-X/releases/download/v1.4.156/ScarletX_v1.4.156.ipa",
+          "size": 409565,
+          "minOSVersion": "15.0"
+        }
+      ],
+      "version": "1.4.156",
+      "downloadURL": "https://github.com/Botanium-git/SCARLET-X/releases/download/v1.4.156/ScarletX_v1.4.156.ipa"
+    }
+  ]
+}
