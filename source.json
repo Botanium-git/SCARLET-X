@@ -13,6 +13,15 @@
       "tintColor": "D52B47",
       "versions": [
         {
+          "version": "1.4.166",
+          "buildVersion": "348",
+          "date": "2026-10-18",
+          "localizedDescription": "Successful develop build",
+          "downloadURL": "https://github.com/Botanium-git/SCARLET-X/releases/download/v1.4.166/ScarletX_v1.4.166.ipa",
+          "size": 423954,
+          "minOSVersion": "15.0"
+        },
+        {
           "version": "1.4.165",
           "buildVersion": "347",
           "date": "2026-10-18",
@@ -103,8 +112,8 @@
           "minOSVersion": "15.0"
         }
       ],
-      "version": "1.4.165",
-      "downloadURL": "https://github.com/Botanium-git/SCARLET-X/releases/download/v1.4.165/ScarletX_v1.4.165.ipa"
+      "version": "1.4.166",
+      "downloadURL": "https://github.com/Botanium-git/SCARLET-X/releases/download/v1.4.166/ScarletX_v1.4.166.ipa"
     }
   ]
 }
