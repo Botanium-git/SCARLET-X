@@ -200,7 +200,7 @@ static NSURLRequest *SXJSONRequest(NSString *url,NSString *method,NSString *toke
  SXRequest(SXJSONRequest(c.URL.absoluteString,@"GET",token,nil),^(NSDictionary *json,NSError *error){
   if(error){done(nil,error);return;}
   NSArray *files=[json[@"files"] isKindOfClass:NSArray.class]?json[@"files"]:@[];
-  NSString *found=[files.firstObject isKindOfClass:NSDictionary.class]?files.firstObject[@"id"]:nil;
+  NSString *found=[files.firstObject isKindOfClass:NSDictionary.class]?((NSDictionary *)files.firstObject)[@"id"]:nil;
   if(found.length){done(found,nil);return;}
   NSDictionary *body=@{@"name":name,@"mimeType":@"application/vnd.google-apps.folder",@"parents":@[parent?:@"root"]};
   SXRequest(SXJSONRequest(@"https://www.googleapis.com/drive/v3/files?fields=id", @"POST",token,body),^(NSDictionary *result,NSError *createError){
@@ -241,7 +241,8 @@ static NSURLRequest *SXJSONRequest(NSString *url,NSString *method,NSString *toke
  NSString *filename=[NSString stringWithFormat:@"ScarletX_CoreText_%@.json",[formatter stringFromDate:NSDate.date]];
  NSDictionary *meta=@{@"name":filename,@"mimeType":@"application/json",@"parents":@[folder]};
  NSData *metaData=[NSJSONSerialization dataWithJSONObject:meta options:0 error:nil];
- NSString *boundary=[@"SXDrive" stringByAppendingString:SXRandomURLSafe(12)?:@"Boundary"];
+ NSString *suffix=SXRandomURLSafe(12) ?: @"Boundary";
+ NSString *boundary=[@"SXDrive" stringByAppendingString:suffix];
  NSMutableData *body=[NSMutableData data];
  [body appendData:[[NSString stringWithFormat:@"--%@\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n",boundary] dataUsingEncoding:NSUTF8StringEncoding]];
  [body appendData:metaData];
