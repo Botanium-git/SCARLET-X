@@ -32,8 +32,22 @@ void SXTextProbeCompare(NSString *text, CGFloat width, UIFont *font, CGFloat leg
     if (![[NSUserDefaults standardUserDefaults] boolForKey:@"SXCoreTextCompareEnabled"]) return;
     if (![text isKindOfClass:NSString.class] || text.length == 0 || !font || width <= 0.0) return;
     static NSUInteger sampleCount = 0;
-    if (sampleCount >= 100) return;
-    sampleCount++;
+    static NSMutableSet<NSString *> *seenSamples = nil;
+    static NSObject *sampleLock = nil;
+    static dispatch_once_t sampleOnce;
+    dispatch_once(&sampleOnce, ^{
+        seenSamples = [NSMutableSet set];
+        sampleLock = [NSObject new];
+    });
+    // Only ephemeral fingerprints are kept in memory; no post text is logged or persisted.
+    NSString *sampleKey = [NSString stringWithFormat:@"%lu-%.3f-%@-%.2f",
+        (unsigned long)text.hash, (double)width, font.fontName, (double)font.pointSize];
+    NSUInteger sampleNumber = 0;
+    @synchronized (sampleLock) {
+        if (sampleCount >= 100 || [seenSamples containsObject:sampleKey]) return;
+        [seenSamples addObject:sampleKey];
+        sampleNumber = ++sampleCount;
+    }
 
     CGFloat lineHeight = font.lineHeight;
     CGFloat spacing = 0.0;
@@ -120,7 +134,7 @@ void SXTextProbeCompare(NSString *text, CGFloat width, UIFont *font, CGFloat leg
                 resultHeight = ceil(MAX(0.0, firstTop - lastBottom));
                 NSString *metrics = [lineMetrics componentsJoinedByString:@"|"];
                 NSString *summary = [NSString stringWithFormat:@"sample=%lu chars=%lu width=%.2f font=%.2f lines=%ld legacy=%.2f coreText=%.2f delta=%.2f metrics=%@ fontNames=%@ types=%@ emojiLines=%lu emojiFirst=%u emojiLast=%u",
-                    (unsigned long)sampleCount, (unsigned long)text.length, (double)width,
+                    (unsigned long)sampleNumber, (unsigned long)text.length, (double)width,
                     (double)font.pointSize, (long)count, (double)legacyHeight,
                     (double)resultHeight, (double)(resultHeight - legacyHeight), metrics,
                     [lineFonts componentsJoinedByString:@"|"],[lineFlags componentsJoinedByString:@"|"],
