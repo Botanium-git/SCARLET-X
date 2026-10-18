@@ -34,6 +34,16 @@
 `_CTLineGetTypographicBounds` も T1Twitter に `*UND*` として記録されている。
 **解釈**: この2バイナリ内の定義を示すレコードではない。参照があるだけで使用経路は未確定。定義の所在はIPAのほかのMach-Oやフレームワークを追う必要がある。
 
+
+### OX-005 — TFNクラス定義の所在をIPAから特定（2026-10-19）
+**IPA実物から確認**: 公式X v12.25の `Payload/Twitter.app/Frameworks/XServiceLibraries.framework/XServiceLibraries` をIPAから展開して、`llvm-objdump --macho --syms` で確認。
+- `_OBJC_CLASS_$_TFNAttributedTextModel`: `0x04422590`, `g O __DATA,__objc_data`
+- `_OBJC_METACLASS_$_TFNAttributedTextModel`: `0x044225B8`
+- `_OBJC_CLASS_$_TFNSizeThatFitsHelper`: `0x0442A3A8`, `g O __DATA,__objc_data`
+- `_OBJC_METACLASS_$_TFNSizeThatFitsHelper`: `0x0442A380`
+これは外部参照ではなく、上記Mach-Oにある定義シンボルを示す。以前のOX-004は *解析していた2バイナリでは未定義* という意味であり矛盾しない。
+**まだ未確認**: 定義クラスの実装メソッドと投稿本文計測への接続。
+
 ## 過去の会話の解析報告（当ターン再検証は未実施）
 
 ### OX-H01 — フォントトークン
@@ -71,7 +81,7 @@ v1.4.166 の `ScarletX_CoreText_2026-10-19_083121.json` の新形式100件:
 v1.4.167 でユーザー指示によりアプリ内更新UIと実装ファイルを削除。Sources/自動リリースは維持。
 
 ## 未解決 / 優先順位
-1. TFNAttributedTextModel / TFNSizeThatFitsHelper の定義バイナリをIPA全体で特定。
+1. XServiceLibraries の TFNAttributedTextModel / TFNSizeThatFitsHelper のクラスメソッド・参照を解析。
 2. OX-001〜003のオーナークラスと呼び出し先を実コードで確認。
 3. 公式Xの**タイムライン本文**に適用するフォント、属性、ベースライン、計測ルールを特定。
 4. 同一投稿・同一デバイス・同一有効幅で実測し、差があれば反証可能な形で記録。
