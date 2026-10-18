@@ -1,7 +1,6 @@
 #import "SettingsViewController.h"
 #import "LogViewController.h"
 extern UIViewController *SXCreateGoogleDriveSettingsController(void);
-extern UIViewController *SXCreateUpdateViewController(void);
 
 static NSString * const SXNativeUIKey = @"ScarletXNativeUI";
 static NSString * const SXDiagResourcesKey = @"ScarletXDiagResources";
@@ -42,17 +41,17 @@ static NSString * const SXFollowingOnlyKey = @"ScarletXFollowingOnly";
 - (void)viewDidLoad { [super viewDidLoad]; self.title=@"Settings"; self.navigationItem.rightBarButtonItem=[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(done)]; [self.tableView registerClass:UITableViewCell.class forCellReuseIdentifier:@"cell"]; }
 - (void)done { [self dismissViewControllerAnimated:YES completion:nil]; }
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView { return 4; }
-- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section { return section==0?2:(section==1?3:(section==2?2:1)); }
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section { return section==0?2:(section==1?3:1); }
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section { return section==0?@"カスタマイズ":(section==1?@"ログ":(section==2?@"クラウド連携":@"About")); }
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section { return section==0?@"ネイティブUIをONにすると、プロフィールアイコンからScarlet Xのネイティブ左メニューを開きます。変更は次回起動から反映されます。":nil; }
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     UITableViewCell *cell=[tableView dequeueReusableCellWithIdentifier:@"cell" forIndexPath:indexPath]; cell.accessoryType=UITableViewCellAccessoryNone; cell.accessoryView=nil;
     if(indexPath.section==0){ if(indexPath.row==0){ cell.textLabel.text=@"ネイティブUI"; cell.imageView.image=[UIImage systemImageNamed:@"rectangle.on.rectangle"]; UISwitch *toggle=[UISwitch new]; toggle.on=[[NSUserDefaults standardUserDefaults] boolForKey:SXNativeUIKey]; [toggle addTarget:self action:@selector(nativeUIChanged:) forControlEvents:UIControlEventValueChanged]; cell.accessoryView=toggle; } else { cell.textLabel.text=@"表示カスタマイズ"; cell.imageView.image=[UIImage systemImageNamed:@"eye.slash"]; cell.accessoryType=UITableViewCellAccessoryDisclosureIndicator; } }
     else if(indexPath.section==1){ NSArray *titles=@[@"診断ログ",@"エラーログ",@"詳細診断ログ"]; NSArray *icons=@[@"waveform.path.ecg",@"exclamationmark.triangle",@"ladybug"]; cell.textLabel.text=titles[indexPath.row]; cell.imageView.image=[UIImage systemImageNamed:icons[indexPath.row]]; cell.accessoryType=UITableViewCellAccessoryDisclosureIndicator; }
-    else if(indexPath.section==2){ cell.textLabel.text=indexPath.row==0?@"Google Drive連携":@"アップデート"; cell.imageView.image=[UIImage systemImageNamed:indexPath.row==0?@"externaldrive":@"arrow.down.app"]; cell.accessoryType=UITableViewCellAccessoryDisclosureIndicator; }
+    else if(indexPath.section==2){ cell.textLabel.text=@"Google Drive連携"; cell.imageView.image=[UIImage systemImageNamed:@"externaldrive"]; cell.accessoryType=UITableViewCellAccessoryDisclosureIndicator; }
     else { NSString *version=[NSBundle.mainBundle objectForInfoDictionaryKey:@"CFBundleShortVersionString"]?:@"?"; cell.textLabel.text=[NSString stringWithFormat:@"Scarlet X %@",version]; cell.imageView.image=[UIImage systemImageNamed:@"info.circle"]; }
     return cell;
 }
 - (void)nativeUIChanged:(UISwitch *)sender { [[NSUserDefaults standardUserDefaults] setBool:sender.isOn forKey:SXNativeUIKey]; }
-- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath { [tableView deselectRowAtIndexPath:indexPath animated:YES]; if(indexPath.section==0){ if(indexPath.row==1)[self.navigationController pushViewController:[SXDisplayCustomizationViewController new] animated:YES]; return; } if(indexPath.section==2){ [self.navigationController pushViewController:indexPath.row==0?SXCreateGoogleDriveSettingsController():SXCreateUpdateViewController() animated:YES]; return; } if(indexPath.section!=1)return; if(indexPath.row<2){ SXLogKind kind=indexPath.row==0?SXLogKindDiagnostics:SXLogKindErrors; [self.navigationController pushViewController:[[LogViewController alloc] initWithLogKind:kind] animated:YES]; } else [self.navigationController pushViewController:[SXDetailedDiagnosticsViewController new] animated:YES]; }
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath { [tableView deselectRowAtIndexPath:indexPath animated:YES]; if(indexPath.section==0){ if(indexPath.row==1)[self.navigationController pushViewController:[SXDisplayCustomizationViewController new] animated:YES]; return; } if(indexPath.section==2){ [self.navigationController pushViewController:SXCreateGoogleDriveSettingsController() animated:YES]; return; } if(indexPath.section!=1)return; if(indexPath.row<2){ SXLogKind kind=indexPath.row==0?SXLogKindDiagnostics:SXLogKindErrors; [self.navigationController pushViewController:[[LogViewController alloc] initWithLogKind:kind] animated:YES]; } else [self.navigationController pushViewController:[SXDetailedDiagnosticsViewController new] animated:YES]; }
 @end
