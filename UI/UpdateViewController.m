@@ -24,7 +24,7 @@ static NSString *const SXUpdateSourceURL = @"https://raw.githubusercontent.com/B
 }
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section { return 3; }
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
-    return @"GitHub Releasesで公開されたIPAをLiveContainerへ直接渡します。上書き確認はLiveContainerで行われます。データを保持するには「新規インストール」ではなく既存のcom.scarletx.appを選んでください。更新中はScarlet Xを閉じてください。";
+    return @"ゲストアプリ実行中の直接インストールはLiveContainerに再起動を要求されるため、更新手順を案内します。Sourcesで既存のcom.scarletx.appを選ぶと上書きできます。";
 }
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     UITableViewCell *cell=[tableView dequeueReusableCellWithIdentifier:@"update" forIndexPath:indexPath];
@@ -40,7 +40,7 @@ static NSString *const SXUpdateSourceURL = @"https://raw.githubusercontent.com/B
         cell.imageView.image=[UIImage systemImageNamed:@"arrow.clockwise"];
         cell.accessoryType=UITableViewCellAccessoryDisclosureIndicator;
     } else {
-        cell.textLabel.text=@"最新版をLiveContainerでインストール";
+        cell.textLabel.text=@"LiveContainerで更新する手順";
         cell.imageView.image=[UIImage systemImageNamed:@"arrow.up.right.square"];
         cell.accessoryType=UITableViewCellAccessoryDisclosureIndicator;
     }
@@ -169,23 +169,16 @@ static NSString *const SXUpdateSourceURL = @"https://raw.githubusercontent.com/B
     }] resume];
 }
 - (void)openLiveContainer {
-    if(!self.latestIPAURL.length || !self.latestVersion.length) {
-        UIAlertController *a=[UIAlertController alertControllerWithTitle:@"更新できません" message:@"公開IPAの情報を取得できていません。最新版を再確認してください。" preferredStyle:UIAlertControllerStyleAlert];
-        [a addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
-        [self presentViewController:a animated:YES completion:nil];
-        return;
+    NSString *message=@"Scarlet Xの実行中はLiveContainerでインストールできない場合があります。\n\n1. Scarlet Xを終了\n2. LiveContainerを単独で起動\n3. Sources → Scarlet X → インストール\n4. 既存のcom.scarletx.appを選んで上書き\n\n同じバージョンの再インストールにも使えます。";
+    UIAlertController *alert=[UIAlertController alertControllerWithTitle:@"LiveContainerで更新する手順" message:message preferredStyle:UIAlertControllerStyleAlert];
+    if(self.latestIPAURL.length) {
+        NSString *ipa=self.latestIPAURL;
+        [alert addAction:[UIAlertAction actionWithTitle:@"IPAのURLをコピー" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+            UIPasteboard.generalPasteboard.string=ipa;
+        }]];
     }
-    NSURLComponents *link=[NSURLComponents componentsWithString:@"livecontainer://install"];
-    link.queryItems=@[[NSURLQueryItem queryItemWithName:@"url" value:self.latestIPAURL]];
-    NSURL *url=link.URL;
-    if(!url)return;
-    [UIApplication.sharedApplication openURL:url options:@{} completionHandler:^(BOOL success) {
-        if(!success) {
-            UIAlertController *a=[UIAlertController alertControllerWithTitle:@"LiveContainerを開けませんでした" message:@"LiveContainerのSourcesからScarlet Xを選んで更新してください。" preferredStyle:UIAlertControllerStyleAlert];
-            [a addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
-            [self presentViewController:a animated:YES completion:nil];
-        }
-    }];
+    [alert addAction:[UIAlertAction actionWithTitle:@"閉じる" style:UIAlertActionStyleCancel handler:nil]];
+    [self presentViewController:alert animated:YES completion:nil];
 }
 
 @end
