@@ -33,7 +33,7 @@ static NSString *SXRandomURLSafe(NSUInteger bytes) {
     else { c.textLabel.text=@"Googleで認証をテスト"; c.imageView.image=[UIImage systemImageNamed:@"person.crop.circle.badge.checkmark"]; c.accessoryType=UITableViewCellAccessoryDisclosureIndicator; }
     return c;
 }
-- (ASPresentationAnchor)presentationAnchorForWebAuthenticationSession:(ASWebAuthenticationSession *)session { return self.view.window ?: UIApplication.sharedApplication.windows.firstObject; }
+- (ASPresentationAnchor)presentationAnchorForWebAuthenticationSession:(ASWebAuthenticationSession *)session { return self.view.window; }
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
     if (indexPath.row==1) [self startAuth];
