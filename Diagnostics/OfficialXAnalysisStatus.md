@@ -20,6 +20,9 @@ This is a *findings register*, not a substitute for raw binary data or the full 
 - AppleColorEmoji was present in all recorded disagreement samples, but some lines also contained other fallback fonts.
 - These are **Scarlet X internal method differences**, not official X measurements.
 
+## Newly confirmed definition location (2026-10-19)
+- Full IPA inspected: XServiceLibraries.framework/XServiceLibraries defines ObjC class symbols TFNAttributedTextModel (0x04422590) and TFNSizeThatFitsHelper (0x0442A3A8). See OX-005 in OfficialXFindingsLedger.md. This does not establish timeline-body sizing behavior.
+
 ## Not yet confirmed
 - Which official X component actually measures a timeline post's body.
 - Which text attributes, font selection, line-break policies, baseline/leading/rounding rules official X uses.
@@ -28,7 +31,7 @@ This is a *findings register*, not a substitute for raw binary data or the full 
 - Proof that the current Core Text experiment matches official X.
 
 ## Next research / validation
-1. Locate a *definition* or actual call chain for text measurement, rather than inferring from undefined symbols.
+1. Inspect the XServiceLibraries class implementations and identify an *actual call chain* for timeline-body text measurement.
 2. Correlate code paths to timeline post body UI before claiming relevance.
 3. Compare identical text on the same device, same effective font size and width in official X and Scarlet X.
 4. Document each confirmed conclusion with source binary, function address, disassembly/call graph, or actual experiment data.
