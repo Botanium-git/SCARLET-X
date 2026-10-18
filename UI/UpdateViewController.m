@@ -4,6 +4,7 @@ static NSString *const SXUpdateSourceURL = @"https://raw.githubusercontent.com/B
 
 @interface SXUpdateViewController : UITableViewController
 @property(nonatomic,copy) NSString *latestVersion;
+@property(nonatomic,copy) NSString *latestIPAURL;
 @property(nonatomic,copy) NSString *status;
 @property(nonatomic,assign) BOOL checking;
 @end
@@ -18,7 +19,7 @@ static NSString *const SXUpdateSourceURL = @"https://raw.githubusercontent.com/B
 }
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section { return 3; }
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
-    return @"配布済みの最新版だけを確認します。「LiveContainerを開く」は公式のSources追加リンクを使用します。既にソースを登録している場合は重複と表示されることがあります。そのときはLiveContainerのSourcesでScarlet Xを更新してください。上書き確認では既存のcom.scarletx.appを選んでください。";
+    return @"GitHub Releasesで公開されたIPAをLiveContainerへ直接渡します。上書き確認はLiveContainerで行われます。データを保持するには「新規インストール」ではなく既存のcom.scarletx.appを選んでください。更新中はScarlet Xを閉じてください。";
 }
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     UITableViewCell *cell=[tableView dequeueReusableCellWithIdentifier:@"update" forIndexPath:indexPath];
@@ -34,7 +35,7 @@ static NSString *const SXUpdateSourceURL = @"https://raw.githubusercontent.com/B
         cell.imageView.image=[UIImage systemImageNamed:@"arrow.clockwise"];
         cell.accessoryType=UITableViewCellAccessoryDisclosureIndicator;
     } else {
-        cell.textLabel.text=@"LiveContainerを開く（Sources）";
+        cell.textLabel.text=@"最新版をLiveContainerでインストール";
         cell.imageView.image=[UIImage systemImageNamed:@"arrow.up.right.square"];
         cell.accessoryType=UITableViewCellAccessoryDisclosureIndicator;
     }
@@ -58,36 +59,51 @@ static NSString *const SXUpdateSourceURL = @"https://raw.githubusercontent.com/B
         id payload=data.length?[NSJSONSerialization JSONObjectWithData:data options:0 error:nil]:nil;
         NSArray *apps=[payload isKindOfClass:NSDictionary.class] && [payload[@"apps"] isKindOfClass:NSArray.class]?payload[@"apps"]:@[];
         NSString *found=nil;
+        NSString *ipaURL=nil;
         for(NSDictionary *app in apps) {
             if(![app isKindOfClass:NSDictionary.class] || ![app[@"bundleIdentifier"] isEqual:@"com.scarletx"])continue;
             found=[app[@"version"] isKindOfClass:NSString.class]?app[@"version"]:nil;
+            ipaURL=[app[@"downloadURL"] isKindOfClass:NSString.class]?app[@"downloadURL"]:nil;
             break;
         }
         dispatch_async(dispatch_get_main_queue(),^{
             __strong typeof(weakSelf) self=weakSelf;if(!self)return;
             self.checking=NO;
-            if(error || !found.length)self.status=error.localizedDescription?:@"更新情報を読み取れませんでした";
+            if(error || !found.length || !ipaURL.length){self.latestIPAURL=nil;self.status=error.localizedDescription?:@"更新情報を読み取れませんでした";}
             else {
                 self.latestVersion=found;
+                NSURLComponents *download=[NSURLComponents componentsWithString:ipaURL];
+                BOOL valid=[download.scheme isEqualToString:@"https"] && [download.host isEqualToString:@"github.com"] && [download.path hasPrefix:@"/Botanium-git/SCARLET-X/releases/download/"] && [download.path hasSuffix:@".ipa"];
+                self.latestIPAURL=valid?ipaURL:nil;
                 NSString *current=NSBundle.mainBundle.infoDictionary[@"CFBundleShortVersionString"]?:@"0";
                 NSComparisonResult result=[current compare:found options:NSNumericSearch];
-                self.status=result==NSOrderedAscending?@"新しいバージョンがあります":(result==NSOrderedSame?@"最新版です":@"このアプリの方が新しいバージョンです");
+                self.status=!valid?@"公開IPAのURLを検証できません":(result==NSOrderedAscending?@"新しいバージョンがあります":(result==NSOrderedSame?@"最新版です":@"このアプリの方が新しいバージョンです"));
             }
             [self.tableView reloadData];
         });
     }] resume];
 }
 - (void)openLiveContainer {
-    NSString *encoded=[SXUpdateSourceURL stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLQueryAllowedCharacterSet];
-    NSString *link=[NSString stringWithFormat:@"livecontainer://source?url=%@",encoded];
-    NSURL *url=[NSURL URLWithString:link];
+    NSString *current=NSBundle.mainBundle.infoDictionary[@"CFBundleShortVersionString"]?:@"0";
+    if(!self.latestIPAURL.length || !self.latestVersion.length ||
+       [current compare:self.latestVersion options:NSNumericSearch]!=NSOrderedAscending) {
+        UIAlertController *a=[UIAlertController alertControllerWithTitle:@"更新できません" message:@"新しい公開バージョンが確認できてから実行してください。" preferredStyle:UIAlertControllerStyleAlert];
+        [a addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+        [self presentViewController:a animated:YES completion:nil];
+        return;
+    }
+    NSURLComponents *link=[NSURLComponents componentsWithString:@"livecontainer://install"];
+    link.queryItems=@[[NSURLQueryItem queryItemWithName:@"url" value:self.latestIPAURL]];
+    NSURL *url=link.URL;
+    if(!url)return;
     [UIApplication.sharedApplication openURL:url options:@{} completionHandler:^(BOOL success) {
         if(!success) {
-            UIAlertController *a=[UIAlertController alertControllerWithTitle:@"LiveContainerを開けませんでした" message:@"LiveContainerを手動で開き、SourcesからScarlet Xを選んでください。" preferredStyle:UIAlertControllerStyleAlert];
+            UIAlertController *a=[UIAlertController alertControllerWithTitle:@"LiveContainerを開けませんでした" message:@"LiveContainerのSourcesからScarlet Xを選んで更新してください。" preferredStyle:UIAlertControllerStyleAlert];
             [a addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
             [self presentViewController:a animated:YES completion:nil];
         }
     }];
 }
+
 @end
 UIViewController *SXCreateUpdateViewController(void) { return [SXUpdateViewController new]; }
