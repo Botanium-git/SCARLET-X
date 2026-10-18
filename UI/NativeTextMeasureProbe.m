@@ -30,11 +30,14 @@ void SXTextProbeCompare(NSString *text, CGFloat width, UIFont *font, CGFloat leg
     };
     CTParagraphStyleRef style = CTParagraphStyleCreate(settings, sizeof(settings) / sizeof(settings[0]));
     if (!style) return;
+    CTFontRef ctFont = CTFontCreateWithName((__bridge CFStringRef)font.fontName, font.pointSize, NULL);
+    if (!ctFont) { CFRelease(style); return; }
     NSAttributedString *attributed = [[NSAttributedString alloc] initWithString:text attributes:@{
-        (__bridge NSString *)kCTFontAttributeName: font,
+        (__bridge NSString *)kCTFontAttributeName: (__bridge id)ctFont,
         (__bridge NSString *)kCTParagraphStyleAttributeName: (__bridge id)style
     }];
     CFRelease(style);
+    CFRelease(ctFont);
 
     CTFramesetterRef setter = CTFramesetterCreateWithAttributedString((__bridge CFAttributedStringRef)attributed);
     if (!setter) return;
