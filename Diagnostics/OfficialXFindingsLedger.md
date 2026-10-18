@@ -19,8 +19,8 @@
 
 ### OX-002 — サイズ計算に関係しそうなselector
 **DB確認**: `T1Twitter` の `objc_methods` に
-- `sizeThatFits:attributedText:`, imp `8463912` (hex `0x812E68`)
-- `layoutWithText:font:origin:width:outFrame:outContentHeight:`, imp `4816840` (hex `0x498788`)
+- `sizeThatFits:attributedText:`, imp `8463912` (hex `0x812628`)
+- `layoutWithText:font:origin:width:outFrame:outContentHeight:`, imp `4816840` (hex `0x497FC8`)
 - `_t1_quotedStatusCellHeightForStatus:account:width:layoutMetrics:withOptions:`, imp `83128` (hex `0x144B8`)
 がある。
 **未確認**: どれがタイムライン本文を計測するか。名前から決めつけない。
