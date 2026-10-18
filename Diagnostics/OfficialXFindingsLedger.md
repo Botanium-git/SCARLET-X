@@ -44,6 +44,26 @@
 これは外部参照ではなく、上記Mach-Oにある定義シンボルを示す。以前のOX-004は *解析していた2バイナリでは未定義* という意味であり矛盾しない。
 **まだ未確認**: 定義クラスの実装メソッドと投稿本文計測への接続。
 
+
+### OX-006 — XServiceLibrariesを独立索引化（2026-10-19）
+**IPA + 既存インデクサから確認**: `SCARLET_MachO_Indexer` の `build --framework XServiceLibraries` で、82.0 MBのMach-Oから `strings=446543`、`objc_methods=25530` をSQLiteへ追加インデックス化した（独立DB）。既存の2バイナリDBに統合したわけではない。
+
+**SQLiteの `objc_methods` で確認した実装候補**:
+- `sizeThatFitsSize:layoutMetrics:` — IMP `0x2FF2350`、戻り値 `CGSize`
+- `sizeThatFitsSize:layoutMetrics:displayedLines:` — IMP `0x2FF23B0`、戻り値 `CGSize`
+- `_t1_textModelForAttributedString:` — IMP `0xDD1E5C`
+- `initWithString:font:lineSpacing:` — IMP `0xCA1244`
+- `initWithString:font:alignment:lineBreakMode:paragraphSpacing:lineHeight:lineSpacing:` — IMP `0xCA12D4`
+- `_setFont:alignment:lineBreakMode:paragraphSpacing:lineHeight:lineSpacing:writingDirection:` — IMP `0xCA1DCC`
+
+**未確認**: これらのIMPの所有クラス、具体的な逆アセンブル動作、タイムライン本文の呼び出し経路。メソッド名だけでは使用箇所を断定できない。
+
+**再現手順**:
+```bash
+python3 scarlet_macho_index.py build Twitter.ipa -o xservice.sqlite --framework XServiceLibraries
+python3 ResearchTools/macho_db_search.py --db xservice.sqlite --query sizeThatFits --binary XServiceLibraries
+```
+
 ## 過去の会話の解析報告（当ターン再検証は未実施）
 
 ### OX-H01 — フォントトークン
