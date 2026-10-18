@@ -1,6 +1,7 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import <CoreText/CoreText.h>
+#import "../Diagnostics/DiagnosticsStore.h"
 #include <math.h>
 
 // Diagnostic-only: never changes the height or rendering used by the existing table.
@@ -8,7 +9,7 @@ void SXTextProbeCompare(NSString *text, CGFloat width, UIFont *font, CGFloat leg
     if (![[NSUserDefaults standardUserDefaults] boolForKey:@"SXCoreTextCompareEnabled"]) return;
     if (![text isKindOfClass:NSString.class] || text.length == 0 || !font || width <= 0.0) return;
     static NSUInteger sampleCount = 0;
-    if (sampleCount >= 200) return;
+    if (sampleCount >= 100) return;
     sampleCount++;
 
     CGFloat lineHeight = font.lineHeight;
@@ -64,10 +65,11 @@ void SXTextProbeCompare(NSString *text, CGFloat width, UIFont *font, CGFloat leg
                 free(origins);
             }
         }
-        NSLog(@"[SXCoreTextCompare] sample=%lu chars=%lu width=%.2f font=%.2f lines=%ld legacy=%.2f coreText=%.2f delta=%.2f",
+        NSString *detail = [NSString stringWithFormat:@"sample=%lu chars=%lu width=%.2f font=%.2f lines=%ld legacy=%.2f coreText=%.2f delta=%.2f",
               (unsigned long)sampleCount, (unsigned long)text.length, (double)width,
               (double)font.pointSize, (long)count, (double)legacyHeight,
-              (double)resultHeight, (double)(resultHeight - legacyHeight));
+              (double)resultHeight, (double)(resultHeight - legacyHeight)];
+        [[DiagnosticsStore shared] addEvent:@"Core Text本文高さ比較" detail:detail url:nil];
         CFRelease(frame);
     }
     CGPathRelease(path);
