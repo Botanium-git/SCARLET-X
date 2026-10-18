@@ -152,13 +152,17 @@ static CGSize SX278MediaSize(NSDictionary *post, CGFloat contentWidth, CGFloat r
     return CGSizeMake(contentWidth, ceil(MAX(1.0, rowWidth) * 0.68));
 }
 
+extern void SXTextProbeCompare(NSString *text, CGFloat width, UIFont *font, CGFloat legacyHeight);
+
 static CGFloat SX278TextHeight(NSString *text, CGFloat width, UIFont *font) {
     if (text.length == 0) return 0.0;
     CGRect rect = [text boundingRectWithSize:CGSizeMake(MAX(1.0, width), CGFLOAT_MAX)
                                     options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading
                                  attributes:@{NSFontAttributeName:font}
                                     context:nil];
-    return ceil(rect.size.height);
+    CGFloat legacyHeight = ceil(rect.size.height);
+    SXTextProbeCompare(text, MAX(1.0, width), font, legacyHeight);
+    return legacyHeight;
 }
 
 static CGFloat SX278PostHeight(NSDictionary *post, CGFloat width) {
