@@ -171,7 +171,7 @@ static NSString *const SXUpdateSourceURL = @"https://raw.githubusercontent.com/B
 - (void)openLiveContainer {
     NSString *current=NSBundle.mainBundle.infoDictionary[@"CFBundleShortVersionString"]?:@"0";
     if(!self.latestIPAURL.length || !self.latestVersion.length ||
-       [current compare:self.latestVersion options:NSNumericSearch]!=NSOrderedAscending) {
+       NO) {
         UIAlertController *a=[UIAlertController alertControllerWithTitle:@"更新できません" message:@"新しい公開バージョンが確認できてから実行してください。" preferredStyle:UIAlertControllerStyleAlert];
         [a addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
         [self presentViewController:a animated:YES completion:nil];
