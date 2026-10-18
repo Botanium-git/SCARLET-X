@@ -54,7 +54,7 @@ static NSData *SXFormData(NSDictionary<NSString *,NSString *> *values) {
 }
 typedef void (^SXAPICompletion)(NSDictionary *result, NSError *error);
 static void SXRequest(NSURLRequest *request,SXAPICompletion finish) {
- [[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData *data,NSURLResponse *response,NSError *error){
+ [[[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData *data,NSURLResponse *response,NSError *error){
   id obj=data.length?[NSJSONSerialization JSONObjectWithData:data options:0 error:nil]:nil;
   NSDictionary *json=[obj isKindOfClass:NSDictionary.class]?obj:@{};
   NSInteger status=[response isKindOfClass:NSHTTPURLResponse.class]?((NSHTTPURLResponse *)response).statusCode:0;
