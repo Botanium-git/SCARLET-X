@@ -1,12 +1,13 @@
 #import <UIKit/UIKit.h>
 
-static NSString *const SXUpdateSourceURL = @"https://raw.githubusercontent.com/Botanium-git/SCARLET-X/develop/source.json";
+static NSString *const SXUpdateReleasesAPI = @"https://api.github.com/repos/Botanium-git/SCARLET-X/releases?per_page=30";
 
 @interface SXUpdateViewController : UITableViewController
 @property(nonatomic,copy) NSString *latestVersion;
 @property(nonatomic,copy) NSString *latestIPAURL;
 @property(nonatomic,copy) NSString *status;
 @property(nonatomic,assign) BOOL checking;
+@property(nonatomic,copy) NSString *lastChecked;
 @end
 
 @implementation SXUpdateViewController
@@ -28,7 +29,7 @@ static NSString *const SXUpdateSourceURL = @"https://raw.githubusercontent.com/B
     cell.textLabel.numberOfLines=0;
     NSString *current=NSBundle.mainBundle.infoDictionary[@"CFBundleShortVersionString"]?:@"?";
     if(indexPath.row==0) {
-        cell.textLabel.text=[NSString stringWithFormat:@"現在: v%@\n配布最新版: %@\n状態: %@",current,self.latestVersion?[@"v" stringByAppendingString:self.latestVersion]:@"未取得",self.status?:@""];
+        cell.textLabel.text=[NSString stringWithFormat:@"現在: v%@\n配布最新版: %@\n状態: %@\n取得元: GitHub Releases API\n最終確認: %@",current,self.latestVersion?[@"v" stringByAppendingString:self.latestVersion]:@"未取得",self.status?:@"",self.lastChecked?:@"未取得"];
         cell.imageView.image=[UIImage systemImageNamed:@"info.circle"];
     } else if(indexPath.row==1) {
         cell.textLabel.text=@"最新版を再確認";
@@ -48,36 +49,65 @@ static NSString *const SXUpdateSourceURL = @"https://raw.githubusercontent.com/B
 }
 - (void)checkForUpdates {
     if(self.checking)return;
-    self.checking=YES; self.status=@"確認中…";[self.tableView reloadData];
-    NSURLComponents *c=[NSURLComponents componentsWithString:SXUpdateSourceURL];
-    c.queryItems=@[[NSURLQueryItem queryItemWithName:@"t" value:[NSString stringWithFormat:@"%.0f",NSDate.date.timeIntervalSince1970]]];
-    NSMutableURLRequest *req=[NSMutableURLRequest requestWithURL:c.URL];
+    self.checking=YES;
+    self.status=@"確認中…";
+    [self.tableView reloadData];
+    NSURLComponents *components=[NSURLComponents componentsWithString:SXUpdateReleasesAPI];
+    NSMutableURLRequest *req=[NSMutableURLRequest requestWithURL:components.URL];
     req.cachePolicy=NSURLRequestReloadIgnoringLocalCacheData;
     req.timeoutInterval=20;
+    [req setValue:@"application/vnd.github+json" forHTTPHeaderField:@"Accept"];
+    [req setValue:@"ScarletX-Updater" forHTTPHeaderField:@"User-Agent"];
     __weak typeof(self) weakSelf=self;
     [[[NSURLSession sharedSession] dataTaskWithRequest:req completionHandler:^(NSData *data,NSURLResponse *response,NSError *error) {
-        id payload=data.length?[NSJSONSerialization JSONObjectWithData:data options:0 error:nil]:nil;
-        NSArray *apps=[payload isKindOfClass:NSDictionary.class] && [payload[@"apps"] isKindOfClass:NSArray.class]?payload[@"apps"]:@[];
-        NSString *found=nil;
-        NSString *ipaURL=nil;
-        for(NSDictionary *app in apps) {
-            if(![app isKindOfClass:NSDictionary.class] || ![app[@"bundleIdentifier"] isEqual:@"com.scarletx"])continue;
-            found=[app[@"version"] isKindOfClass:NSString.class]?app[@"version"]:nil;
-            ipaURL=[app[@"downloadURL"] isKindOfClass:NSString.class]?app[@"downloadURL"]:nil;
-            break;
+        NSError *jsonError=nil;
+        id parsed=data.length?[NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError]:nil;
+        NSArray *releases=[parsed isKindOfClass:NSArray.class]?parsed:nil;
+        NSInteger http=[response isKindOfClass:NSHTTPURLResponse.class]?((NSHTTPURLResponse *)response).statusCode:0;
+        NSString *found=nil,*ipaURL=nil;
+        for(id item in releases) {
+            if(![item isKindOfClass:NSDictionary.class])continue;
+            NSDictionary *release=item;
+            if([release[@"draft"] boolValue] || [release[@"prerelease"] boolValue])continue;
+            NSString *tag=[release[@"tag_name"] isKindOfClass:NSString.class]?release[@"tag_name"]:@"";
+            if(![tag hasPrefix:@"v"] || tag.length<2)continue;
+            NSString *version=[tag substringFromIndex:1];
+            NSCharacterSet *invalid=[[NSCharacterSet characterSetWithCharactersInString:@"0123456789."] invertedSet];
+            if([version rangeOfCharacterFromSet:invalid].location!=NSNotFound)continue;
+            NSString *expected=[NSString stringWithFormat:@"ScarletX_v%@.ipa",version];
+            NSArray *assets=[release[@"assets"] isKindOfClass:NSArray.class]?release[@"assets"]:@[];
+            for(id itemAsset in assets) {
+                if(![itemAsset isKindOfClass:NSDictionary.class])continue;
+                NSDictionary *asset=itemAsset;
+                if(![asset[@"name"] isEqual:expected])continue;
+                NSString *candidate=[asset[@"browser_download_url"] isKindOfClass:NSString.class]?asset[@"browser_download_url"]:nil;
+                NSURLComponents *url=[NSURLComponents componentsWithString:candidate];
+                BOOL valid=[url.scheme isEqualToString:@"https"] && [url.host isEqualToString:@"github.com"] &&
+                    [url.path isEqualToString:[NSString stringWithFormat:@"/Botanium-git/SCARLET-X/releases/download/%@/%@",tag,expected]];
+                if(!valid)continue;
+                if(!found || [found compare:version options:NSNumericSearch]==NSOrderedAscending) {
+                    found=version;ipaURL=candidate;
+                }
+            }
         }
         dispatch_async(dispatch_get_main_queue(),^{
-            __strong typeof(weakSelf) self=weakSelf;if(!self)return;
+            __strong typeof(weakSelf) self=weakSelf;
+            if(!self)return;
             self.checking=NO;
-            if(error || !found.length || !ipaURL.length){self.latestIPAURL=nil;self.status=error.localizedDescription?:@"更新情報を読み取れませんでした";}
-            else {
+            NSDateFormatter *formatter=[NSDateFormatter new];
+            formatter.dateFormat=@"yyyy-MM-dd HH:mm:ss";
+            self.lastChecked=[formatter stringFromDate:NSDate.date];
+            if(error || http!=200 || !found.length || !ipaURL.length) {
+                self.latestIPAURL=nil;
+                self.latestVersion=nil;
+                self.status=error.localizedDescription?:[NSString stringWithFormat:@"取得失敗 (HTTP %ld%@)",(long)http,jsonError?@", JSON不正":@""];
+            } else {
                 self.latestVersion=found;
-                NSURLComponents *download=[NSURLComponents componentsWithString:ipaURL];
-                BOOL valid=[download.scheme isEqualToString:@"https"] && [download.host isEqualToString:@"github.com"] && [download.path hasPrefix:@"/Botanium-git/SCARLET-X/releases/download/"] && [download.path hasSuffix:@".ipa"];
-                self.latestIPAURL=valid?ipaURL:nil;
+                self.latestIPAURL=ipaURL;
                 NSString *current=NSBundle.mainBundle.infoDictionary[@"CFBundleShortVersionString"]?:@"0";
-                NSComparisonResult result=[current compare:found options:NSNumericSearch];
-                self.status=!valid?@"公開IPAのURLを検証できません":(result==NSOrderedAscending?@"新しいバージョンがあります":(result==NSOrderedSame?@"最新版です":@"このアプリの方が新しいバージョンです"));
+                NSComparisonResult order=[current compare:found options:NSNumericSearch];
+                self.status=order==NSOrderedAscending?@"新しいバージョンがあります":
+                    (order==NSOrderedSame?@"最新版です":@"このアプリの方が新しいバージョンです");
             }
             [self.tableView reloadData];
         });
