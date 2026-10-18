@@ -216,7 +216,7 @@ static NSURLRequest *SXJSONRequest(NSString *url,NSString *method,NSString *toke
   if(![entry[@"title"] isEqual:@"Core Text本文高さ比較"])continue;
   NSString *detail=[entry[@"detail"] isKindOfClass:NSString.class]?entry[@"detail"]:@"";
   // Accept only numerical measurements, never arbitrary log text or URLs.
-  NSRegularExpression *pattern=[NSRegularExpression regularExpressionWithPattern:@"^sample=[0-9]+ chars=[0-9]+ width=[0-9.]+ font=[0-9.]+ lines=[0-9]+ legacy=[0-9.]+ coreText=[0-9.]+ delta=[-0-9.]+(?: metrics=[0-9.,|]+)?$" options:0 error:nil];
+  NSRegularExpression *pattern=[NSRegularExpression regularExpressionWithPattern:@"^sample=[0-9]+ chars=[0-9]+ width=[0-9.]+ font=[0-9.]+ lines=[0-9]+ legacy=[0-9.]+ coreText=[0-9.]+ delta=[-0-9.]+(?: metrics=[0-9.,|]+(?: fontNames=[A-Za-z0-9_.,|\\-]+ types=[0-9|]+)?)?$" options:0 error:nil];
   if([pattern numberOfMatchesInString:detail options:0 range:NSMakeRange(0,detail.length)]!=1)continue;
   [safe addObject:@{@"date":entry[@"date"]?:@0,@"detail":detail}];
  }
