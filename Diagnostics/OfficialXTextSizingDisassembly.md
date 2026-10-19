@@ -408,3 +408,21 @@ OX-024のXActivityHistory.VideoRowViewを**通常タイムラインと取り違�
 **確実な事実**は上記class/list/selector/IMPと実命令存在。**まだ立証していない**のは、これらが通常タイムラインの実際の選択経路であること、`TTAStatusBodyTextView`への直接/間接呼び出し、具体的なdisplayType・fontOptions・本文の最終行高。別Mach-Oでの動的dispatchや過去のVideoRowView経路を自動的に接続しない。
 
 次は`T1StandardStatusViewLayoutStateGenerator`の`0x2AE63C`でメッセージ送信先をstub/selectorまで解決し、`T1StatusCell`の`setCellLayout:`・`layoutSubviews`へのデータ接続と、通常タイムラインでの利用証拠を並行追跡する。
+
+
+## OX-026 — T1StandardStatusViewLayoutStateGeneratorの入口を実命令で検証（2026-10-19）
+
+入力は元IPAのT1Twitter。SQLite `scarlet_macho(1).sqlite` に `binary_id=1, selector=layoutStateForViewModel:options:account:layoutMetrics:withPreviousLayoutState:, imp=2811452 (0x2AE63C), types=@56@0:8@16Q24@32@40@48` を再確認。元Mach-Oの `llvm-objdump -d --start-address=0x2ae63c --stop-address=0x2ae9a0 T1Twitter` でコードを独立確認。
+
+関数入口の確認事項（指定PCはunslid VM address）:
+
+- `0x2AE63C sub sp,sp,#0x130`、`0x2AE640..668` に保存レジスタ/フレーム準備。これはSQLiteのIMPアドレスが実際の関数入口であることと整合する。
+- `0x2AE66C mov x26,x6`, `0x2AE670 mov x19,x5`, `0x2AE674 mov x25,x4`, `0x2AE678 mov x21,x3`, `0x2AE67C mov x23,x2`, `0x2AE680 mov x20,x0`。引数を退避し後続で参照する。selectorの引数名だけで受信クラスやオブジェクト構造を仮定しない。
+- `0x2AE6C4..0x2AE6D4` はx2=x23, x3=x21, x4=x25, x5=0を設定して `0x1303880` にBL。返値は `0x2AE6D8` にx22へ保存。呼び先のselectorとownerは**まだ未解決**。
+- `0x2AE6DC..0x2AE6E4` は別の入力に `0x13104E0` を呼び、その返値w0について `cbz` による条件分岐。分岐によって `0x2AE6E8` で受け取る候補または `0x2AE6F8..70C` で生成する候補をx21に置き、`0x2AE710..` の共通経路へ進む。
+- `0x2AE710..0x2AE754` に複数の間接Objective-C stub相当のBLと返値を中間レジスタへ保存する経路。**stub/selref解決前に具体的なレイアウトクラスを推定しない**。
+- `0x2AE864..` では一つの呼出し結果x0を1および2と比較して分岐し、`0x2AE880` では返り値のbit0を検査する。**この値をTTAStatusBodyTextViewのdisplayTypeと同一視しない**。
+
+**現時点の限界**: T1Twitter内のgeneratorに入力選択・条件分岐・複数のメッセージ送信があることまでは実命令で確認したが、呼び先stubのselector・receiver所有者・TTAStatusBodyTextViewとの連結・最終セル高の式は未解決。LLVMの表示する`_T1ShouldAttachUnifiedCardForViewModel` は近傍のシンボル見出しであり、このIMPの関数名を証明しない。OX-025で想定したgenerator→layout state→cellの関係は依然探索仮説。
+
+**次に必要な操作**: `0x1303880`, `0x12E87A0`, `0x1370B80`, `0x13104E0`, `0x132A260` 等についてT1Twitterの`__objc_stubs`と`__objc_selrefs`からselectorを解決し、receiverを追ってから、返値の型とcellへの受け渡しを評価する。公式X実機未確認、アプリ本体は変更していない。
