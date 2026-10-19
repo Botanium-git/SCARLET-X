@@ -289,3 +289,8 @@ WHERE name LIKE '%TFNSizeThatFitsHelper%';
 
 - `T1StandardStatusView` class symbol `0x1AED840` has a concrete rebased `__objc_classrefs` slot `0x1AD3E30` in T1Twitter. One resolved access (`0x2A86E8..0x2A86F0`) sends selector `layoutTracingSamplingFractionalPercentage` (objc stub `0x1314DA0`, selref `0x1AAD530`) to the class and then passes its return value to another method. This specific reference concerns tracing settings, **not verified status-view allocation or home timeline placement**.
 - OX-044's internal standard-view→generator link remains intact, but normal home-timeline adoption is **unconfirmed**. Classref occurrence alone does not prove an on-screen use. Details: [OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-045. No app/main/version change.
+
+## 2026-10-19 — OX-046
+
+- `T1StatusCell` uses the same internal object (ivar-offset storage at VM `0x1ADD804`) for status rendering/layout: `setCellLayout:` IMP `0x2F09F4` sends `setLayoutState:` (`0x13431A0`); `layoutSubviews` IMP `0x2F0B74` sends `setFrame:` (`0x133F080`); `sizeThatFits:` IMP `0x2F0BE4` delegates to `intrinsicContentSize` (`0x1306D60`). Adjacent reset/update code sends `setViewModel:options:account:` (`0x1352060`). These selectors and ivar reads were checked against original T1Twitter Mach-O.
+- This identifies a **cell → inner status-view layout/measurement bridge**, but **does not prove** that the inner runtime class is `T1StandardStatusView`, nor that this cell is selected by the ordinary home timeline. The constructor/ivar assignment and caller selection remain to investigate. Detailed addresses and limits: [OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-046. App code/main/version untouched.
