@@ -603,3 +603,34 @@ llvm-objdump -d --start-address=0x1319ba0 --stop-address=0x1319bb4 T1Twitter
 ```bash
 llvm-objdump -d --start-address=0x3bae90 --stop-address=0x3bb4cc T1Twitter
 ```
+
+
+## OX-032 — 本文高さAPI直結、selectionPaddingとlinkTapDetectionBottomPaddingの同定（2026-10-19）
+
+一次資料: T1Twitter X v12.25 `/mnt/data/T1Twitter`。前回OX-031で未解決だった`-[T1StandardStatusBodyViewAdapter layoutStateForViewModel:layoutMetrics:]` (0x3BAE90) のselectorを、元Mach-Oの`__objc_stubs`にあるADRP/LDRのselref slotを直接読んで再確認。元アプリ・ライブラリ・main未変更。
+
+**本文高さへの直接接続**
+- `0x3BB130..0x3BB158`は`TTAStatusBodyTextView` classref (0x1AD5FC8) をreceiver (x0) にして、viewModel (x2=x22)、`options`の値 (x3=x23)、layoutMetrics (x4=x20)、adapter `displayType` (x5)、幅候補 (d0=d8)、追加の引数 (x6=x20復元値、x7=x26、stack上にも値) を設定し、`0x3BB158 bl 0x12F8400`を実行。
+- `0x12F8400` selref slot `0x1AA62C8` → **`heightForViewModel:options:displayTextOptions:displayType:width:layoutMetrics:richTextEnabled:trailingString:maxLines:attachmentDelegate:textKit2Enabled:cachingEnabled:`**。これはOX-019で実装解析済みの`TTAStatusBodyTextView`高さAPIと同じselectorであり、**standard body adapter→公式本文height APIの静的直接接続を確認**。引数の完全な対応と実際のdisplayType数値は今後の追跡課題。
+- `0x3BB15C fminnm d1,d9,d0`、`0x3BB160 fcmp d9,#0`、`0x3BB164 fcsel d9,d1,d0,gt`。ここから `heightCandidate = d9>0 ? minNum(d9, returnedHeight) : returnedHeight`（NaN取扱いはfminnm）と読める。maximumSizeBlockの高さ候補は、正なら実測API高さの上限として働き、0ならAPI高さを使う。
+
+**OX-031 d10/d11の取得元を解決**
+- `0x3BB0B8 bl 0x131FF20` のselector = `options` (selref `0x1AB0190`)。戻りbit33を`0x3BB0C8 tbnz x0,#0x21`で検査。bit33が有効ならd10,d11は初期値0のまま。
+- bit33が無効の場合のみ、TTAStatusBodyTextView classref slot `0x1AD5FC8`をreceiverに:
+  - `0x3BB0D0 bl 0x1333C60` selector `selectionPadding` (selref `0x1AB50E0`) → d10
+  - `0x3BB0DC bl 0x13156C0` selector `linkTapDetectionBottomPadding` (selref `0x1AAD778`) → d11
+- よって **bit33がoff**、本文幅d8・採用済み高さd9が正の経路では、`0x3BB280..0x3BB28C`の合成式は **W = d8 + 2*selectionPadding, H = d9 + linkTapDetectionBottomPadding + 2*selectionPadding**。**bit33がonでは両paddingは0**。値の具体的pt数はこの調査では未解決。d9は前述のheight API結果を最大高さ候補でcapした値。
+- `0x3BB294 bl 0x134D200` selector `setSize:` (selref `0x1ABB648`) 。`0x3BB2AC bl 0x13354E0` selector `setAdditionalEdgeInsets:` (selref `0x1AB5700`)、値は`(-d10,-d10,-d10-d11,-d10)`（d0,d1,d2,d3）。これはsizeへ加えた計測用寸法を別途negative edge insetsとして状態に登録する処理。順序はarm64構造体引数からの推論を含むため、UIEdgeInsetsのtop/left/bottom/rightへの対応を厳密に断定する前にメソッド型エンコーディング確認が必要。
+- `0x3BB2C4`以下のサイズ非正フォールバックでも、`setSize:`を呼ぶ。
+- `0x3BB2B4/0x3BB2DC/0x3BB2E8`はadapterの`displayType` selector (stub `0x12ED280`, selref `0x1AA3668`) を取得し1/2と比較。`0x3BB32C`は`setValidForFocalTweetIncompleteQuotedStatus:` selector (stub `0x1351760`, selref `0x1ABC7A0`)。ここはruntime値が未確認。
+- `0x3BB36C bl 0x12F3100` selector `fontForViewModel:options:displayTextOptions:displayType:width:layoutMetrics:` (selref `0x1AA4E08`) 、receiverは再度 `TTAStatusBodyTextView` classref。**同じadapterで高さAPIと表示フォントAPIの両方を呼ぶ**と確認。
+
+**重要な制限**: これでOX-030/031の未解決selectorが複数実証でき、adapter→height API→サイズ状態`setSize:`というコード上の連続性を確認した。ただしadapter採用の実際のタイムライン条件、実測displayType、全引数x6/x7とstackの正確な種類、端末フォントpt値、`maximumSizeBlock`自体の設定元は未確認。ビット33の意味も推測で付けない。正規Xの端末実機観測はなし。Scarlet Xには未適用。
+
+再現用:
+```bash
+llvm-objdump -d --start-address=0x3bb0b4 --stop-address=0x3bb390 T1Twitter
+llvm-objdump -d --start-address=0x12f8400 --stop-address=0x12f8414 T1Twitter
+llvm-objdump -d --start-address=0x1333c60 --stop-address=0x1333c74 T1Twitter
+llvm-objdump -d --start-address=0x13156c0 --stop-address=0x13156d4 T1Twitter
+```
