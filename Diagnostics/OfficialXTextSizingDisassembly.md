@@ -955,3 +955,20 @@ Separate sqlite selector-index survey (candidate list only) found **three `statu
 **Scope/conclusion:** OX-048 proved standard T1StatusCell factory selects T1StandardStatusView, while OX-049 still does **not** establish that the home timeline uses that cell. The explicit example classref is a cast, not allocation. Further work: verify `statusCellClass` owner and return class and inspect potential timeline data sources. No Scarlet X code/main/version changes or official app runtime test.
 
 Reproduce: `llvm-objdump --macho --dyld-info T1Twitter | grep 1AD1F08`; `llvm-objdump -d --start-address=0x3f144 --stop-address=0x3f184 T1Twitter`; `llvm-objdump -d --start-address=0x1366440 --stop-address=0x1366454 T1Twitter`. Decode selector refs `0x1AC1AD8` and `0x1ABF490` in original Mach-O.
+
+
+## OX-050 — statusCellClass owners and return values (2026-10-20)
+
+Primary source: provided X v12.25 T1Twitter Mach-O, read-only. Revisited OX-049's SQLite candidate selector `statusCellClass` and independently parsed native nlist metaclasses, ro data and relative Objective-C method lists (`0x8000000C` entries) for all three IMPs. Class references decoded from original Mach-O `__objc_classrefs` rebase data.
+
+| Owner (class method) | Metaclass | Relative method list | IMP | Return |
+|---|---|---|---|---|
+| `+[T1TweetSelectionTableRowAdapter statusCellClass]` | `0x1BA0C30` | `0x1375CD0` | `0xE2FE44` | nil class (`mov x0,#0; b 0x798410`) |
+| `+[T1ConversationFocalStatusTableRowAdapter statusCellClass]` | `0x1AED700` | `0x13914C0` | `0x295D70` | classref `0x1AD5280` → `T1ConversationFocalStatusViewTableViewCell` class `0x1AE1220` |
+| `+[T1StatusTableRowAdapter statusCellClass]` | `0x1AF4640` | `0x1393250` | `0x41E0B8` | classref `0x1AD1F08` → `T1StatusCell` class `0x1AEF370` |
+
+Both non-nil methods load their classrefs into x0 and tail-branch to runtime helper `0x12B03D8`. The first returns nil via a distinct helper `0x798410`, whose finer retain behavior is not assessed; x0 is explicitly zero. The owner/selector/IMP identities were verified from relative method entries, not simply inferred from class or method names.
+
+**Static link:** If `T1StatusTableRowAdapter`'s `statusCellClass` is used, the selected cell class is `T1StatusCell`. OX-048 shows the latter's default `statusViewClass` is `T1StandardStatusView`, enabling the complete static adapter→cell→standard status view→layout generator→body adapter→TTAStatusBodyTextView chain. This does **not** yet prove the ordinary home timeline uses `T1StatusTableRowAdapter`, nor the conditions for alternate row adapters or dynamic runtime overrides. Follow the row adapter factory/data-source selection next. No app/main/version change and no official-X runtime measurements.
+
+Reproduce: `llvm-objdump -d --start-address=0xe2fe44 --stop-address=0xe2fe54 T1Twitter`; similarly ranges `0x295d70..0x295d7c` and `0x41e0b8..0x41e0c4`; dyld-info search `1AD5280`/`1AD1F08`.
