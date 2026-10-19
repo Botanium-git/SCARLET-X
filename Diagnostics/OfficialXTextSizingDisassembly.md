@@ -889,3 +889,22 @@ Source: supplied official X v12.25 `T1Twitter` Mach-O, `llvm-objdump -d` inspect
 **Limits:** The ivar's name, assignment/constructor origin, concrete class, cell registration ownership, and ordinary home-timeline selection are not proved here. Merely possessing `setLayoutState:`, `intrinsicContentSize`, and `setViewModel:options:account:` does not distinguish `T1StandardStatusView` from alternative status-view classes. Next inspect T1StatusCell initialization, ivar metadata, and any factory/selection callsites. No app/main/version changes or device runtime testing.
 
 Reproduce: `llvm-objdump -d --start-address=0x2f09f4 --stop-address=0x2f0bf4 T1Twitter`; inspect ObjC stubs at `0x13431A0`, `0x133F080`, `0x1306D60`, `0x1352060`, `0x12E5040`, `0x12DBCE0` and their selrefs.
+
+
+## OX-047 — T1StatusCell inner status view is chosen through statusViewClass (2026-10-19)
+
+Primary evidence: official X v12.25 IPA, freshly extracted `Payload/Twitter.app/Frameworks/T1Twitter.framework/T1Twitter`; disassembly of original Mach-O with LLVM. `_OBJC_CLASS_$_T1StatusCell` at `0x1AEF370`, class_ro `0x1996E28`, relative method list `0x13D37C0` (61 methods). Owner-resolved instance methods: `initWithStyle:reuseIdentifier:` **0x2EF97C** and `statusViewWithFrame:` **0x2F099C** (in addition to OX-046 methods).
+
+In `-[T1StatusCell initWithStyle:reuseIdentifier:]`, `0x2EF9B4..0x2EF9CC` obtains cell bounds and calls objc stub **0x135CC00**, selector ref `0x1ABF4C8` → **`statusViewWithFrame:`**. Its return value is retained and saved into the same cell ivar whose *ivar offset pointer* is `0x1ADD804` (at `0x2EF9CC..0x2EF9D8`). The cell then sends a method via stub `0x133E160` to the saved object and adds it to a content view via stub `0x12D3BC0`; their exact selector names should be checked before labeling these individual operations.
+
+The method `-[T1StatusCell statusViewWithFrame:]` at **0x2F099C** calls runtime helper `0x12B03D8` followed by objc stub **0x135CB40**. The stub's selref `0x1ABF498` resolves to **`statusViewClass`**. Then `0x2F09C4` calls alloc stub `0x12B02F4`, and `0x2F09E0` calls objc stub **0x12FFE60**, selref `0x1AA8160` → **`initWithFrame:isInCell:isDarkBackground:`**. Registers set w2=1 and w3=0, with CGRect values passed in floating-point register group. Thus the concrete view class is **obtained through `statusViewClass`**, rather than an explicitly hardcoded `T1StandardStatusView` classref within this factory.
+
+**Conclusion:** An actual creation/ownership bridge is now verified: `T1StatusCell.initWithStyle:reuseIdentifier:` → `statusViewWithFrame:` → class returned by `statusViewClass` → `initWithFrame:isInCell:isDarkBackground:` → saved cell ivar → layout/delegation proven in OX-046. The concrete `statusViewClass` implementation and any subclasses/overrides or selection by specific timeline controllers have **not** been resolved. Therefore this proves that the cell obtains an inner status view, but **does not prove** it must be `T1StandardStatusView` for regular home posts. `isInCell=1`, `isDarkBackground=0` are the immediate arguments of the observed factory; runtime conditions and subclasses remain subject to verification. App code and main not touched; no version bump or device verification.
+
+Reproduce:
+```sh
+llvm-objdump -d --start-address=0x2ef97c --stop-address=0x2efa10 T1Twitter
+llvm-objdump -d --start-address=0x2f099c --stop-address=0x2f09f4 T1Twitter
+llvm-objdump -d --start-address=0x135cb40 --stop-address=0x135cb54 T1Twitter
+llvm-objdump -d --start-address=0x12ffe60 --stop-address=0x12ffe70 T1Twitter
+```
