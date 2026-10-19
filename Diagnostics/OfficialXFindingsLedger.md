@@ -72,6 +72,10 @@ python3 ResearchTools/macho_db_search.py --db xservice.sqlite --query sizeThatFi
 ### OX-008 — IMPの実行領域検証と独立DB生成（2026-10-19）
 **実物Mach-O・SQLiteによる再検証**: XServiceLibraries の `objc_methods` 25,530件のうち、格納された `imp` が実行属性のあるMach-Oセクション内を指すのは **18,600件**、範囲外は **6,930件**。元DBは保存し、別DB `XServiceLibraries_validated.sqlite` に実行領域内のレコードだけを残した。検証用プログラム: `ResearchTools/validate_imp_index.py`。このフィルタは誤ったメタデータアドレスを除外するが、対応するオーナークラスや呼び出し経路の真偽は判定しない。元インデクサ全体の修正完了を意味しない。
 
+
+### OX-009 — Relative method IMPの生成時検証（2026-10-19）
+**元インデクサのソースと実物Mach-Oで確認**: `scan_relative_method_lists` はObjective-C候補リストを探索し `imp_field_va+imp_rel` でアドレスを算出していたが、実行可能セクションに入るかを検証していなかった。修正版では `S_ATTR_PURE_INSTRUCTIONS` / `S_ATTR_SOME_INSTRUCTIONS` を持つセクションの範囲にあり、4バイト境界に整列するIMPのみ受理する。実物 `XServiceLibraries` で再スキャンした結果18,600件。以前の検証済みDBの18,600件と `(selector,imp)` が全件一致（差集合0件）。修正の再現用: `ResearchTools/repair_macho_indexer.py`。**留保**: クラス所有者・呼び出し関係・偽陽性の完全排除は未確認。元のツールは保存する。
+
 ## 過去の会話の解析報告（当ターン再検証は未実施）
 
 ### OX-H01 — フォントトークン
