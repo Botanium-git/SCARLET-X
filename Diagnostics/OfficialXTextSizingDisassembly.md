@@ -568,3 +568,38 @@ llvm-objdump -d --start-address=0x3ba7c0 --stop-address=0x3ba7f8 T1Twitter
 llvm-objdump -d --start-address=0x3bae90 --stop-address=0x3bb0b0 T1Twitter
 llvm-objdump -d --start-address=0x1319ba0 --stop-address=0x1319bb4 T1Twitter
 ```
+
+
+## OX-031 — Body adapterのCGSize合成とnil block fallback（2026-10-19）
+
+一次資料: T1Twitter v12.25 SHA-256 `1af51e57d746a81546da299e103241da9682ac397f33475defec7f6a3e6e5ccd`、XAppLibraries SHA-256 `ce10ca22abc997bfc3eb7732be33c198175994e24a421219cf0808c6e7882249`。既知の`-[T1StandardStatusBodyViewAdapter layoutStateForViewModel:layoutMetrics:]`（0x3BAE90）の0x3BAF00..0x3BB370を、元Mach-O `llvm-objdump`で再デコード。
+
+**間接maximumSizeBlockとフォールバック**
+- `0x3BAF10 cbz x0,0x3BB01C`: `maximumSizeBlock`がnilなら、`0x3BB01C`でlayoutMetricsに`bodyWidth`を送り、`0x3BB024 mov v8,v0`、`0x3BB028 fmov d9,xzr`で**サイズ候補 (width=bodyWidth,height=0)** とする。
+- blockがある場合、`0x3BAF34 blr x8`の結果（v0/v1）をv8/v9へ保存。width=d8が0のとき`0x3BAF58`のbodyWidthを採る。ただしblockのinvoke実装/割当元は未確定。
+- 条件付き`0x3BB074..0x3BB080`はd8に-8を加えた幅候補と元幅を、フラグbit0で`fcsel`する。**高さではない**。
+
+**サイズ合成（0x3BB270以降）**
+- `0x3BB270 fcmp d8,#0`; `0x3BB274 b.le 0x3BB2C4`; `0x3BB278 fcmp d9,#0`; `0x3BB27C b.le 0x3BB2C4`。幅または高さの候補が0以下なら`0x3BB2C4`へ分岐する。
+- 両方正の場合:
+```text
+0x3BB280 fadd d1,d10,d10   # 2*d10
+0x3BB284 fadd d0,d1,d8     # W = d8 + 2*d10
+0x3BB288 fadd d1,d11,d1
+0x3BB28C fadd d1,d1,d9     # H = d9 + d11 + 2*d10
+0x3BB290 BL 0x134D200     # CGFloatペアを引数に渡す呼出し
+0x3BB298 fneg d0,d10
+0x3BB29C fsub d2,d0,d11    # -(d10+d11)
+0x3BB2AC BL 0x13354E0
+```
+- この分岐で成立する算術恒等式は **W=d8+2*d10, H=d9+d11+2*d10**。ただし、d10/d11が意味する実際のpadding・insetsは**selector/データフロー解決まで未確定**。呼出し先のクラス/引数の用途も現時点で断定しない。
+- いずれかが0以下なら`0x3BB2C4`でメモリからd0/d1をロードし`0x134D200`へ渡す、異なるサイズ設定経路。読み込む定数の具体的CGSizeは現段階では未解決。
+- `0x3BB2B0..0x3BB2F8`の後段はadapterのgetter戻り値を1/2と比較して追加分岐。前段で既に`displayType` getterを確認したとしても、**このgetterのselectorは実際のstub/selrefを再検証するまでdisplayTypeと断定しない**。
+- `0x3BB334..0x3BB36C`ではXAppLibrariesにbindされた`TTAStatusBodyTextView`のclassref slot `0x1AD5FC8`を再びロードし、`0x12F3100`へBLして別のオブジェクトを取得し、後段で返値を保持する。これは**body viewクラス参照を含むサイズ/状態構築箇所**だが、selectorや返りオブジェクト型を解決するまでheight APIと混同しない。
+
+**更新した未解決条件**: (a) maximumSizeBlock設定元/実体、(b) d10/d11の生成元と意味、(c) `0x134D200`/`0x13354E0`/`0x12F3100`を含むselector、(d) 返されるstateの具体的サイズ格納先、(e) 通常タイムライン採用とruntime displayType。公式X実機未確認。アプリ本体・main・バージョン未変更。
+
+再現コマンド:
+```bash
+llvm-objdump -d --start-address=0x3bae90 --stop-address=0x3bb4cc T1Twitter
+```
