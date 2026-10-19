@@ -447,3 +447,36 @@ OX-024のXActivityHistory.VideoRowViewを**通常タイムラインと取り違�
 `0x2AE864..0x2AE884` の数値1/2の比較対象は `promotedBadgePlacement` 由来であり、**OX-019の本文displayType=1/2ではない**。ここは混同を避けるため明示。 `0x1354640`のbit0検査は `shouldDisplayAsCompactPromotedTweet` の返値であり、同様に本文表示タイプとは区別する。
 
 ただし、selectorだけでは動的receiverの実クラスや通常タイムライン採用の証明にはならない。今回の確認は**generator内部のlayout metrics / adapter set / cache利用経路**に限定され、本文の計測値の取得箇所とセル最終高さは未追跡。新しいアプリUI変更なし。
+
+
+## OX-027 — LayoutStateGenerator後半にある座標計算候補の切り分け（2026-10-19）
+
+一次資料: 添付の公式X v12.25 T1Twitter Mach-O、SHA-256 `1af51e57d746a81546da299e103241da9682ac397f33475defec7f6a3e6e5ccd`（今回再照合）。対象はOX-025/026で所有者を解決した `-[T1StandardStatusViewLayoutStateGenerator layoutStateForViewModel:options:account:layoutMetrics:withPreviousLayoutState:]` の内部、**0x2AED80..0x2AEE30**。通常タイムラインのruntime採用は未立証。
+
+```text
+2aed94  943fea40  bl     0x12a9694
+2aed98  4ea01c0a  mov.16b v10, v0
+2aed9c  4ea11c2b  mov.16b v11, v1
+2aeda0  4ea21c4c  mov.16b v12, v2
+2aeda4  4ea31c6d  mov.16b v13, v3
+2aedb0  9441bfb4  bl     0x131ec80
+2aedc0  9440ae70  bl     0x12da780
+2aedc4  6d010fe2  stp    d2, d3, [sp,#0x10]
+2aedc8  6d0007e0  stp    d0, d1, [sp]
+2aede0  943feaf3  bl     0x12a99ac
+2aede4  1e682808  fadd   d8,d0,d8
+2aedf0  9441bfa4  bl     0x131ec80
+2aee00  94411350  bl     0x12f3b40
+2aee04  1e61390b  fsub   d11,d8,d1
+2aee20  1e6e6968  fmaxnm d8,d11,d14
+2aee24  aa1603e0  mov    x0,x22
+2aee28  9440a1be  bl     0x12d7520
+2aee2c  f1001c1f  cmp    x0,#7
+2aee30  54000fe1  b.ne   0x2af02c
+```
+
+`llvm-objdump -d --start-address=0x2aed80 --stop-address=0x2aee80 T1Twitter` で実命令を照合。左の8桁はLLVMが表示する32bit命令語で、file-order bytesではない。**確定できる事実**: 0x2AEDE0の呼び出し後、返りd0を既存d8へ加算し、0x2AEE00の呼び出し後にd1を減算し、`fmaxnm`でd14との下限候補を計算したのち、別条件に分岐する。
+
+**未解決**: 0x12A9694 / 0x131EC80 / 0x12DA780 / 0x12A99AC / 0x12F3B40 / 0x12D7520 のselector、実際のreceiver、d8/d14の初期値の意味、ここでの座標が本文なのか画像/カード等なのか、最終的なlayout stateのsizeへの格納。この段階では**本文高さをセル高へ加算していると断定できない**。近傍シンボル表示 `_T1ShouldAttachUnifiedCardForViewModel` は関数ownerの根拠にしない。
+
+**次の検証**: 上記stubをXServiceではなく**T1Twitter自身の**selrefsから解決し、0x131EC80に渡す`w2=5`の意味と、返り値の型、d8への取り込みを逆方向追跡する。次に実際のstate.size setterへの到達とT1StatusCellへの受け渡しを調べる。アプリ本体・バージョン・mainは変更しない。
