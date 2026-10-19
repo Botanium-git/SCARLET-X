@@ -942,3 +942,16 @@ llvm-objdump -d --start-address=0xc008 --stop-address=0xc014 T1Twitter
 llvm-objdump --macho --dyld-info T1Twitter | grep -E '1AD3E30|1AD1828'
 llvm-objdump --macho --syms T1Twitter | grep 'OBJC_METACLASS_.*T1StatusCell'
 ```
+
+
+## OX-049 — T1StatusCell classref use is a safe cast; timeline registration still unresolved (2026-10-20)
+
+Read-only source: supplied official X v12.25 `T1Twitter` Mach-O and `scarlet_macho(1).sqlite`. Confirmed `T1StatusCell` symbol class VM **0x1AEF370** and chained-rebase classref **0x1AD1F08** (distinct from metaclass and superref entries) with `llvm-objdump --macho --dyld-info`.
+
+Concrete classref use at **0x3F158..0x3F16C**: `adrp x8,0x1AD1000`, `ldr x0,[x8,#0xF08]`, runtime helper `0x12B03D8`, `mov x2,x0`, `mov x0,x19`, `bl 0x1366440`. Original stub `0x1366440` loads selector reference **0x1AC1AD8**, which resolves to **`tfs_safeCastAsClass:`**. Thus **this is a checked cast of the x19 object to T1StatusCell**, NOT construction, registration, or proof of home timeline use. The following stub `0x135CB20` resolves to **`statusView`** (selref **0x1ABF490**) and is called on the cast result. The enclosing method owner, original x19 object source, and screen still need owner/dataflow analysis.
+
+Separate sqlite selector-index survey (candidate list only) found **three `statusCellClass` implementations** within T1Twitter with unslid IMPs **0xE30044**, **0x295EF0**, **0x41E078** (decimal 14876228, 2710896, 4317368). These candidates may be factory/selection clues, but the current scan has not resolved their actual class/metaclass owners, implementations, or whether the home timeline calls them. They must not be described as verified timeline selectors without first validating metadata and calls in the Mach-O. `tableView:cellForRowAtIndexPath:` also has multiple indexed implementations; none was identified as the home timeline owner in this pass.
+
+**Scope/conclusion:** OX-048 proved standard T1StatusCell factory selects T1StandardStatusView, while OX-049 still does **not** establish that the home timeline uses that cell. The explicit example classref is a cast, not allocation. Further work: verify `statusCellClass` owner and return class and inspect potential timeline data sources. No Scarlet X code/main/version changes or official app runtime test.
+
+Reproduce: `llvm-objdump --macho --dyld-info T1Twitter | grep 1AD1F08`; `llvm-objdump -d --start-address=0x3f144 --stop-address=0x3f184 T1Twitter`; `llvm-objdump -d --start-address=0x1366440 --stop-address=0x1366454 T1Twitter`. Decode selector refs `0x1AC1AD8` and `0x1ABF490` in original Mach-O.
