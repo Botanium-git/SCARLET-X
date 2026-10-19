@@ -64,6 +64,10 @@ python3 scarlet_macho_index.py build Twitter.ipa -o xservice.sqlite --framework 
 python3 ResearchTools/macho_db_search.py --db xservice.sqlite --query sizeThatFits --binary XServiceLibraries
 ```
 
+
+### OX-007 — SQLite IMP address caveat (2026-10-19)
+**Mach-O section headers directly verified**: `XServiceLibraries` has `__TEXT,__text` at `0x4000..0x2ECC4E4`; `__TEXT,__objc_methlist` at `0x2F63D30..0x30156EC`. Indexed entries such as `sizeThatFitsSize:layoutMetrics:` (`objc_methods.imp=0x2FF2350`) and `sizeThatFitsSize:layoutMetrics:displayedLines:` (`0x2FF23B0`) are **inside `__objc_methlist`, NOT executable `__text`**. Accordingly the numeric `imp` column cannot be trusted as a method implementation PC without independent validation. Earlier OX-006 descriptions of these entries as implementation addresses must be read as index-stored values, not confirmed code targets. Root cause in indexer and scope of affected records not yet established. Disassembly or call graph inference from these specific stored `imp` values is invalid.
+
 ## 過去の会話の解析報告（当ターン再検証は未実施）
 
 ### OX-H01 — フォントトークン
