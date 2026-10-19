@@ -972,3 +972,37 @@ Both non-nil methods load their classrefs into x0 and tail-branch to runtime hel
 **Static link:** If `T1StatusTableRowAdapter`'s `statusCellClass` is used, the selected cell class is `T1StatusCell`. OX-048 shows the latter's default `statusViewClass` is `T1StandardStatusView`, enabling the complete static adapter→cell→standard status view→layout generator→body adapter→TTAStatusBodyTextView chain. This does **not** yet prove the ordinary home timeline uses `T1StatusTableRowAdapter`, nor the conditions for alternate row adapters or dynamic runtime overrides. Follow the row adapter factory/data-source selection next. No app/main/version change and no official-X runtime measurements.
 
 Reproduce: `llvm-objdump -d --start-address=0xe2fe44 --stop-address=0xe2fe54 T1Twitter`; similarly ranges `0x295d70..0x295d7c` and `0x41e0b8..0x41e0c4`; dyld-info search `1AD5280`/`1AD1F08`.
+
+
+## OX-051 — Home-timeline selector index addresses are not executable IMPs (2026-10-20)
+
+Primary source: supplied official X v12.25 `T1Twitter` Mach-O re-extracted from `Payload/Twitter.app/Frameworks/T1Twitter.framework/T1Twitter`, SHA-256 `1af51e57d746a81546da299e103241da9682ac397f33475defec7f6a3e6e5ccd`, plus supplied `scarlet_macho(1).sqlite`. No live X injection or binary edits.
+
+**Important indexing limitation found during home-timeline adapter tracing:** In this SQLite database, the `objc_methods.imp` field for the home-timeline factory selectors below gives addresses **inside the `__TEXT,__objc_methlist` section**, not executable code. Therefore treating these integer values as actual method IMPs and disassembling them is incorrect.
+
+| Indexed selector | SQLite `imp` integer | Hex VA | Native section |
+|---|---:|---:|---|
+| `homeTimelineContainerViewControllerWithAccount:homeTimeline:countryFilteredTimeline:latestTimeline:rankedFollowingTimeline:titleViewPlugins:barButtonItemPlugins:` | 21091028 | `0x141D2D4` | `__TEXT,__objc_methlist` |
+| `homeTimelineItemsViewControllerWithAccount:timeline:` | 21091040 | `0x141D2E0` | `__TEXT,__objc_methlist` |
+| `urtHomeTimelineStreamFactoryWithApplicationLink:homeConfiguration:` | 21091052 | `0x141D2EC` | `__TEXT,__objc_methlist` |
+
+The native Mach-O load commands show `__TEXT,__text` begins at `0x4000` and has size `0x1296124`; `__TEXT,__objc_methlist` begins at `0x1374280` and has size `0xA9B94`. All three addresses above fall inside the **metadata** section, far outside executable `__text`. Indeed `llvm-objdump -d --start-address=0x141d2b0 --stop-address=0x141d320` emits no instructions. This finding does **not** disprove those selectors or factory methods; it shows that the index alone does not provide their implementation bodies. The exact meaning/encoding of the indexed record is not yet established and must not be guessed.
+
+**What is established:** X v12.25 contains indexed home-timeline-related selectors, including `homeTimelineItemsViewControllerWithAccount:timeline:` and a home-container factory selector; the SQLite `imp` values above are **not independently verified IMPs**. No home data-source → `T1StatusTableRowAdapter` factory edge was established in this pass. OX-050's conditional adapter→cell chain remains valid, but it must not be labeled as a confirmed home-timeline runtime path.
+
+**Next:** Parse the original Objective-C metadata at these `__objc_methlist` records (owner class, list layout, selector and relative implementation encoding) and follow actual resolved executable IMPs to identify timeline item adapter selection. Verify any claimed `T1StatusTableRowAdapter` creation against concrete classrefs, selectors, and disassembly before connecting it to the home timeline.
+
+Reproduce:
+```sh
+sha256sum T1Twitter
+llvm-objdump --macho --private-headers T1Twitter
+llvm-objdump -d --start-address=0x141d2b0 --stop-address=0x141d320 T1Twitter
+python3 - <<'PY'
+import sqlite3
+db=sqlite3.connect('scarlet_macho(1).sqlite')
+for selector in ('homeTimelineItemsViewControllerWithAccount:timeline:', 'urtHomeTimelineStreamFactoryWithApplicationLink:homeConfiguration:'):
+    print(selector,db.execute('select imp from objc_methods where selector=?',(selector,)).fetchall())
+PY
+```
+
+Scope: diagnostics only on `develop`, no app code/main/version changes, no official X runtime claims.
