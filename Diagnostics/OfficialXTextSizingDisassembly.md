@@ -831,3 +831,12 @@ Performed an exhaustive, 4-byte-aligned ARM64 **immediate BL** target scan over 
 Consequently there is **still no demonstrated ordinary home-timeline runtime caller** of this generator. The static body-adapter `displayType=0` proven in OX-040 cannot yet be generalized to all home timeline posts. The proper next step is to find selector-dispatch callsites and identify receiver class/provenance, then view-model/display conditions. No app code, main, or version modification and no on-device observation.
 
 Reproduce: obtain executable `__text` from `llvm-objdump --macho --section-headers T1Twitter`, scan each 32-bit word for ARM64 BL and sign-extend imm26. Compare decoded target addresses to `0x2AE63C` and `0x2A7410`. SQLite query `select selector,imp,list_address from objc_methods where imp=2811452` confirms indexed method row but is not alone proof of runtime use.
+
+
+## OX-042 — objc selector dispatch callsite discovery (2026-10-19)
+
+Source: supplied T1Twitter Mach-O, inspected read-only. `__objc_stubs` range `0x12B0C20..0x1374280`, `__objc_selrefs` `0x1A91BA8..0x1AD0410`, executable `__text` `0x4000..0x129A124`. An ADRP(x1)+LDR(x1) selector-reference resolver maps Objective-C stub **0x1314C80** to selref **0x1AAD4E8**, whose target is **`layoutStateForViewModel:options:account:layoutMetrics:withPreviousLayoutState:`**. The binary's aligned ARM64 BL immediate-target scan locates **7 direct BLs to this selector stub**, at **0x25F400, 0x25FEC0, 0x2A8B30, 0x2EF85C, 0x32A678, 0x32A90C, 0x8498F0**.
+
+All seven are `objc_msgSend`-style **selector-stub calls**, not direct calls to the standard generator's IMP `0x2AE63C`. This resolves why OX-041's direct-to-IMP scan was negative, while leaving open which runtime class receives each message. Examples: 0x2A8B18 sets x0 from x22 and marshals viewModel/options/account/layoutMetrics/previous state into x2..x6 before 0x2A8B30; 0x25F3E8 similarly receives x0=x22; 0x25FEA8 sets x0=x21; 0x2EF844 sets x0=x25. The final receiver classes / exact provenance remain **unverified**. In particular, **none of these has been proved to dispatch to `T1StandardStatusViewLayoutStateGenerator` on the normal home timeline**. Other dynamically formed calls and other Mach-Os are outside the scan scope.
+
+Reproduce by parsing `__objc_stubs` ADRP+LDR selector addresses and scanning `__text` ARM64 BL imm26 branches; disassemble e.g. `llvm-objdump -d --start-address=0x2a8ae8 --stop-address=0x2a8b40 T1Twitter`. No app/main/version edits or runtime tests.
