@@ -213,3 +213,9 @@ WHERE name LIKE '%TFNSizeThatFitsHelper%';
 - **間接計測関数の意味**: `layoutStateForViewModel:layoutMetrics:`（0x3BAE90）の`0x1319BA0`は`maximumSizeBlock`（selref `0x1AAE8B0`）。非nil時には`0x3BAF28`でblock invoke pointerを読み、`0x3BAF34 blr x8`でviewModel・layoutMetricsを渡す。返りv0/v1を保持し、第一成分が0なら`bodyWidth`（stub `0x12DB600`、selref `0x1A9EF48`）から幅を採る。
 - `0x12BB1C0`は`_t1_convertToAutoTranslatedViewModelIfNeeded:`（selref `0x1A96E38`）。`0x3BB074`付近に条件付き-8.0があるが**本文高さへの一律減算ではない**。
 - **依然未解決**: maximumSizeBlockの設定元/実装、通常タイムラインでのadapter採用条件・displayTypeの実値、TTA高さAPIへの具体的引数伝播、最終セル合成。詳細の命令と出典は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-030。公式X実機未測定、アプリ本体/main/バージョン変更なし。
+
+## 2026-10-19 継続調査 — OX-031
+
+- **OX-031（T1Twitter実命令）**: `T1StandardStatusBodyViewAdapter layoutStateForViewModel:layoutMetrics:` 0x3BAE90の後半を再解析。`maximumSizeBlock`がnilなら`layoutMetrics.bodyWidth`と高さ0を候補とし、blockがあれば結果のv0/v1を幅/高さ候補として保持。幅が0ならbodyWidth、条件付き幅-8pt分岐も存在。
+- **サイズ合成**: `0x3BB270..0x3BB2AC`で幅d8・高さd9が両方正のとき、`W=d8+2*d10`, `H=d9+d11+2*d10`を形成して後続callへ渡す。どちらかが0以下なら別のメモリ定数からサイズを設定する分岐。**d10/d11をpaddingと確定したわけではない**。同じ関数の後続にTTAStatusBodyTextView classrefを使用する箇所もあるが、具体的selector・最終size・通常タイムライン採用は未確認。
+- 根拠の命令語・PCと未解決範囲は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-031。アプリ本体・main・バージョン未変更、公式X実機未確認。
