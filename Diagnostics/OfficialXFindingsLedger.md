@@ -225,3 +225,8 @@ WHERE name LIKE '%TFNSizeThatFitsHelper%';
 - **OX-032：本文height APIへの直接接続を解決**。T1Twitter `T1StandardStatusBodyViewAdapter layoutStateForViewModel:layoutMetrics:` 0x3BB158 のobjc stub `0x12F8400`は、`TTAStatusBodyTextView heightForViewModel:options:displayTextOptions:displayType:width:layoutMetrics:richTextEnabled:trailingString:maxLines:attachmentDelegate:textKit2Enabled:cachingEnabled:` selector。続いて返るheightとmaximumSizeBlock側の高さ候補d9を `d9>0 ? fminnm(d9, heightAPIResult) : heightAPIResult` で統合する。
 - **d10/d11の意味**: optionsのbit33がoffなら、TTAStatusBodyTextViewのクラスメソッド `selectionPadding` → d10、`linkTapDetectionBottomPadding` → d11。bit33がonなら両者0。正のサイズ候補では `W=d8+2*d10`、`H=d9+d11+2*d10` をレイアウト状態へ `setSize:`、その後 `setAdditionalEdgeInsets:` で負の差分を記録。非正の別サイズ分岐も確認。
 - `displayType`は1/2比較に使用。後段はTTAStatusBodyTextViewの`fontForViewModel:options:displayTextOptions:displayType:width:layoutMetrics:`も呼ぶ。**ただし通常タイムライン採用条件・実際のdisplayType、bit33の機能名、padのpt数、maximumSizeBlock設定元はまだ未確認**。詳細は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-032。アプリ本体/main/バージョン未変更。
+
+## 2026-10-19 継続調査 — OX-033
+
+- **OX-033**: XAppLibraries `TTAStatusBodyTextView.linkTapDetectionBottomPadding` IMP `0x2CCCBDC` は `fmov d0,#6.0; ret` で定数 **6pt** を返す。`selectionPadding` IMP `0x2CCCBD0` はclassref `0x6540D98`の `_OBJC_CLASS_$_TFNAttributedTextView` へ、selector `selectionPadding` (selref `0x651E550`) を転送。したがって selectionPadding の実数値は **XServiceLibraries の呼び先を解析するまで未確定**。
+- この6ptはOX-032の **bit33 offかつ本文サイズ正** の合成式における `linkTapDetectionBottomPadding` の値であって、すべてのセルに無条件に加算してよいという根拠ではない。`maximumSizeBlock` 設定元、通常タイムラインでのbit33/displayTypeは未解決。詳細は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-033。アプリ本体/main/バージョン未変更。
