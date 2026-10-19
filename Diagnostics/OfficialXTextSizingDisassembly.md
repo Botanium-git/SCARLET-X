@@ -875,3 +875,17 @@ Other nearby classref occurrences at `0x2AE604..0x2AE608` and `0x2AE6F8..0x2AE6F
 Next: find concrete allocation/factory or reusable-cell class from a likely timeline controller, with receiver and selected class confirmed by code/dataflow; do not equate any classref with actual UI placement. No code/main/version changes, no real-device measurements.
 
 Reproduce: `llvm-objdump --macho --dyld-info T1Twitter | grep 1AD3E30`, `llvm-objdump -d --start-address=0x2a86dc --stop-address=0x2a8708 T1Twitter`, and `llvm-objdump -d --start-address=0x1314da0 --stop-address=0x1314db0 T1Twitter` (selector reference at `0x1AAD530`).
+
+
+## OX-046 — T1StatusCell delegates layout state and frames to an internal view (2026-10-19)
+
+Source: supplied official X v12.25 `T1Twitter` Mach-O, `llvm-objdump -d` inspected at `0x2F09F4..0x2F0BE4`; ObjC stub ADRP/LDR selrefs resolved from the original binary. All addresses are unslid VM addresses.
+
+- Previously verified `-[T1StatusCell setCellLayout:]` IMP **0x2F09F4**: `0x2F0A4C..0x2F0A58` reads an object from a T1StatusCell ivar using the offset encoded at VM **0x1ADD804**; `0x2F0A5C bl 0x13431A0` sends **`setLayoutState:`** to that object, with layout-state argument x2. This confirms the cell forwards a layout state to an internally held object. The precise runtime class of that object remains unresolved.
+- `-[T1StatusCell layoutSubviews]` IMP **0x2F0B74**: `0x2F0BA8 bl 0x12E5040` sends **`contentView`**, `0x2F0BB8 bl 0x12DBCE0` sends **`bounds`**, then `0x2F0BC4..0x2F0BC8` loads the same internally held object and sends **`setFrame:`** via stub **0x133F080**. Thus the cell explicitly sets its inner view's frame from a CGRect produced on this path. This is layout behavior, not proof of which status view implementation is inside.
+- `-[T1StatusCell sizeThatFits:]` IMP **0x2F0BE4** reads the same ivar and tail-calls stub **0x1306D60**, resolving to **`intrinsicContentSize`**. Therefore cell sizing delegates the size query to the same internal object, rather than directly reimplementing the text-height math in this method.
+- In adjacent method code `0x2F0A84..0x2F0B70`, the internal object also receives **`setViewModel:options:account:`** through ObjC stub **0x1352060**. This supports a cell-to-status-view data update path, without establishing whether this is invariably `T1StandardStatusView`.
+
+**Limits:** The ivar's name, assignment/constructor origin, concrete class, cell registration ownership, and ordinary home-timeline selection are not proved here. Merely possessing `setLayoutState:`, `intrinsicContentSize`, and `setViewModel:options:account:` does not distinguish `T1StandardStatusView` from alternative status-view classes. Next inspect T1StatusCell initialization, ivar metadata, and any factory/selection callsites. No app/main/version changes or device runtime testing.
+
+Reproduce: `llvm-objdump -d --start-address=0x2f09f4 --stop-address=0x2f0bf4 T1Twitter`; inspect ObjC stubs at `0x13431A0`, `0x133F080`, `0x1306D60`, `0x1352060`, `0x12E5040`, `0x12DBCE0` and their selrefs.
