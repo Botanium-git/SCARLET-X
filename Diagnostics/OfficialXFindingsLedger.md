@@ -234,3 +234,8 @@ WHERE name LIKE '%TFNSizeThatFitsHelper%';
 ## 2026-10-19 継続調査 — OX-034
 
 - **OX-034**: XServiceLibraries SHA-256 `09e830331f35a7806f477cd0cbd497642461c44face5f818d39f9abd0b3040fc` の `_OBJC_METACLASS_$_TFNAttributedTextView` `0x44226A8` → ro `0x41C2D20` → relative methods `0x2F83590` 内、selector `selectionPadding` entry `0x2F83598` → IMP `0xCB52A8` を実Mach-O照合。`fmov d0,#2.0;ret` により **selectionPadding=2pt** を確定。OX-033の **linkTapDetectionBottomPadding=6pt** と合わせ、OX-032のbit33 off/正の本文サイズ経路ではレイアウトstateへ `W=幅候補+4pt`, `H=採用本文高+10pt`。さらにnegative `additionalEdgeInsets`も設定するため表示上の最終余白と同一ではない。bit33 onの場合padding両方0。通常タイムラインの実bit33・displayType、maximumSizeBlockの設定元は引き続き未確定。詳細は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-034。アプリ本体/main/バージョン変更なし。
+
+## 2026-10-19 継続調査 — OX-035
+
+- **OX-035：maximumSizeBlockの実所有クラス確認**。T1Twitter `T1StandardStatusBodyViewAdapter` (class `0x1AF28B8`) のsuperclass slot `0x1AF28C0` は、XServiceLibraries `_OBJC_CLASS_$_TFNComposableViewAdapter` へのchained bind。本文adapter own method list（36件）にmaximumSizeBlock/accessorは存在せず、superclass `TFNComposableViewAdapter` のrelative method list `0x2FB4810`（28件）に `maximumSizeBlock` IMP `0xCD8038` と `setMaximumSizeBlock:` IMP `0xCD8040`を確認。getterは `[self+0x30]` を返し、setterはoffset `0x30`で共通保存処理へ分岐する。
+- これによりOX-030のblock invokeの所有元/ivarの一部を解決。ただし**実際のsetter呼出し元・具体的block invokeアドレス・通常タイムラインの設定条件は未解決**。詳細は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-035。アプリ本体/main/バージョン変更なし。
