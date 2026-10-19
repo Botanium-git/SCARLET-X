@@ -1034,3 +1034,34 @@ The original Mach-O's chained rebase data points from `__DATA,__objc_const` slot
 Next: find conforming implementation(s) / Swift bridge for `TwitterHomeFeatureObjC` via ObjC class protocol lists and Swift conformance metadata; follow concrete `homeTimelineItemsViewControllerWithAccount:timeline:` implementation and its data-source adapter selection.
 
 No app source/main/version changes. No live iPhone results implied.
+
+
+## OX-053 — Home factory selectors have no concrete ObjC method entries in T1Twitter index (2026-10-20)
+
+Primary inputs: user-supplied official X v12.25 `T1Twitter` Mach-O and `scarlet_macho(1).sqlite`. This pass used read-only SQLite queries and native Mach-O symbol listings, not an iPhone runtime test.
+
+A complete lookup of the exact selector `homeTimelineItemsViewControllerWithAccount:timeline:` in the supplied SQLite `objc_methods` table returns **one** row: `binary_id=1`, `list_address=21091000 (0x141D2B8)`, `entry_index=2`, `imp=21091040 (0x141D2E0)`. The full selector `homeTimelineContainerViewControllerWithAccount:homeTimeline:countryFilteredTimeline:latestTimeline:rankedFollowingTimeline:titleViewPlugins:barButtonItemPlugins:` also returns **one** row, in the same list at index 1, with `imp=0x141D2D4`. OX-052 established this list is the required-instance declaration list for the Swift-exposed ObjC protocol `TwitterHomeFeatureObjC` and the 12-byte entries' implementation deltas are zero. Hence **the available ObjC method index supplies no concrete implementation for either selector**. This is a statement about the index's coverage, **not** proof that X has no implementation: Swift method dispatch, separate binaries and optimized/stripped code are possible explanations still needing verification.
+
+The same native T1Twitter symbol table independently includes concrete Objective-C class symbols:
+
+| Symbol | VM address |
+|---|---:|
+| `_OBJC_CLASS_$_TwitterHomeFeature` | `0x1B56120` |
+| `_OBJC_CLASS_$_TwitterHomeFeatures` | `0x1B56D28` |
+| `_OBJC_METACLASS_$_TwitterHomeFeature` | `0x1BBBD38` |
+| `_OBJC_METACLASS_$_TwitterHomeFeatures` | `0x1BBC848` |
+
+**Naming alone does not establish** that `TwitterHomeFeature` or `TwitterHomeFeatures` adopts `TwitterHomeFeatureObjC`, implements these factory methods, or selects `T1StatusTableRowAdapter`. The next step is to decode class `class_ro_t` protocol lists and relevant Swift conformance metadata, and inspect the other IPA binary records for concrete factory implementations. Keep OX-050's adapter-to-cell path explicitly conditional until that link is verified.
+
+Reproduce:
+```sh
+python3 - <<'PY'
+import sqlite3
+con=sqlite3.connect('scarlet_macho(1).sqlite')
+for sel in ('homeTimelineItemsViewControllerWithAccount:timeline:', 'homeTimelineContainerViewControllerWithAccount:homeTimeline:countryFilteredTimeline:latestTimeline:rankedFollowingTimeline:titleViewPlugins:barButtonItemPlugins:'):
+    print(sel,con.execute('SELECT binary_id,imp,list_address,entry_index FROM objc_methods WHERE selector=?',(sel,)).fetchall())
+PY
+llvm-objdump --macho --syms T1Twitter | grep 'OBJC_.*TwitterHomeFeature'
+```
+
+Only diagnostic documentation on `develop` changed. No app code, version, `main` or live-device measurements.
