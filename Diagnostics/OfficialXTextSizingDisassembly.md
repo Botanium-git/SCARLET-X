@@ -488,7 +488,7 @@ OX-024のXActivityHistory.VideoRowViewを**通常タイムラインと取り違�
 
 | caller BL | stub/GOT or selref | 解決名 | 出典 |
 |---|---|---|---|
-| `0x2AEDA C`ではなく `0x2AEDB0` | ObjC stub `0x131EC80`, selref `0x1AAFCE8` | `objectAtIndexedSubscript:` | slot raw target `0x16452D2` |
+| `0x2AEDB0` | ObjC stub `0x131EC80`, selref `0x1AAFCE8` | `objectAtIndexedSubscript:` | slot raw target `0x16452D2` |
 | `0x2AEDE0` | C stub `0x12A99AC`, GOT `0x18682C0` | `_TFNVerticalSpacingForBaselineEdgeInsets` | chained bind word `0x8010000000002561`; dylib XServiceLibraries |
 | `0x2AEE00` | ObjC stub `0x12F3B40`, selref `0x1AA5098` | `frame` | slot raw target `0x1606754` |
 | `0x2AED94` | C stub `0x12A9694`, GOT `0x1868000` | `_TFNBaselineEdgeInsetsForNonTextWithSimulatedFont` | chained bind word `0x8010000000002509`; dylib XServiceLibraries |
