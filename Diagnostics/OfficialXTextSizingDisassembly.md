@@ -357,3 +357,23 @@ fallback `_lineHeightForFont:` **0xCA2338..0xCA2364** は **font.lineHeight + _T
 ### OX-022記録上の表記訂正（2026-10-19）
 
 上のLLVM列を初回記録で「命令bytes」と呼んだのは不正確。`llvm-objdump`の `52800007` は32-bit命令語で、Mach-O上の連続4バイトは `07 00 80 52`（以前のEvidence.txtの `07008052` に一致）。`0x30C35A0` の `94672718` もファイル上のバイト列は `18 27 67 94`。命令デコードと分岐先を覆す訂正ではなく、**エンディアン表記と証拠の種類の訂正**。元の一覧は残した。元XAppLibrariesのSHA-256を再照合し、該当区間をLLVMで再表示して確認した。
+
+
+## OX-023 — Swift callerの直接BLを一段遡る（2026-10-19）
+
+対象: 元IPA由来XAppLibraries、SHA-256 `ce10ca22abc997bfc3eb7732be33c198175994e24a421219cf0808c6e7882249`。前回OX-022の包含関数`0x30C31C0..0x30C37F0`への**直接BL**を`__TEXT,__text`（VMA `0x4000`、長さ`0x4A2F508`）の4バイト境界で実命令wordから計算して照合。AArch64 BLの26bit符号付き相対即値を4倍し、命令PCに加算。`B`も別走査。
+
+- **直接BL caller: 1件**、`0x30C3B24 -> 0x30C31C0`。当該4-byte命令語は`0x97FFFDA7`（ファイル順bytes `A7 FD FF 97`）、llvm-objdumpも `bl 0x30c31c0` と出力した。
+- 同範囲内で同ターゲットへの直接`B`は0件。この0件は**間接呼び出し、Swift vtable/witness table、objc dispatch、他Mach-Oからの呼び出しの不存在を証明しない**。
+- `0x30C3B10`から始まる小関数で`0x30C3B1C`は `bl 0x4A44560`、`0x30C3B20`でその返値をx20に保存、`0x30C3B24`で解析対象関数を呼ぶ。`0x30C3B28`でx20をx0に戻し、`0x30C3B34`で`0x4A44554`へtail branch。後者のstubsは前回OX-022の解決済み`_objc_release`相当の参照と一致する。前者0x4A44560の正確なindirect symbol解決をせず用途を断定しない。
+- 直前の`0x30C39E4`から別関数が始まり、後続の`0x30C3B38`から別プロローグが始まる。0x30C3B10の小関数を**Swift/ObjCの特定ownerの証拠として扱わない**。
+- 0x30C3B10は無引数に見えるが、Swift implicit context registerの可能性もあり、単独の`BL`では通常タイムラインとの関係もわからない。
+
+再現コマンド（元バイナリ）:
+
+```bash
+llvm-objdump --section-headers XAppLibraries
+llvm-objdump -d --start-address=0x30c3b10 --stop-address=0x30c3b38 XAppLibraries
+```
+
+**次の分岐点**: (a) 0x30C3B10を参照するclosure/thunk descriptor, vtableなどのデータ参照を実物メタデータから確認する、(b) 0x30C31C0で読み込むSwiftフィールドoffset global 0x6789xxxの初期化元を追う、(c) UI画面での実行時displayTypeを独立確認する。実機未確認。アプリ表示コード・バージョン変更なし。
