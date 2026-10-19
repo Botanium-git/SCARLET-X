@@ -230,3 +230,7 @@ WHERE name LIKE '%TFNSizeThatFitsHelper%';
 
 - **OX-033**: XAppLibraries `TTAStatusBodyTextView.linkTapDetectionBottomPadding` IMP `0x2CCCBDC` は `fmov d0,#6.0; ret` で定数 **6pt** を返す。`selectionPadding` IMP `0x2CCCBD0` はclassref `0x6540D98`の `_OBJC_CLASS_$_TFNAttributedTextView` へ、selector `selectionPadding` (selref `0x651E550`) を転送。したがって selectionPadding の実数値は **XServiceLibraries の呼び先を解析するまで未確定**。
 - この6ptはOX-032の **bit33 offかつ本文サイズ正** の合成式における `linkTapDetectionBottomPadding` の値であって、すべてのセルに無条件に加算してよいという根拠ではない。`maximumSizeBlock` 設定元、通常タイムラインでのbit33/displayTypeは未解決。詳細は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-033。アプリ本体/main/バージョン未変更。
+
+## 2026-10-19 継続調査 — OX-034
+
+- **OX-034**: XServiceLibraries SHA-256 `09e830331f35a7806f477cd0cbd497642461c44face5f818d39f9abd0b3040fc` の `_OBJC_METACLASS_$_TFNAttributedTextView` `0x44226A8` → ro `0x41C2D20` → relative methods `0x2F83590` 内、selector `selectionPadding` entry `0x2F83598` → IMP `0xCB52A8` を実Mach-O照合。`fmov d0,#2.0;ret` により **selectionPadding=2pt** を確定。OX-033の **linkTapDetectionBottomPadding=6pt** と合わせ、OX-032のbit33 off/正の本文サイズ経路ではレイアウトstateへ `W=幅候補+4pt`, `H=採用本文高+10pt`。さらにnegative `additionalEdgeInsets`も設定するため表示上の最終余白と同一ではない。bit33 onの場合padding両方0。通常タイムラインの実bit33・displayType、maximumSizeBlockの設定元は引き続き未確定。詳細は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-034。アプリ本体/main/バージョン変更なし。
