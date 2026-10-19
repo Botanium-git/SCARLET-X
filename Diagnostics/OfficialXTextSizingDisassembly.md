@@ -377,3 +377,19 @@ llvm-objdump -d --start-address=0x30c3b10 --stop-address=0x30c3b38 XAppLibraries
 ```
 
 **次の分岐点**: (a) 0x30C3B10を参照するclosure/thunk descriptor, vtableなどのデータ参照を実物メタデータから確認する、(b) 0x30C31C0で読み込むSwiftフィールドoffset global 0x6789xxxの初期化元を追う、(c) UI画面での実行時displayTypeを独立確認する。実機未確認。アプリ表示コード・バージョン変更なし。
+
+
+## OX-024 — 0x30C3B10の実所有者を解決：VideoRowView（2026-10-19）
+
+元のXAppLibraries（SHA-256 `ce10ca22abc997bfc3eb7732be33c198175994e24a421219cf0808c6e7882249`）のMach-Oセクションを直接走査し、**0x30C3B10は`XActivityHistory.VideoRowView`の`layoutSubviews`実装**であることを確かめた。
+
+実物からの解決手順・根拠:
+
+1. `__objc_methlist`の相対IMP field **0x4B0F868** にsigned rel32 `0xFE5B42A8`（負）があり、`field + offset = 0x30C3B10`。これはOX-023の唯一の直接BL caller `0x30C3B24`を含む小関数。
+2. 当該method listのheaderは **0x4B0F840**、`entsizeAndFlags=0x8000000C`、count=4。entryは0x4B0F848, 0x4B0F854, **0x4B0F860**, 0x4B0F86C。対象entryのselector field 0x4B0F860から `__objc_selrefs` **0x6515520** を参照し、その実ポインタのlow36 target **0x587DF20**（`__objc_methname`）の文字列は **`layoutSubviews`**。type field 0x4B0F864から `__objc_methtype` **0x5947A00** の `v16@0:8` を取得。
+3. `__objc_data` の **0x65D6240** にchained rebase pointer word `0x0020000004B0F840`（low36 target 0x4B0F840）があり、このmethod listを指す。これを含むclass_ro相当の構造で **0x65D6238** のname pointer `0x001000000593FC70`（low36 target 0x593FC70）を確認。`__objc_classname`の同アドレスは **`_TtC16XActivityHistory12VideoRowView`**。Swift-mangled class名としてモジュール `XActivityHistory`、型 `VideoRowView` に対応する。
+4. `llvm-objdump -d --start-address=0x30c3b10 --stop-address=0x30c3b38 XAppLibraries` で `0x30C3B24: bl 0x30C31C0` を独立照合。従って **VideoRowView.layoutSubviews → 0x30C31C0 → TTAStatusBodyTextView高さAPI** という直接静的経路が確認できた。
+
+**解釈の訂正**: OX-022/023で「Swift側caller・所有型未解決」とした点は、この直接callerについて解消。`0x30C31C0`自体のSwift所有型・他の間接callerは未確定だが、確認できた直接呼び出しが属するのは通常タイムラインではなく**Activity HistoryのVideoRowView**。したがってこの経路を通常タイムラインの実行条件の証明として使わない。前記記録を削除せず、本節で補足・訂正する。静的所有者が分かっても公式X実機での呼び出し状況を確認したわけではない。
+
+**次の優先順位**: TTAStatusBodyTextView高さAPIの**他の直接・間接caller**や通常のtimeline cell所有型を探す。displayType/fontOptionsの通常タイムライン入力値はなお未確定。アプリ本体変更なし。
