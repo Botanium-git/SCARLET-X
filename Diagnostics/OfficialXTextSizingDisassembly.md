@@ -862,3 +862,16 @@ Primary source: supplied T1Twitter Mach-O, SHA-256 `1af51e57d746a81546da299e1032
 - No application source code, version, main or user device changed. Next: identify where T1StandardStatusView is placed/selected and investigate potential alternate timeline view implementations.
 
 Reproduce with `llvm-objdump -d --start-address=0x2a73a0 --stop-address=0x2a7410 T1Twitter`, `llvm-objdump -d --start-address=0x2a8a80 --stop-address=0x2a8b38 T1Twitter`, and dyld-info lookup of `0x1AD53C8`.
+
+
+## OX-045 — T1StandardStatusView class references: static reachability, not timeline adoption (2026-10-19)
+
+Source: supplied T1Twitter v12.25 Mach-O. The `_OBJC_CLASS_$_T1StandardStatusView` symbol resides at **0x1AED840**. Original dyld chained-rebase entries identify `__objc_classrefs` slot **0x1AD3E30** as pointing to this class; this is distinct from the standard generator classref established in OX-044. The classref is used from multiple functions in the binary, so the class is statically referenced.
+
+One concrete reference: `0x2A86E8 adrp x8,0x1AD3000` and `0x2A86EC ldr x0,[x8,#0xE30]` load the `T1StandardStatusView` class object. At `0x2A86F0 bl 0x1314DA0`, the Objective-C selector stub resolves through selref **0x1AAD530** to **`layoutTracingSamplingFractionalPercentage`** (verified from its ADRP/LDR and selref string). The return value goes in x2 to the next call at `0x2A8700`. Hence **this classref use concerns layout tracing configuration**, not proof of `T1StandardStatusView` instance allocation/placement in a home timeline.
+
+Other nearby classref occurrences at `0x2AE604..0x2AE608` and `0x2AE6F8..0x2AE6FC` are inside/near the standard-generator implementation and likewise cannot be taken as proof of a home-timeline owning controller. The class reference lookup alone does not identify which screens instantiate T1StandardStatusView or whether alternate status views are used. OX-044 already proves the internal `T1StandardStatusView -> standard generator -> body adapter` static link; **home timeline runtime selection is still unverified**.
+
+Next: find concrete allocation/factory or reusable-cell class from a likely timeline controller, with receiver and selected class confirmed by code/dataflow; do not equate any classref with actual UI placement. No code/main/version changes, no real-device measurements.
+
+Reproduce: `llvm-objdump --macho --dyld-info T1Twitter | grep 1AD3E30`, `llvm-objdump -d --start-address=0x2a86dc --stop-address=0x2a8708 T1Twitter`, and `llvm-objdump -d --start-address=0x1314da0 --stop-address=0x1314db0 T1Twitter` (selector reference at `0x1AAD530`).
