@@ -194,3 +194,9 @@ WHERE name LIKE '%TFNSizeThatFitsHelper%';
 - **OX-027（T1Twitter実命令）**: T1StandardStatusViewLayoutStateGenerator の `layoutStateForViewModel:options:account:layoutMetrics:withPreviousLayoutState:` 内 `0x2AED94..0x2AEE30` を追加逆アセンブル。`0x2AEDE0` の呼び出し結果 d0 を d8 へ加算し、`0x2AEE00` の結果 d1 を減算し、`0x2AEE20 fmaxnm d8,d11,d14` で値を選ぶ経路を確認。直後はx0と7の比較による分岐。
 - **留保**: 本文高さ、画像/カードの寸法、または別の配置座標かは未確定。`0x12A99AC`, `0x12F3B40`, `0x131EC80` 等のstub/receiver/型を解決するまで、セル高さ式の発見と扱わない。詳細は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-027。
 - 元T1Twitter SHA-256再照合済み。実機未確認。アプリ本体・main・バージョン変更なし。
+
+## 2026-10-19 継続調査 — OX-028
+
+- **OX-028（T1Twitter実Mach-Oのstub/bind照合）**: OX-027の未解決演算を再調査。`0x2AED94 -> 0x12A9694`は`_TFNBaselineEdgeInsetsForNonTextWithSimulatedFont`へのchained bind（GOT `0x1868000`）、`0x2AEDE0 -> 0x12A99AC`は`_TFNVerticalSpacingForBaselineEdgeInsets`へのbind（GOT `0x18682C0`）。`0x2AEDB0`/`0x2AEDF0`のreceiverに対するselectorは`objectAtIndexedSubscript:`（引数index=5）、`0x2AEE00`はその返却オブジェクトに対する`frame`。後続の`fsub d11,d8,d1`ではframeの第2double成分を引く。
+- **区別**: この演算をCore Text本文高さの直接合成とは扱わない。非テキスト用baseline間隔とview frame位置の計算が関与している。index 5は本文displayType 5ではない。collectionの型、選ばれたview、d8/d14由来、補助関数内部式、最終セルサイズは未確定。旧OX-027は保存し解決情報を追記。
+- 生証拠のslot/命令・再現コマンドは[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-028。公式X実機観測なし、アプリ本体/main/バージョン変更なし。
