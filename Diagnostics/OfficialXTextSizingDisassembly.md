@@ -768,3 +768,33 @@ llvm-objdump -d --start-address=0x2c5090 --stop-address=0x2c50b4 T1Twitter
 llvm-objdump -d --start-address=0x2c5200 --stop-address=0x2c5224 T1Twitter
 llvm-objdump -d --start-address=0x2c53d4 --stop-address=0x2c5428 T1Twitter
 ```
+
+
+## OX-038 — OX-037の2生成経路は引用投稿ビューとDM投稿ビューのクラスメソッド（2026-10-19）
+
+一次資料: 提供された公式X v12.25の`T1Twitter` Mach-O（読取のみ）、およびSQLiteのimp/list候補。開始時のdevelop HEADは`f504628d7d49521c55364b9422c6da86dad7d2e7`（前回とidentical）。元Mach-Oの`_OBJC_METACLASS_$_...` nlist→class_ro→relative method list (header `0x8000000C`)→entry相対IMPを**直接突き合わせ**、さらにselector名はrelative entryのname fieldが指す**selrefポインタを1回解決**して検証した。
+
+### 生成経路Aの実owner：`T1QuotedStandardStatusView`（引用投稿ビュー）
+- `_OBJC_METACLASS_$_T1QuotedStandardStatusView` nlist **0x1AEAF78** → meta class_ro **0x197C668**（内部のclass name `T1QuotedStandardStatusView`と一致）→ relative method list **0x1392710**。
+- index **6**, relative entry **0x1392760**、selector selref **0x1A9BC30** → cstring **`_t1_viewAdapterSetWithLayoutMetrics:`**、method type **`@24@0:8@16`**、IMP **0x2080F4**。
+- 従ってOX-037で確認した`0x208540`の本文adapterへの`setMaximumSizeBlock:`は、**`+[T1QuotedStandardStatusView _t1_viewAdapterSetWithLayoutMetrics:]`内**の処理。これはメソッド名とownerから引用投稿ビュー向けの生成経路と判明したが、外側の通常タイムラインで**引用表示される可能性**は排除しない。
+
+### 生成経路Bの実owner：`T1DirectMessageConversationStatusView`（DM内投稿ビュー）
+- `_OBJC_METACLASS_$_T1DirectMessageConversationStatusView` nlist **0x1AEDE58** → meta class_ro **0x19902F0**（内部class name一致）→ relative method list **0x13917C8**。
+- index **1**, entry **0x13917DC**、selector selref **0x1A9BC38** → cstring **`_t1_viewAdapterSetWithMaxWidth:`**、method type **`@24@0:8d16`**、IMP **0x2C4FEC**。
+- よってOX-037の`0x2C5214` setterは **`+[T1DirectMessageConversationStatusView _t1_viewAdapterSetWithMaxWidth:]`内**。通常のホームタイムライン本文生成へ直接当てはめない。
+
+### 解釈更新と制限
+
+OX-037が示したのは「少なくとも2か所でbody adapterをreceiverに`maximumSizeBlock`が設定され、両blockの高さ成分は0」という**実コード上の事実**で、**通常タイムラインの普通の投稿に同設定が使用される証拠ではなかった**。OX-038でownerを確認した結果、少なくともこの2箇所は**引用投稿ビュー / DM投稿ビュー**のクラスメソッドだった。通常のホームタイムラインの標準投稿について、blockの設定有無・値は依然未確定。
+
+今回の調査ではmethod ownerおよびメソッド型までは実Mach-Oで確認済み。ただし、この2メソッドの**全外部呼び出し元**を網羅したわけではなく、実行時の採用・再利用や画面表示条件を確定したわけではない。次は`T1StandardStatusViewLayoutStateGenerator._t1_viewAdapterSet`など普通の投稿に近い生成処理の本文adapterの設定/未設定と呼び出し元、`maximumSizeBlock`のwidth getter `0x12E51E0`のselectorを調べる。
+
+アプリ本体・main・バージョン変更なし。実機検証なし。
+
+再現:
+```sh
+llvm-objdump --macho --syms T1Twitter | grep -E 'OBJC_METACLASS_\\$_(T1QuotedStandardStatusView|T1DirectMessageConversationStatusView)'
+llvm-objdump -d --start-address=0x2080f4 --stop-address=0x208160 T1Twitter
+llvm-objdump -d --start-address=0x2c4fec --stop-address=0x2c5040 T1Twitter
+```
