@@ -304,3 +304,8 @@ WHERE name LIKE '%TFNSizeThatFitsHelper%';
 
 - 元T1Twitter Mach-Oのmetaclass relative method listで`statusViewClass`実装を2件確認。**`+[T1StatusCell statusViewClass]` IMP `0x2EF7B8`**（metaclass `0x1AEF398`, methods `0x1392FC0`）はclassref `0x1AD3E30`→**`T1StandardStatusView`**（class `0x1AED840`）を返す経路。**`+[T1ConversationFocalStatusViewTableViewCell statusViewClass]` IMP `0xC008`**（metaclass `0x1AE11F8`, methods `0x1391510`）はclassref `0x1AD1828`→**`T1ConversationFocalStatusView`**（class `0x1AED2F0`）を返す経路。
 - OX-047のセルfactoryと組み合わせて、**標準T1StatusCellのクラス選択→T1StandardStatusView→standard layout generator→body adapter（displayType=0）→TTAStatusBodyTextView**の静的チェーンがつながった。ただし**通常ホームタイムラインでT1StatusCellが実際に登録・選択される条件は未証明**。会話注目投稿用には別の選択経路も存在。詳細は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-048。main/アプリ本体/バージョン変更なし、実機未確認。
+
+## 2026-10-20 — OX-049
+
+- `T1StatusCell` class VM `0x1AEF370`, classref `0x1AD1F08` confirmed in original T1Twitter dyld rebase. At `0x3F158..0x3F16C`, the classref is passed to selector **`tfs_safeCastAsClass:`** (stub `0x1366440`, selref `0x1AC1AD8`) for a checked cast of an existing object; the cast result then receives **`statusView`** (stub `0x135CB20`, selref `0x1ABF490`). **This is not a cell allocation or timeline registration**.
+- A preliminary sqlite index search found three `statusCellClass` IMP candidates `0xE2FE44`, `0x295D70`, `0x41E0B8`, with class owner, implementation and home-timeline use **not yet proven**. This research does not establish that home timeline uses `T1StatusCell`. Detailed static evidence: [OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-049. App/main/version unchanged; no device runtime test.
