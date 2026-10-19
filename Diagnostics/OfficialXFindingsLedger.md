@@ -246,3 +246,9 @@ WHERE name LIKE '%TFNSizeThatFitsHelper%';
 - `T1StandardStatusViewLayoutStateGenerator._t1_viewAdapterSet`（0x2A7410）内`0x2A7648`のreceiverは `T1StandardStatusAttachmentViewAdapter`（classref `0x1AD48B8`→class `0x1AEFB18`）。定数block `0x187BB08` のinvoke `0x2A8560` は `layoutMetrics.bodyWidth` と高さ0を返す。**本文adapterの最大高さ制限とは別**。
 - 別callsite `0x329B88`のstack block invoke `0x329E70`は `bodyWidth` + captured doubleを幅、高さ0を返すことを確認。ほかのcallsiteも精査が必要。
 - **本文adapterへのsetter呼び出しと本文用block実装はまだ特定できていない**。詳細は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-036。公式X実機未確認、アプリ本体/main/バージョン変更なし。
+
+## 2026-10-19 継続調査 — OX-037
+
+- **OX-037**: classref `0x1AD48A8`→`T1StandardStatusBodyViewAdapter` class `0x1AF28B8`をdyld-infoで解決し、本文adapter自身をreceiverとする`setMaximumSizeBlock:`呼出しを **2経路**で確認。`_t1_viewAdapterSetWithLayoutMetrics:` (IMP `0x2080F4`) は生成した本文adapter `[sp,#0x98]`に`0x208540`でglobal block `0x1879160`（invoke `0x2088AC`, height=0）を設定。`_t1_viewAdapterSetWithMaxWidth:` (IMP `0x2C4FEC`) は生成した本文adapter `[sp,#0x58]`に`0x2C5214`でstack/copy block（invoke `0x2C53D4`, height=0）を設定。
+- **OX-036精密化**: 0x208530..0x208650 の19 setter callsiteのうち、同一block `0x1879160`なのは `0x208530..0x208620`の**16件**。0x208630は`0x18791C0`、0x208640と0x208650は`0x1879180`。以前の「19件が同一block」は不正確だったため訂正。
+- OX-032のheight cap条件 `maximumSizeBlock.height>0` と合わせ、**この2経路は高さ上限をblockから指定しない**と判断できる。ただし他の経路、通常タイムラインでの実際の採用条件、実機観測は未確認。解析詳細は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-037。アプリ本体/main/バージョン変更なし。
