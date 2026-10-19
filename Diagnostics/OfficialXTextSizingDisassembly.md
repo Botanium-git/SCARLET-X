@@ -652,3 +652,27 @@ llvm-objdump --macho --dyld-info XAppLibraries | grep 6540D98
 llvm-objdump -d --start-address=0x4ac9820 --stop-address=0x4ac9834 XAppLibraries
 llvm-objdump --macho --section=__objc_selrefs --full-contents XAppLibraries | grep '^ 651e550'
 ```
+
+
+## OX-034 — TFNAttributedTextView.selectionPadding = 2pt（2026-10-19）
+
+一次資料: `/mnt/data/XServiceLibraries` SHA-256 `09e830331f35a7806f477cd0cbd497642461c44face5f818d39f9abd0b3040fc`（再計算一致）。元Mach-Oから`_OBJC_METACLASS_$_TFNAttributedTextView` nlist **0x44226A8** → ro **0x41C2D20** → relative methods **0x2F83590**（header `0x8000000C`, 3件）を手動解析し、relative entry **0x2F83598** のselector参照先 **0x43CA108** が `selectionPadding`（cstring VM **0x37344B4**）と一致、IMP **0xCB52A8** を解決。さらに元バイナリをllvm-objdumpで再検査:
+
+```asm
+0xCB52A8 fmov d0, #2.00000000
+0xCB52AC ret
+```
+
+このため、OX-033で`TTAStatusBodyTextView.selectionPadding`から転送される **`TFNAttributedTextView.selectionPadding` は常に CGFloat 2.0pt**。同じくOX-033確認済みの`TTAStatusBodyTextView.linkTapDetectionBottomPadding = 6.0pt`と合わせると、OX-032で静的確認した **options bit33 offかつ本文幅・採用本文高が正の場合**:
+
+- `W = bodyWidthCandidate + 2*2 = bodyWidthCandidate + 4pt`
+- `H = acceptedBodyHeight + 6 + 2*2 = acceptedBodyHeight + 10pt`
+- 同じ経路で`setAdditionalEdgeInsets:`へ負値を設定するため、**表示セルの最終上下余白が+10ptとは言えない**。
+- **bit33 onでは両padding=0**で上記加算はしない。
+- `maximumSizeBlock`の設定元・実際の通常タイムラインのbit33/displayTypeは引き続き未確定。この調査の対象は`selectionPadding`定数の検証であり、maximumSizeBlockの所有元まで解明したわけではない。実機未検証・アプリコード/main/バージョン未変更。
+
+再現:
+```bash
+llvm-objdump --macho --syms XServiceLibraries | grep '_OBJC_METACLASS_\\$_TFNAttributedTextView'
+llvm-objdump -d --start-address=0xcb52a0 --stop-address=0xcb52b0 XServiceLibraries
+```
