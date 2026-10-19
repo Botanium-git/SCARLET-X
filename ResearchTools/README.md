@@ -57,3 +57,14 @@ python3 scarlet_macho_index_repaired.py build original.ipa -o XServiceLibraries_
 ```
 
 実物検証: XServiceLibrariesの再走査で18,600件。以前の `XServiceLibraries_validated.sqlite` との `(selector,imp)` 集合の差は0件だった。**修正スクリプトは元インデクサの該当文字列パターンが1回ずつ存在する場合だけ動く**。別版には無理にパッチを当てない。クラス所有者の抽出は未実装。
+
+## extract_class_methods.py — クラスからメソッドを直接引く
+
+公式X v12.25の `XServiceLibraries` のObjective-Cクラス構造（relative method_list_t）を、元のMach-Oから読み取り専用で抽出する研究用ツール。
+
+```bash
+python3 ResearchTools/extract_class_methods.py --macho XServiceLibraries --class-address 0x4422590 --expected-class TFNAttributedTextModel
+python3 ResearchTools/extract_class_methods.py --macho XServiceLibraries --class-address 0x442A3A8 --expected-class TFNSizeThatFitsHelper
+```
+
+入力したクラス名との照合とMach-Oセグメント範囲検証を行う。ポインタ形式・relative method listに関して**この特定のIPAで観測した構成**に依存し、他バージョンでの動作は保証しない。コードは追加済みだが、このGitHub登録版の実行テストは別途必要。検証済みの抽出結果は `Diagnostics/OfficialXClassResolution.md` に保存。
