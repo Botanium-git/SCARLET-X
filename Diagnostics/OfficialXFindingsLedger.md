@@ -166,3 +166,9 @@ WHERE name LIKE '%TFNSizeThatFitsHelper%';
 - **OX-022（XAppLibraries実命令）**: OX-019で特定したSwift側包含関数 `0x30C31C0..0x30C37F0` の `0x30C35A0` 本文高さAPI callerを追加追跡。返り高さが正なら対象ビューをその高さで `setFrame:` して `setHidden:NO`、0以下ならゼロ矩形・`setHidden:YES`。正の場合は後続座標計算で8.0等を加える経路があるが、**Core Textの文字計測への8pt追加ではない**。別viewの `sizeThatFits:` も後続に存在。所有Swift型、runtime displayType、通常タイムラインでの採用、最終セル高さへの接続は依然未確定。
 - 詳細と命令bytes: [OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-022。対象Mach-O SHA-256は引き継ぎ値と再照合済み。Capstone未導入の実行環境でLLVM objdumpを使用。静的解析であり公式Xの実機計測ではない。
 - アプリ本体・バージョン・mainを変更していない。
+
+## 2026-10-19 継続調査 — OX-023
+
+- **OX-023（実バイナリ・直接分岐探索）**: XAppLibrariesの`__TEXT,__text`内のAArch64直接`BL`を復号し、OX-022の関数`0x30C31C0`へ直接呼ぶ`0x30C3B24`を確認。直接`B`は0件。前者の命令語`0x97FFFDA7`、file-order bytes `A7 FD FF 97`。llvm-objdumpでも直接照合。
+- `0x30C3B10`開始の小関数がこのBLを持ち、前後に`0x4A44560`呼び出しと`0x4A44554`へのtail branchを持つ。**所有Swift型・closure用途・通常タイムライン採用は未解決**。間接呼び出し・Swift vtable/witness・ObjC dispatchや別Mach-Oを走査結果の0件と混同しない。
+- 詳細と再現方法は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md)のOX-023。公式X実機計測ではなく、アプリ本体の変更なし。
