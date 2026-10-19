@@ -159,3 +159,10 @@ WHERE name LIKE '%TFNSizeThatFitsHelper%';
 - **OX-021**: 属性生成0x972D38→NSMutableAttributedString(TFSFillTemplates)カテゴリinitializer→_setFont:→CTParagraphStyleCreate。最小行高、同じ入力の最大/最小行間、調整0、段落間隔、alignment/linebreak/directionを設定。NSParagraphStyle.lineSpacingと同一視しない。lineHeight<=0時のfallbackはfont.lineHeight+3。最大行高はこの設定群にない。
 - **表示更新**: 有効幅はselection paddingが有効ならmax(bounds.width−2P,0)。model生成→setTextModel:、dirty/layout metrics判定、invalidateIntrinsicContentSize、layoutSubviews→setFrame:も確認。
 - 新規ツール: direct B/BL selector-stub呼出し探索、カテゴリowner解決。元IPA/SQLiteとアプリ本体は変更していない。
+
+
+## 2026-10-19 継続調査 — OX-022
+
+- **OX-022（XAppLibraries実命令）**: OX-019で特定したSwift側包含関数 `0x30C31C0..0x30C37F0` の `0x30C35A0` 本文高さAPI callerを追加追跡。返り高さが正なら対象ビューをその高さで `setFrame:` して `setHidden:NO`、0以下ならゼロ矩形・`setHidden:YES`。正の場合は後続座標計算で8.0等を加える経路があるが、**Core Textの文字計測への8pt追加ではない**。別viewの `sizeThatFits:` も後続に存在。所有Swift型、runtime displayType、通常タイムラインでの採用、最終セル高さへの接続は依然未確定。
+- 詳細と命令bytes: [OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-022。対象Mach-O SHA-256は引き継ぎ値と再照合済み。Capstone未導入の実行環境でLLVM objdumpを使用。静的解析であり公式Xの実機計測ではない。
+- アプリ本体・バージョン・mainを変更していない。
