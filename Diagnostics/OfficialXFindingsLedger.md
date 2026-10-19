@@ -239,3 +239,10 @@ WHERE name LIKE '%TFNSizeThatFitsHelper%';
 
 - **OX-035：maximumSizeBlockの実所有クラス確認**。T1Twitter `T1StandardStatusBodyViewAdapter` (class `0x1AF28B8`) のsuperclass slot `0x1AF28C0` は、XServiceLibraries `_OBJC_CLASS_$_TFNComposableViewAdapter` へのchained bind。本文adapter own method list（36件）にmaximumSizeBlock/accessorは存在せず、superclass `TFNComposableViewAdapter` のrelative method list `0x2FB4810`（28件）に `maximumSizeBlock` IMP `0xCD8038` と `setMaximumSizeBlock:` IMP `0xCD8040`を確認。getterは `[self+0x30]` を返し、setterはoffset `0x30`で共通保存処理へ分岐する。
 - これによりOX-030のblock invokeの所有元/ivarの一部を解決。ただし**実際のsetter呼出し元・具体的block invokeアドレス・通常タイムラインの設定条件は未解決**。詳細は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-035。アプリ本体/main/バージョン変更なし。
+
+## 2026-10-19 継続調査 — OX-036
+
+- **OX-036**: `T1Twitter` 内 `setMaximumSizeBlock:` selref `0x1AB9300` → objc stub `0x13444E0`を元Mach-Oで照合し、`__text`からこのstubへの**直接BLを35箇所**確認。件数は設定対象の数ではなくcallsite数。
+- `T1StandardStatusViewLayoutStateGenerator._t1_viewAdapterSet`（0x2A7410）内`0x2A7648`のreceiverは `T1StandardStatusAttachmentViewAdapter`（classref `0x1AD48B8`→class `0x1AEFB18`）。定数block `0x187BB08` のinvoke `0x2A8560` は `layoutMetrics.bodyWidth` と高さ0を返す。**本文adapterの最大高さ制限とは別**。
+- 別callsite `0x329B88`のstack block invoke `0x329E70`は `bodyWidth` + captured doubleを幅、高さ0を返すことを確認。ほかのcallsiteも精査が必要。
+- **本文adapterへのsetter呼び出しと本文用block実装はまだ特定できていない**。詳細は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-036。公式X実機未確認、アプリ本体/main/バージョン変更なし。
