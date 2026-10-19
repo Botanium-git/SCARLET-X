@@ -278,3 +278,9 @@ WHERE name LIKE '%TFNSizeThatFitsHelper%';
 ## 2026-10-19 — OX-043
 
 - T1Twitter callsite `0x2A8B30` (OX-042) receiver x22 is derived from the `layoutStateGenerator` getter: objc stub `0x1314CC0`, selref `0x1AAD4F8` → method name `layoutStateGenerator`. Result retained into x22 at `0x2A8ABC`; `0x2A8B18` copies x22 to x0 before `layoutStateForViewModel:options:account:layoutMetrics:withPreviousLayoutState:` selector send. This confirms **getter-result dispatch**, not the concrete runtime generator class. Containing owner, property assignment and home-timeline dispatch remain unverified. Full evidence: [OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-043. No app/main/version change.
+
+## 2026-10-19 — OX-044
+
+- **OX-044（標準ビューから標準レイアウト生成器への静的接続を確立）**: OX-042のselector call `0x2A8B30`を含む所有者は `-[T1StandardStatusView _t1_updateLayoutStateWithLayoutMetrics:]` IMP `0x2A8A80`（元Mach-O class relative methods確認）。このメソッドで `layoutStateGenerator` getterの結果をx22に保持し、レイアウト生成selectorのreceiverにする。
+- `+[T1StandardStatusView layoutStateGenerator]` IMP `0x2A73A0`（メタクラスmethod list `0x1392F00`）はキャッシュ対象を返し、初期化側 `0x2A73E4..0x2A7400`が classref `0x1AD53C8`→`T1StandardStatusViewLayoutStateGenerator` class `0x1AED818`を使用して生成器を保存する。よって標準投稿ビュー→標準レイアウト生成器→body adapter（OX-040、displayType=0）の**静的接続**が裏付けられた。
+- **制限**: 実ホームタイムラインでこのビューがいつ/必ず使われるか、表示の実測条件・フォントサイズは未確認。詳細は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-044。main/アプリ本体/バージョン変更なし。
