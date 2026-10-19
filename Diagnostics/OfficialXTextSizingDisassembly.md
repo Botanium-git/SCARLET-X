@@ -704,3 +704,32 @@ llvm-objdump --macho --dyld-info T1Twitter | grep '0x1AF28C0'
 llvm-objdump --macho --syms XServiceLibraries | grep '_OBJC_CLASS_\\$_TFNComposableViewAdapter'
 llvm-objdump -d --start-address=0xcd8028 --stop-address=0xcd8048 XServiceLibraries
 ```
+
+
+## OX-036 — `setMaximumSizeBlock:`の実呼び出し元とblock実装（2026-10-19）
+
+対象: 提供された公式X v12.25 `T1Twitter` Mach-O。直接BL検索は**実行可能`__TEXT,__text`のBLエンコードをdecodeし、呼出先ObjC stubとのtarget完全一致**で実施。`setMaximumSizeBlock:` は`__objc_methname` VM **0x167482F**、`__objc_selrefs` slot **0x1AB9300**、`__objc_stubs` **0x13444E0**（ADRP/LDRが同selref slotを参照）と確認。
+
+- **直接BL呼び出し35箇所**を確認（アドレス: `0x208530..0x208650`の16byte刻み19箇所、`0x20E0EC`, `0x20F3D0`, `0x2A7648`, `0x2C5214..0x2C5298`の12byte刻み12箇所、`0x329B88`; 合計35）。**35種類の本文用block、という意味ではない**。各receiverの型と生成条件で分類する必要がある。
+- **実例：0x2A7648は本文用adapterとは別のreceiver**。直前の `0x2A7618..0x2A7628` でclassref slot `0x1AD48B8`からalloc/init相当の処理を行ってx23を保持。`dyld-info`ではslotが **class `0x1AEFB18`へrebase**、nlist class symbolは `_OBJC_CLASS_$_T1StandardStatusAttachmentViewAdapter`。すなわちこの呼出しは **attachment adapterへのmaximumSizeBlock設定**。同関数は`T1StandardStatusViewLayoutStateGenerator`の `_t1_viewAdapterSet`（IMP `0x2A7410`）の内部。
+- `0x2A7630..0x2A7648`で x2をVM **0x187BB08** の定数blockオブジェクトへ設定して `setMaximumSizeBlock:` を呼ぶ。block objectのinvoke slot (VM +0x10) は **`0x2A8560`**。invokeの実命令:
+```asm
+0x2A8568 mov x0,x2
+0x2A856C bl 0x12DB600  ; ObjC selector bodyWidth（OX-030/031で解決）
+0x2A8570 fmov d1,xzr
+0x2A8578 ret
+```
+  block引数のlayoutMetricsから `bodyWidth` を取得して、**CGSize(width=layoutMetrics.bodyWidth,height=0)** を返すblockと解釈できる。これは最大「高さ」を固定していない。注: 関数の引数register解釈はOX-030のblock invoke ABIとの整合で判断。
+- 別の`setMaximumSizeBlock:`呼出例 `0x329B88`はstack上にblock literalを構築（`0x329B60..0x329B84`）、invoke function VM **0x329E70**。このinvokeは `bodyWidth` の戻り値にcapture objectのoffset `0x20`のdoubleを加算し、高さとしてd1=0を返す。**一律の本文高さ制限blockではない**。このcallerの正確なclass ownerと採用条件は未解決。
+- 他の`0x20E0EC`および`0x20F3D0`でもstack上のblock literalを作成してsetterへ渡す命令列がある。selector callが確実でも、receiverを本文adapterと確定できるまでは通常タイムライン用と呼ばない。
+- **未解決**: 35 callsiteの完全なreceiver/class分類、本文 `T1StandardStatusBodyViewAdapter` に実際にblockが設定されるか、本文用blockのinvoke本体と高さ成分、displayType/通常タイムライン採用条件。特に今回のattachment adapter blockを本文adapterの設定として転用しない。
+- 元アプリコード/main/バージョンは未変更。静的解析のみ、実機検証なし。
+
+再現:
+```sh
+llvm-objdump -d --start-address=0x2a7600 --stop-address=0x2a7650 T1Twitter
+llvm-objdump -d --start-address=0x2a8560 --stop-address=0x2a857c T1Twitter
+llvm-objdump -d --start-address=0x329b50 --stop-address=0x329ba0 T1Twitter
+llvm-objdump -d --start-address=0x329e70 --stop-address=0x329ea0 T1Twitter
+llvm-objdump --macho --dyld-info T1Twitter | grep 1AD48B8
+```
