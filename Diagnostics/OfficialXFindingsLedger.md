@@ -172,3 +172,9 @@ WHERE name LIKE '%TFNSizeThatFitsHelper%';
 - **OX-023（実バイナリ・直接分岐探索）**: XAppLibrariesの`__TEXT,__text`内のAArch64直接`BL`を復号し、OX-022の関数`0x30C31C0`へ直接呼ぶ`0x30C3B24`を確認。直接`B`は0件。前者の命令語`0x97FFFDA7`、file-order bytes `A7 FD FF 97`。llvm-objdumpでも直接照合。
 - `0x30C3B10`開始の小関数がこのBLを持ち、前後に`0x4A44560`呼び出しと`0x4A44554`へのtail branchを持つ。**所有Swift型・closure用途・通常タイムライン採用は未解決**。間接呼び出し・Swift vtable/witness・ObjC dispatchや別Mach-Oを走査結果の0件と混同しない。
 - 詳細と再現方法は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md)のOX-023。公式X実機計測ではなく、アプリ本体の変更なし。
+
+## 2026-10-19 継続調査 — OX-024
+
+- **OX-024（実バイナリ・所有者確定）**: OX-023の小関数`0x30C3B10`は、XAppLibrariesの`-[XActivityHistory.VideoRowView layoutSubviews]`（Objective-C登録名 `_TtC16XActivityHistory12VideoRowView`）のIMP。`__objc_methlist` list `0x4B0F840`（4 entries）→entry `0x4B0F860`→IMP field `0x4B0F868`→0x30C3B10、selector `layoutSubviews`、type `v16@0:8`。`__objc_data` class_ro相当 `0x65D6220`のbaseMethods pointer `0x65D6240`→上記method list、name pointer `0x65D6238`→`__objc_classname` 0x593FC70でownerを照合。内部`0x30C3B24`は`0x30C31C0`へ直接BL。
+- **優先順位の訂正**: 前回の「Swift所有者未確定」はこの直接呼び出しについて解消。ただし**Activity HistoryのVideoRowViewであり通常タイムラインの証明にはならない**。`0x30C31C0`の全ての間接callerや実行時displayTypeは引き続き未確定。詳細は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-024。
+- 公式Xのruntime観測ではない。アプリ本体・main・バージョン変更なし。
