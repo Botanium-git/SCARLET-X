@@ -318,3 +318,38 @@ fallback `_lineHeightForFont:` **0xCA2338..0xCA2364** は **font.lineHeight + _T
 2. TTAStatusBodyAttributedTextView→TFNAttributedTextViewのfit/draw/update、selectionPadding、layoutMetrics.lineHeight生成。
 3. 実際の通常タイムラインcallerのdisplayType/options/width、およびセル合成・UITableViewへの反映。
 4. トークン実装とDynamic Type条件。資料・同条件実機計測を根拠に比較し、アプリ本体へまだ値を適用しない。
+
+
+## OX-022 — Swift側callerの本文高さ返値とレイアウト分岐（2026-10-19追加）
+
+一次資料: XAppLibraries SHA-256 `ce10ca22abc997bfc3eb7732be33c198175994e24a421219cf0808c6e7882249`、unslid VM address `0x30C31C0..0x30C37F0`。LLVM `llvm-objdump -d --start-address=0x30c34b0 --stop-address=0x30c3758 XAppLibraries` で当該範囲の実命令を独立再確認。ここでは前回OX-019が解決したselector stubの対応を引き継ぐ。
+
+- `0x30C34E8`: x22にSwiftオブジェクトのフィールドから読み出した対象body view相当のreceiverを保持。後続 `0x30C3524`/`0x30C3530` で同receiverから `displayTextOptions`/`displayType` を取得。具体的なSwift所有型・そのフィールドの型は**未確認**。
+- `0x30C3580..0x30C35A0`: view model相当・options・displayTextOptions・displayType・幅(d0)・layoutMetrics相当を引数にクラス高さAPIを送る。実命令 `0x30C359C mov w7,#0` は確認できるが、多数引数のstack格納および値の意味をさらに追わずに画面名や全フラグを特定しない。
+- `0x30C35A4`: 返された浮動小数の高さをv10/d10へ保存。`0x30C35C0 fcmp d10,#0`、`0x30C35C4 b.le 0x30C361C` により**高さが正かどうか**で配置が分岐する。
+- 正の場合、`0x30C35DC..0x30C35F4` で対象viewへ `setFrame:`（高さとしてd10を渡す）→`setHidden:NO` を呼ぶ。負またはゼロの場合、`0x30C361C..0x30C363C` でゼロ矩形を設定し `setHidden:YES`。後続ではd10=16.0を置く。
+- 正の分岐の `0x30C3608..0x30C3614` にはd10へ定数8.0と別のdouble値を加える経路がある。これは**callerの配置/後続座標計算**であり、モデルCore Textの計測高さに8ptを加えると解釈しない。`0x30C3634` の0/nonzeroフラグも表示状態の変更であって字体行高ではない。
+- 後続 `0x30C36A0..0x30C3754` に別viewの `setFrame:` と `sizeThatFits:` があり、本文返値の後で周辺ビュー配置が継続することを確認。ただし、**全セル高、テーブル行高、通常タイムライン採用値は依然未確認**。
+
+主要命令（LLVM出力の命令bytesも列記）:
+
+```text
+30c3524  9466ef17  bl 0x4a7f180   ; selector stub: displayTextOptions
+30c3530  9466ef94  bl 0x4a7f380   ; selector stub: displayType
+30c359c  52800007  mov w7, #0
+30c35a0  94672718  bl 0x4a8d200   ; heightForViewModel:... stub
+30c35a4  4ea01c0a  mov.16b v10, v0
+30c35c0  1e602148  fcmp d10, #0.0
+30c35c4  540002cd  b.le 0x30c361c
+30c35e8  94683f56  bl 0x4ad3340   ; setFrame:
+30c35f4  94684433  bl 0x4ad46c0   ; setHidden:
+30c360c  fd435100  ldr d0, [x8,#0x6a0]
+30c3610  1e692940  fadd d0,d10,d0
+30c3614  1e6b284a  fadd d10,d0,d11 ; d11=8
+30c3630  94683f44  bl 0x4ad3340   ; zero frame
+30c363c  94684421  bl 0x4ad46c0   ; hidden YES
+30c3640  1e66100a  fmov d10,#16.0
+30c370c  946898b5  bl 0x4ae99e0   ; sizeThatFits:
+```
+
+**確度**: 実命令で確認したcallerレイアウト分岐。オーナーとruntime画面条件は未解明。アプリ本体に適用しない。
