@@ -86,3 +86,9 @@ python3 ResearchTools/inspect_text_sizing.py --macho XServiceLibraries --range 0
 - `resolve_chained_bind.py --macho XAppLibraries --address 0x6540eb8 --address 0x6543730`: observed pointer format 6 / imports format 1 / single-start pageに限定し、指定slotがpage chain上にあることを確認してbind名、またはhigh8=0のrebase先と定義symbolを報告する。非対応形式は拒否する。
 - `inspect_text_sizing.Image.function_range(start)`: LC_FUNCTION_STARTSのULEB128を読み、登録済みstartから次のstartまでを返す。対象は今回のframework（base=0）。最後の関数や未登録startでは推定せず失敗する。
 - 実物3バイナリで使用し、owner/型・既知bind/rebase・非chainアドレス拒否・主要6関数の全命令デコードを検証。証拠は既存Diagnostics/OfficialXTextSizingEvidence.txtへ追記。
+
+## 2026-10-19追加 — selector callsites / category owners
+
+- `find_selector_calls.py --macho XAppLibraries --selector attributedTextModelHeightForOptions:` は__textの4-byte arm64 B/BLからselector stubへの直接呼出しを探し、LC_FUNCTION_STARTSの包含関数とclass/metaclassのownerが分かる場合に報告する。間接objc_msgSend、Swift所有型、カテゴリowner、動的置換は網羅しない。0件を未使用の証明にしない。
+- `find_category_methods.py --macho XServiceLibraries --selector _lineHeightForFont:` は__objc_catlist→relative method listとchained class pointerからカテゴリowner/型/IMPを解決する。観測0x8000000C形式のみ。カテゴリのロード順やruntimeでどの実装が勝つかは証明しない。
+- 実物でTTAStatusBodyTextViewへの呼出し、既知BL、NSMutableAttributedString(TFSFillTemplates)カテゴリを照合。主要関数境界・命令・chain所属・SDK定数との対応を既存のDiagnostics資料へ保存。

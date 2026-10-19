@@ -50,3 +50,9 @@ This is a *findings register*, not a substitute for raw binary data or the full 
 - XAppLibraries now supplies a concrete status/display-text-model path: TFNTwitterStatus → new TFNTwitterDisplayTextModel allocation → bound TFNAttributedTextModel allocation/initializer. Cache paths also exist.
 - Display-model height API uses fitToWidth: / actualSize, float32 upward rounding and a signed 64-bit integer return; frame-generation, caller and cache conditions are documented separately.
 - Ordinary timeline UI options, font/attribute generation and final table-row composition remain pending. No production typography changes or official-device parity claims.
+
+## 2026-10-19 continuation (OX-019–021)
+- Body-view static connection is now established for TTAStatusBodyTextView: display types 0/3/4/5/6 use view-model height API; 1/2 use a selectable-text-view sizing API with textKit2Enabled. Do not generalize all body rendering to Core Text.
+- Body font-options construction, token choices by numeric displayType, minimum line height and minimum/maximum line spacing setup are reconstructed. Exact runtime token sizes, Dynamic Type and ordinary timeline option values remain unconfirmed.
+- Attribute initialization resolves to NSMutableAttributedString(TFSFillTemplates), not a standalone class implementation. Paragraph settings are Core Text settings, not a guessed NSParagraphStyle.lineSpacing value.
+- Body content update/model assignment, effective width with optional selection padding and internal renderer frame assignment are traced. Parent cell composition and UITableView row integration remain pending.

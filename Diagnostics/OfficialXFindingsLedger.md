@@ -150,3 +150,12 @@ WHERE name LIKE '%TFNSizeThatFitsHelper%';
 - **OX-017（静的接続）**: XAppLibrariesでTFNTwitterStatusのattributedTextModelForOptions:（0x98C588）→display-model選択。新規生成のclassref rebaseはTFNTwitterDisplayTextModel（0x6578C48）。同クラスのattributedTextModelForOptions:（0x96EE74）はTFNAttributedTextModelへのbind（slot0x6540EB8、ordinal12444）をallocし、initWithAttributedString:colorProviderView:へ渡す経路を持つ。
 - **OX-018（実命令）**: TFNTwitterStatus高さ取得0x98C518→display-model高さ取得0x96E3C4。再計測側にfitToWidth:→actualSize→float32正方向切り上げ→signed integer返値を確認。キャッシュ経路もある。メソッド型q24@0:8@16で、CGFloat戻り値と混同しない。
 - **未確認**: 実際の本文view/cellからの呼び出し、通常options/font/width、生成属性の全内容、セル高さの合成、実機一致。アプリ本体は変更しない。
+
+## 2026-10-19 継続調査 — OX-019〜021
+
+既存OfficialXTextSizingDisassembly.md / OfficialXTextSizingEvidence.txtへ根拠を追記。
+- **OX-019**: TTAStatusBodyTextView高さAPI0x2CCC9EC→displayType 0/3/4/5/6ではviewModel.attributedTextModelHeightForOptions:→pixel丸め。1/2ではSelectableTextViewのsizeForAttributedTextModel:width:textKit2Enabled:へ。実renderer生成も同条件でAttributed/Selectableに分岐。本文viewからモデル計測への静的接続を確認したが、通常タイムラインの実行時typeとセル全体の合成は未確定。
+- **OX-020**: fontOptions補助0x2CCC518を解析。type0 content_body/Bold・layoutMetrics.lineHeight・lineSpacing0、type1/4 headline2(+3)・Chirpによって0/2、type2 body(+3)・0/2・emptyLineMaxHeight=floor(lineHeight/3)、type3 custom30、type5両方content_bodyBold、type6 subtext2。bit33 overrideあり。トークン実ptとDynamic Type実条件は未確定。
+- **OX-021**: 属性生成0x972D38→NSMutableAttributedString(TFSFillTemplates)カテゴリinitializer→_setFont:→CTParagraphStyleCreate。最小行高、同じ入力の最大/最小行間、調整0、段落間隔、alignment/linebreak/directionを設定。NSParagraphStyle.lineSpacingと同一視しない。lineHeight<=0時のfallbackはfont.lineHeight+3。最大行高はこの設定群にない。
+- **表示更新**: 有効幅はselection paddingが有効ならmax(bounds.width−2P,0)。model生成→setTextModel:、dirty/layout metrics判定、invalidateIntrinsicContentSize、layoutSubviews→setFrame:も確認。
+- 新規ツール: direct B/BL selector-stub呼出し探索、カテゴリowner解決。元IPA/SQLiteとアプリ本体は変更していない。

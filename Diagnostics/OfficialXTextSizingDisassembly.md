@@ -221,3 +221,100 @@ python3 ResearchTools/resolve_chained_bind.py --macho XAppLibraries --address 0x
 クラス/メタクラス抽出でowner名照合と実行可能IMP検証、bind/rebaseのページchain所属検証、非chainアドレスの拒否、主要6関数の境界と全命令デコードを実行済み。新ツールは今回のMach-O構成専用で、カテゴリ追加・動的method交換や他pointer形式への汎用解析ではない。
 
 次の優先課題は **TFNTwitterDisplayTextModelの属性生成0x972D38、および実際の本文viewからのoptions/font/widthの設定と呼び出し**。固定3.0や今回の丸めをScarlet X本体へまだ適用しない。
+
+
+## OX-019 — 本文ビューから計測モデルへの接続（2026-10-19追記）
+
+XAppLibrariesの `TTAStatusBodyTextView` をclass/metaclassメタデータから解決。以下の高さAPIは **クラスメソッド**、型とIMPは生証拠へ保存。
+
+`heightForViewModel:options:displayTextOptions:displayType:width:layoutMetrics:richTextEnabled:trailingString:maxLines:attachmentDelegate:textKit2Enabled:cachingEnabled:`
+
+- IMP/boundary: **0x2CCC9EC..0x2CCCBD0**（LC_FUNCTION_STARTS）。
+- fontOptionsは共通補助関数 **0x2CCC518..0x2CCC9EC** で生成。
+- slot0x6543798はTFNMutableTwitterStatusDisplayAttributedTextModelOptionsへrebase。textOptions、width、fontOptions、richTextEnabled、trailingString、attachmentDelegateを設定する。
+- displayType **0,3,4,5,6** ではsetMaxLines:/setCachingEnabled:後に **0x2CCCB1CでviewModelへattributedTextModelHeightForOptions:**。返された整数x0をdoubleに変換し `_TFNCeilToPixel`。
+- displayType **1,2** ではattributedTextModelForOptions:でモデルを取得し、**TTAStatusBodySelectableTextView** の `sizeForAttributedTextModel:width:textKit2Enabled:` に渡す（0x2CCCB68）。高さを `_TFNCeilToPixel` して返す。
+- 同じ数値条件で、実際の内部rendererも **TTAStatusBodyAttributedTextView（0,3,4,5,6）** / **TTAStatusBodySelectableTextView（1,2）** に分岐する（0x2CCD570..0x2CCD5FC）。後者のinitializerはtextKit2Enabled/askGrokEnabledを受け取る。
+- displayType>6の分岐は通常用途と見なさず未定義用途として留保。各数値の実際の画面名・通常タイムラインのruntime値はまだ未確認。
+
+**訂正ではなく範囲の更新**: 前回までの「本文viewへの接続未確認」は、このTTAStatusBodyTextViewからモデルAPIを呼ぶ静的経路については解消。ただし全表示経路がCore Textへ統一される証明ではない。特にSelectable経路は別途解析が必要。
+
+### 表示更新・幅
+
+- `_attributedTextModelWithLayoutMetrics:` **0x2CCD91C..0x2CCDB18** は、内部rendererのselection paddingが有効なら **max(bounds.width−2×selectionPadding,0)** を有効幅としてoptions.widthへ設定する。それ以外はmax(bounds.width,0)。selectionPaddingはTFNAttributedTextViewのクラスAPIへ転送し、数値は今回未解析。
+- fontOptionsは高さAPIと同じ0x2CCC518を使用。textOptions/richText/trailingString/colorProviderView/attachmentDelegate/cachingEnabledを設定し、**0x2CCDAC0でviewModelへattributedTextModelForOptions:**。
+- `_updateContentIfNeeded` **0x2CCD760..0x2CCD91C** はdirty flag・layout metricsの条件を確認してmodelを構築し、**0x2CCD7F4で内部rendererへsetTextModel:**、active ranges等も更新。明示maxLinesをmodelに設定する経路とinvalidateIntrinsicContentSizeもある。
+- `layoutSubviews` **0x2CCDC60..0x2CCDCC0** はsuperを呼び、content更新後にbodyTextViewFrameを得て内部rendererへsetFrame:。
+- `linkTapDetectionBottomPadding` の返値6.0はタップ判定用API名に属する。文字高さへ追加する根拠にはしない。
+
+**親セル全体の高さ・UITableViewへの登録は未確定。** direct selector stubの静的探索で当高さAPIを呼ぶ0x30C35A0（LC_FUNCTION_STARTSの包含関数0x30C31C0..0x30C37F0）を得たが、そのSwift側の所有型・用途は未解決。displayTypeは内側viewのgetterから取得され、定数0などと仮定しない。
+
+## OX-020 — 本文fontOptionsの構築分岐
+
+共通補助関数0x2CCC518はfont/boldFont、kerning、lineHeight、lineSpacing、emptyLineMaxHeight、各色を **TFNTwitterStatusDisplayAttributedTextModelFontOptions**（slot0x6543790→0x6578D38）へ渡す。kerningは0.0。ここでのoptionsはview表示options、次節のtextOptionsとは別引数。
+
+**options bit33が0の場合の主な分岐**:
+
+| displayType | 通常font / boldFont | lineHeight入力 | lineSpacing入力 | emptyLineMaxHeight入力 |
+|---|---|---|---|---|
+| 0（通常分岐） | xds_content_body / xds_content_bodyBold | layoutMetrics.lineHeight | 0 | 0 |
+| 1,4 | xds_headline2 / xds_headline2Bold | font.lineHeight + 3 | Chirp有効0 / 無効2 | 0 |
+| 2 | xds_body / xds_bodyBold | font.lineHeight + 3 | Chirp有効0 / 無効2 | floor(font.lineHeight / 3) |
+| 3 | customFontOfSize:30、weight:3、scalesWithDynamicType:NO（両方同じ呼出し） | font.lineHeight | Chirp有効0 / 無効2 | 0 |
+| 5 | xds_content_bodyBold / xds_content_bodyBold | layoutMetrics.lineHeight | 0 | 0 |
+| 6 | xds_subtext2 / xds_subtext2Bold | font.lineHeight | 0 | 0 |
+
+options bit33が1なら、displayType判定に先行してcontent_body/content_bodyBold・layoutMetrics.lineHeight・lineSpacing=0・emptyLineMaxHeight=0へ進む。
+
+`_TFN_CTExtraLineHeight` はXServiceLibrariesの **0xC9FD54..0xC9FD5C** で、返値は命令上 **3.0**。これはここでlineHeightに加える値。先に解析したサイズ関数末尾の+3.0とは別の命令・別の役割であり、混同しない。
+
+**未確認**: 各UIFontトークンの実pt、Dynamic Type実行時カテゴリ、Chirp設定実値、layoutMetrics.lineHeightの生成式。displayType0を通常タイムラインだとまだ断定しない。色の分岐は記録するが、タイポグラフィ変更の根拠にはしない。
+
+## OX-021 — 属性付き文字列とCore Text段落設定
+
+`-[TFNTwitterDisplayTextModel _tfn_attributedStringForOptions:]` の範囲は **0x972D38..0x9738B0**。
+
+1. cache entryからtextを取得し、**NSMutableAttributedString**（slot0x6540E10 bind ordinal12431）をalloc。
+2. **0x972E54** のinitializerへ、text/fontOptions.font、alignment（shouldBeRenderedFromRightなら2、それ以外0）、lineBreakMode=0、paragraphSpacing=0.0、fontOptions.lineHeight、fontOptions.lineSpacingを渡す。
+3. fontOptions.kerningをsetKerning:へ渡す。emptyLineMaxHeight>0なら `_tfn_addEmptyLineMaxHeight:toAttributedString:` を呼ぶ（その内部効果は未解析）。
+4. 色、hit-highlightのboldFont、link ranges、spoofing-prevention font、hashflags、rich-textのbold/italic、inline-media属性などの後処理が存在。全属性と全range変換の完全復元は未完了。
+
+### initializerの正しい所有者
+
+前回のクラス検索で空だった理由は、これらが **NSMutableAttributedStringのカテゴリ `TFSFillTemplates`** のメソッドだから。カテゴリ構造0x413D278、classref0x413D280→NSMutableAttributedString（bind ordinal6403）、method list0x2F9A9C0を確認。
+
+- 7引数initializer **0xCA12D4..0xCA12DC** はwritingDirection=-1を追加し、8引数initializerへtail-call。
+- 8引数initializer **0xCA12E4..0xCA138C** はinitWithString:後に `_setFont:alignment:lineBreakMode:paragraphSpacing:lineHeight:lineSpacing:writingDirection:` を送信。
+- `_setFont:...` **0xCA1DCC..0xCA1FC8** はfontを全rangeへ設定し、CTParagraphStyleSetting 8件を構築して **0xCA1F48でCTParagraphStyleCreate**。
+- **kCTParagraphStyleAttributeName**（slot0x3DFA6E0 bind ordinal1910）で全rangeへ追加する。
+
+### 実際に構築する8設定
+
+| specifier番号 | Core Textの設定 | 渡す値 | 値サイズ |
+|---|---|---|---|
+| 0 | Alignment | alignmentを変換したbyte（本文入力0→0、2→1） | 1 |
+| 6 | LineBreakMode | 入力が0〜5ならそのbyte、それ以外0 | 1 |
+| 9 | MinimumLineHeight | 入力lineHeight>0ならその値、そうでなければ_lineHeightForFont: | 8 |
+| 14 | MaximumLineSpacing | 入力lineSpacing | 8 |
+| 15 | MinimumLineSpacing | 入力lineSpacing（同じ格納先） | 8 |
+| 16 | LineSpacingAdjustment | 0.0 | 8 |
+| 11 | ParagraphSpacing | 入力paragraphSpacing | 8 |
+| 13 | BaseWritingDirection | writingDirectionのbyte（今回のinitializerでは-1） | 1 |
+
+定数6,9,14,15,16,11,13は **0x3081E20..0x3081E58** の実バイトから確認。設定名との対応はApple著作のiPhoneOS15.6 SDK header `CTParagraphStyle.h`（下記参照）に照合。**MaximumLineHeight（8）はこの8件に含まれない。deprecated LineSpacing（10）でもない。**
+
+fallback `_lineHeightForFont:` **0xCA2338..0xCA2364** は **font.lineHeight + _TFN_CTExtraLineHeight() = font.lineHeight + 3.0**。
+
+これにより最小行高と行間制約の構築は確認できたが、絵文字/fallbackを含むCTFrameの実際のbaseline・描画高さの一致は未測定。最小行高を固定行高と解釈しない。
+
+### SDK照合元
+
+- [Apple CTParagraphStyle.h（Theos SDK内のAppleヘッダ）](https://github.com/theos/sdks/blob/master/iPhoneOS15.6.sdk/System/Library/Frameworks/CoreText.framework/Headers/CTParagraphStyle.h)、取得blob SHA **c3002bc14abc7400afe4efb103783ff7c276ea51**。番号定義を照合。X v12.25がこのSDKでビルドされたという意味ではない。
+- [Apple CTParagraphStyleSpecifier](https://developer.apple.com/documentation/coretext/ctparagraphstylespecifier)。Web取得では一部本文がJavaScript/Markdown制約のため読めなかったので、番号の照合には上記ヘッダを使用した。
+
+## 次に追うもの（OX-019〜021後）
+
+1. TTAStatusBodySelectableTextViewのsizeForAttributedTextModel:width:textKit2Enabled:と描画の分岐。
+2. TTAStatusBodyAttributedTextView→TFNAttributedTextViewのfit/draw/update、selectionPadding、layoutMetrics.lineHeight生成。
+3. 実際の通常タイムラインcallerのdisplayType/options/width、およびセル合成・UITableViewへの反映。
+4. トークン実装とDynamic Type条件。資料・同条件実機計測を根拠に比較し、アプリ本体へまだ値を適用しない。

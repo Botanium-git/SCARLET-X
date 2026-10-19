@@ -2215,3 +2215,2513 @@ SHA256 ce10ca22abc997bfc3eb7732be33c198175994e24a421219cf0808c6e7882249
 0098C7F8  f44f41a9  ldp       x20, x19, [sp, #0x10]
 0098C7FC  f657c3a8  ldp       x22, x21, [sp], #0x30
 0098C800  10df0215  b         #0x4a44440 ; indirect:_objc_autoreleaseReturnValue
+
+# 2026-10-19 continuation: OX-019–021
+
+
+## xapp-height-calls.json
+{
+  "sha256": "ce10ca22abc997bfc3eb7732be33c198175994e24a421219cf0808c6e7882249",
+  "selector": "attributedTextModelHeightForOptions:",
+  "calls": [
+    {
+      "callsite": "0x98c55c",
+      "branch": "bl",
+      "target": "0x4a64be0",
+      "function": "0x98c518",
+      "owners": [
+        {
+          "owner": "TFNTwitterStatus",
+          "kind": "instance",
+          "class_address": "0x6579738",
+          "ro": "0x6368c80",
+          "method_list": "0x4b69460",
+          "entry": "0x4b695f4",
+          "selector": "attributedTextModelHeightForOptions:",
+          "types": "q24@0:8@16",
+          "imp": "0x98c518",
+          "executable": true
+        }
+      ]
+    },
+    {
+      "callsite": "0x2cccb1c",
+      "branch": "bl",
+      "target": "0x4a64be0",
+      "function": "0x2ccc9ec",
+      "owners": [
+        {
+          "owner": "TTAStatusBodyTextView",
+          "kind": "class",
+          "class_address": "0x65bbf00",
+          "ro": "0x645ce80",
+          "method_list": "0x4b27b30",
+          "entry": "0x4b27b44",
+          "selector": "heightForViewModel:options:displayTextOptions:displayType:width:layoutMetrics:richTextEnabled:trailingString:maxLines:attachmentDelegate:textKit2Enabled:cachingEnabled:",
+          "types": "d100@0:8@16Q24Q32Q40d48@56B64@68@76@84B92B96",
+          "imp": "0x2ccc9ec",
+          "executable": true
+        }
+      ]
+    }
+  ]
+}
+
+
+## body-height-callers.json
+{
+  "sha256": "ce10ca22abc997bfc3eb7732be33c198175994e24a421219cf0808c6e7882249",
+  "selector": "heightForViewModel:options:displayTextOptions:displayType:width:layoutMetrics:richTextEnabled:trailingString:maxLines:attachmentDelegate:textKit2Enabled:cachingEnabled:",
+  "calls": [
+    {
+      "callsite": "0x30c35a0",
+      "branch": "bl",
+      "target": "0x4a8d200",
+      "function": "0x30c31c0",
+      "owners": []
+    }
+  ]
+}
+
+
+## body-view-owner-summary.json
+[
+  {
+    "owner": "TTAStatusBodyTextView",
+    "kind": "instance",
+    "class_address": "0x65bbed8",
+    "ro": "0x645d228",
+    "method_list": "0x4b72b80",
+    "entry": "0x4b72c90",
+    "selector": "_t1_textViewForDisplayType:textKit2Enabled:askGrokEnabled:",
+    "types": "@32@0:8Q16B24B28",
+    "imp": "0x2ccd570",
+    "executable": true
+  },
+  {
+    "owner": "TTAStatusBodyTextView",
+    "kind": "instance",
+    "class_address": "0x65bbed8",
+    "ro": "0x645d228",
+    "method_list": "0x4b72b80",
+    "entry": "0x4b72ca8",
+    "selector": "_updateContentIfNeeded",
+    "types": "v16@0:8",
+    "imp": "0x2ccd760",
+    "executable": true
+  },
+  {
+    "owner": "TTAStatusBodyTextView",
+    "kind": "instance",
+    "class_address": "0x65bbed8",
+    "ro": "0x645d228",
+    "method_list": "0x4b72b80",
+    "entry": "0x4b72cb4",
+    "selector": "_attributedTextModelWithLayoutMetrics:",
+    "types": "@24@0:8@16",
+    "imp": "0x2ccd91c",
+    "executable": true
+  },
+  {
+    "owner": "TTAStatusBodyTextView",
+    "kind": "instance",
+    "class_address": "0x65bbed8",
+    "ro": "0x645d228",
+    "method_list": "0x4b72b80",
+    "entry": "0x4b72cd8",
+    "selector": "layoutSubviews",
+    "types": "v16@0:8",
+    "imp": "0x2ccdc60",
+    "executable": true
+  },
+  {
+    "owner": "TTAStatusBodyTextView",
+    "kind": "class",
+    "class_address": "0x65bbf00",
+    "ro": "0x645ce80",
+    "method_list": "0x4b27b30",
+    "entry": "0x4b27b38",
+    "selector": "fontForViewModel:options:displayTextOptions:displayType:width:layoutMetrics:",
+    "types": "@64@0:8@16Q24Q32Q40d48@56",
+    "imp": "0x2ccc4c4",
+    "executable": true
+  },
+  {
+    "owner": "TTAStatusBodyTextView",
+    "kind": "class",
+    "class_address": "0x65bbf00",
+    "ro": "0x645ce80",
+    "method_list": "0x4b27b30",
+    "entry": "0x4b27b44",
+    "selector": "heightForViewModel:options:displayTextOptions:displayType:width:layoutMetrics:richTextEnabled:trailingString:maxLines:attachmentDelegate:textKit2Enabled:cachingEnabled:",
+    "types": "d100@0:8@16Q24Q32Q40d48@56B64@68@76@84B92B96",
+    "imp": "0x2ccc9ec",
+    "executable": true
+  }
+]
+
+## body-class-bindings.json
+{
+  "sha256": "ce10ca22abc997bfc3eb7732be33c198175994e24a421219cf0808c6e7882249",
+  "bindings": [
+    {
+      "address": "0x6543790",
+      "raw": "0x10000006578d38",
+      "pointer_format": 6,
+      "kind": "rebase",
+      "target": "0x6578d38",
+      "symbols": [
+        "_OBJC_CLASS_$_TFNTwitterStatusDisplayAttributedTextModelFontOptions"
+      ],
+      "chain_verified": true
+    },
+    {
+      "address": "0x6543798",
+      "raw": "0x10000006578e00",
+      "pointer_format": 6,
+      "kind": "rebase",
+      "target": "0x6578e00",
+      "symbols": [
+        "_OBJC_CLASS_$_TFNMutableTwitterStatusDisplayAttributedTextModelOptions"
+      ],
+      "chain_verified": true
+    },
+    {
+      "address": "0x6544c88",
+      "raw": "0x100000065bbe88",
+      "pointer_format": 6,
+      "kind": "rebase",
+      "target": "0x65bbe88",
+      "symbols": [
+        "_OBJC_CLASS_$_TTAStatusBodySelectableTextView"
+      ],
+      "chain_verified": true
+    },
+    {
+      "address": "0x6544c90",
+      "raw": "0x100000065bbd98",
+      "pointer_format": 6,
+      "kind": "rebase",
+      "target": "0x65bbd98",
+      "symbols": [
+        "_OBJC_CLASS_$_TTAStatusBodyAttributedTextView"
+      ],
+      "chain_verified": true
+    },
+    {
+      "address": "0x65409a8",
+      "raw": "0x8010000000003022",
+      "pointer_format": 6,
+      "kind": "bind",
+      "ordinal": 12322,
+      "symbol": "_OBJC_CLASS_$_UIFont",
+      "chain_verified": true
+    },
+    {
+      "address": "0x6540d98",
+      "raw": "0x8010000000002fbb",
+      "pointer_format": 6,
+      "kind": "bind",
+      "ordinal": 12219,
+      "symbol": "_OBJC_CLASS_$_TFNAttributedTextView",
+      "chain_verified": true
+    }
+  ]
+}
+
+
+## body-height.txt
+## 0x2ccc9ec..0x2cccbd0
+02CCC9EC  e923b96d  stp       d9, d8, [sp, #-0x70]!
+02CCC9F0  fc6f01a9  stp       x28, x27, [sp, #0x10]
+02CCC9F4  fa6702a9  stp       x26, x25, [sp, #0x20]
+02CCC9F8  f85f03a9  stp       x24, x23, [sp, #0x30]
+02CCC9FC  f65704a9  stp       x22, x21, [sp, #0x40]
+02CCCA00  f44f05a9  stp       x20, x19, [sp, #0x50]
+02CCCA04  fd7b06a9  stp       x29, x30, [sp, #0x60]
+02CCCA08  fd830191  add       x29, sp, #0x60
+02CCCA0C  f80307aa  mov       x24, x7
+02CCCA10  f50306aa  mov       x21, x6
+02CCCA14  081ca04e  mov       v8.16b, v0.16b
+02CCCA18  f70305aa  mov       x23, x5
+02CCCA1C  fa0304aa  mov       x26, x4
+02CCCA20  f60303aa  mov       x22, x3
+02CCCA24  f30302aa  mov       x19, x2
+02CCCA28  b40f40f9  ldr       x20, [x29, #0x18]
+02CCCA2C  e00302aa  mov       x0, x2
+02CCCA30  ccde7594  bl        #0x4a44560 ; indirect:_objc_retain
+02CCCA34  e00314aa  mov       x0, x20
+02CCCA38  cade7594  bl        #0x4a44560 ; indirect:_objc_retain
+02CCCA3C  b30700b4  cbz       x19, #0x2cccb30
+02CCCA40  b91340f9  ldr       x25, [x29, #0x20]
+02CCCA44  bb0b40f9  ldr       x27, [x29, #0x10]
+02CCCA48  e00319aa  mov       x0, x25
+02CCCA4C  c5de7594  bl        #0x4a44560 ; indirect:_objc_retain
+02CCCA50  e0031baa  mov       x0, x27
+02CCCA54  c3de7594  bl        #0x4a44560 ; indirect:_objc_retain
+02CCCA58  e00313aa  mov       x0, x19
+02CCCA5C  e10316aa  mov       x1, x22
+02CCCA60  e20317aa  mov       x2, x23
+02CCCA64  e30315aa  mov       x3, x21
+02CCCA68  acfeff97  bl        #0x2ccc518
+02CCCA6C  fd031daa  mov       x29, x29
+02CCCA70  c5de7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCCA74  f50300aa  mov       x21, x0
+02CCCA78  a8c301f0  adrp      x8, #0x6543000
+02CCCA7C  00cd43f9  ldr       x0, [x8, #0x798]
+02CCCA80  64de7594  bl        #0x4a44410 ; indirect:_objc_alloc_init
+02CCCA84  f60300aa  mov       x22, x0
+02CCCA88  e2031aaa  mov       x2, x26
+02CCCA8C  fd557894  bl        #0x4ae2280 ; objc:setTextOptions: (selref 0x65247e8)
+02CCCA90  e00316aa  mov       x0, x22
+02CCCA94  001da84e  mov       v0.16b, v8.16b
+02CCCA98  02637894  bl        #0x4ae56a0 ; objc:setWidth: (selref 0x65254f0)
+02CCCA9C  e00316aa  mov       x0, x22
+02CCCAA0  e20315aa  mov       x2, x21
+02CCCAA4  87197894  bl        #0x4ad30c0 ; objc:setFontOptions: (selref 0x6520b78)
+02CCCAA8  e00316aa  mov       x0, x22
+02CCCAAC  e20318aa  mov       x2, x24
+02CCCAB0  8c467894  bl        #0x4ade4e0 ; objc:setRichTextEnabled: (selref 0x6523880)
+02CCCAB4  e00316aa  mov       x0, x22
+02CCCAB8  e2031baa  mov       x2, x27
+02CCCABC  215a7894  bl        #0x4ae3340 ; objc:setTrailingString: (selref 0x6524c18)
+02CCCAC0  e0031baa  mov       x0, x27
+02CCCAC4  a4de7594  bl        #0x4a44554 ; indirect:_objc_release
+02CCCAC8  e00316aa  mov       x0, x22
+02CCCACC  e20319aa  mov       x2, x25
+02CCCAD0  24fe7794  bl        #0x4acc360 ; objc:setAttachmentDelegate: (selref 0x651f020)
+02CCCAD4  e00319aa  mov       x0, x25
+02CCCAD8  9fde7594  bl        #0x4a44554 ; indirect:_objc_release
+02CCCADC  ff1a00f1  cmp       x23, #6
+02CCCAE0  e8040054  b.hi      #0x2cccb7c
+02CCCAE4  28008052  mov       w8, #1
+02CCCAE8  0821d79a  lsl       x8, x8, x23
+02CCCAEC  290f8052  mov       w9, #0x79
+02CCCAF0  1f0109ea  tst       x8, x9
+02CCCAF4  20020054  b.eq      #0x2cccb38
+02CCCAF8  b7a74039  ldrb      w23, [x29, #0x29]
+02CCCAFC  e00316aa  mov       x0, x22
+02CCCB00  e20314aa  mov       x2, x20
+02CCCB04  0f307894  bl        #0x4ad8b40 ; objc:setMaxLines: (selref 0x6522218)
+02CCCB08  e00316aa  mov       x0, x22
+02CCCB0C  e20317aa  mov       x2, x23
+02CCCB10  4c057894  bl        #0x4ace040 ; objc:setCachingEnabled: (selref 0x651f758)
+02CCCB14  e00313aa  mov       x0, x19
+02CCCB18  e20316aa  mov       x2, x22
+02CCCB1C  31607694  bl        #0x4a64be0 ; objc:attributedTextModelHeightForOptions: (selref 0x6505240)
+02CCCB20  0000629e  scvtf     d0, x0
+02CCCB24  92d87594  bl        #0x4a42d6c ; indirect:_TFNCeilToPixel
+02CCCB28  081ca04e  mov       v8.16b, v0.16b
+02CCCB2C  18000014  b         #0x2cccb8c
+02CCCB30  e803679e  fmov      d8, xzr
+02CCCB34  1a000014  b         #0x2cccb9c
+02CCCB38  e00313aa  mov       x0, x19
+02CCCB3C  e20316aa  mov       x2, x22
+02CCCB40  20607694  bl        #0x4a64bc0 ; objc:attributedTextModelForOptions: (selref 0x6505238)
+02CCCB44  fd031daa  mov       x29, x29
+02CCCB48  8fde7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCCB4C  f70300aa  mov       x23, x0
+02CCCB50  800100b4  cbz       x0, #0x2cccb80
+02CCCB54  a3a34039  ldrb      w3, [x29, #0x28]
+02CCCB58  c8c30190  adrp      x8, #0x6544000
+02CCCB5C  004546f9  ldr       x0, [x8, #0xc88]
+02CCCB60  e20317aa  mov       x2, x23
+02CCCB64  001da84e  mov       v0.16b, v8.16b
+02CCCB68  2e737894  bl        #0x4ae9820 ; objc:sizeForAttributedTextModel:width:textKit2Enabled: (selref 0x6526550)
+02CCCB6C  201ca14e  mov       v0.16b, v1.16b
+02CCCB70  7fd87594  bl        #0x4a42d6c ; indirect:_TFNCeilToPixel
+02CCCB74  081ca04e  mov       v8.16b, v0.16b
+02CCCB78  03000014  b         #0x2cccb84
+02CCCB7C  04000014  b         #0x2cccb8c
+02CCCB80  e803679e  fmov      d8, xzr
+02CCCB84  e00317aa  mov       x0, x23
+02CCCB88  73de7594  bl        #0x4a44554 ; indirect:_objc_release
+02CCCB8C  e00316aa  mov       x0, x22
+02CCCB90  71de7594  bl        #0x4a44554 ; indirect:_objc_release
+02CCCB94  e00315aa  mov       x0, x21
+02CCCB98  6fde7594  bl        #0x4a44554 ; indirect:_objc_release
+02CCCB9C  e00314aa  mov       x0, x20
+02CCCBA0  6dde7594  bl        #0x4a44554 ; indirect:_objc_release
+02CCCBA4  e00313aa  mov       x0, x19
+02CCCBA8  6bde7594  bl        #0x4a44554 ; indirect:_objc_release
+02CCCBAC  001da84e  mov       v0.16b, v8.16b
+02CCCBB0  fd7b46a9  ldp       x29, x30, [sp, #0x60]
+02CCCBB4  f44f45a9  ldp       x20, x19, [sp, #0x50]
+02CCCBB8  f65744a9  ldp       x22, x21, [sp, #0x40]
+02CCCBBC  f85f43a9  ldp       x24, x23, [sp, #0x30]
+02CCCBC0  fa6742a9  ldp       x26, x25, [sp, #0x20]
+02CCCBC4  fc6f41a9  ldp       x28, x27, [sp, #0x10]
+02CCCBC8  e923c76c  ldp       d9, d8, [sp], #0x70
+02CCCBCC  c0035fd6  ret
+
+## body-font-options.txt
+## 0x2ccc4c4..0x2ccc518
+02CCC4C4  f44fbea9  stp       x20, x19, [sp, #-0x20]!
+02CCC4C8  fd7b01a9  stp       x29, x30, [sp, #0x10]
+02CCC4CC  fd430091  add       x29, sp, #0x10
+02CCC4D0  e10303aa  mov       x1, x3
+02CCC4D4  e00302aa  mov       x0, x2
+02CCC4D8  e20305aa  mov       x2, x5
+02CCC4DC  e30306aa  mov       x3, x6
+02CCC4E0  0e000094  bl        #0x2ccc518
+02CCC4E4  fd031daa  mov       x29, x29
+02CCC4E8  27e07594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCC4EC  f30300aa  mov       x19, x0
+02CCC4F0  fce67694  bl        #0x4a860e0 ; objc:font (selref 0x650d780)
+02CCC4F4  fd031daa  mov       x29, x29
+02CCC4F8  23e07594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCC4FC  f40300aa  mov       x20, x0
+02CCC500  e00313aa  mov       x0, x19
+02CCC504  14e07594  bl        #0x4a44554 ; indirect:_objc_release
+02CCC508  e00314aa  mov       x0, x20
+02CCC50C  fd7b41a9  ldp       x29, x30, [sp, #0x10]
+02CCC510  f44fc2a8  ldp       x20, x19, [sp], #0x20
+02CCC514  cbdf7514  b         #0x4a44440 ; indirect:_objc_autoreleaseReturnValue
+## 0x2ccc518..0x2ccc9ec
+02CCC518  ff4302d1  sub       sp, sp, #0x90
+02CCC51C  eb2b016d  stp       d11, d10, [sp, #0x10]
+02CCC520  e923026d  stp       d9, d8, [sp, #0x20]
+02CCC524  fc6f03a9  stp       x28, x27, [sp, #0x30]
+02CCC528  fa6704a9  stp       x26, x25, [sp, #0x40]
+02CCC52C  f85f05a9  stp       x24, x23, [sp, #0x50]
+02CCC530  f65706a9  stp       x22, x21, [sp, #0x60]
+02CCC534  f44f07a9  stp       x20, x19, [sp, #0x70]
+02CCC538  fd7b08a9  stp       x29, x30, [sp, #0x80]
+02CCC53C  fd030291  add       x29, sp, #0x80
+02CCC540  f40303aa  mov       x20, x3
+02CCC544  fa0302aa  mov       x26, x2
+02CCC548  f70301aa  mov       x23, x1
+02CCC54C  f30300aa  mov       x19, x0
+02CCC550  04e07594  bl        #0x4a44560 ; indirect:_objc_retain
+02CCC554  e00314aa  mov       x0, x20
+02CCC558  02e07594  bl        #0x4a44560 ; indirect:_objc_retain
+02CCC55C  b6c30190  adrp      x22, #0x6540000
+02CCC560  c0d244f9  ldr       x0, [x22, #0x9a0]
+02CCC564  3fae7894  bl        #0x4af7e60 ; objc:twitterColors (selref 0x6529ee0)
+02CCC568  fd031daa  mov       x29, x29
+02CCC56C  06e07594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCC570  f50300aa  mov       x21, x0
+02CCC574  e3907894  bl        #0x4af0900 ; objc:textDetailsColor (selref 0x6528188)
+02CCC578  fd031daa  mov       x29, x29
+02CCC57C  02e07594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCC580  fc0300aa  mov       x28, x0
+02CCC584  b70408b7  tbnz      x23, #0x21, #0x2ccc618
+02CCC588  5f0f00f1  cmp       x26, #3
+02CCC58C  4c090054  b.gt      #0x2ccc6b4
+02CCC590  5f0700f1  cmp       x26, #1
+02CCC594  c0090054  b.eq      #0x2ccc6cc
+02CCC598  5f0b00f1  cmp       x26, #2
+02CCC59C  20120054  b.eq      #0x2ccc7e0
+02CCC5A0  5f0f00f1  cmp       x26, #3
+02CCC5A4  810e0054  b.ne      #0x2ccc774
+02CCC5A8  bbc30190  adrp      x27, #0x6540000
+02CCC5AC  60d744f9  ldr       x0, [x27, #0x9a8]
+02CCC5B0  00d0671e  fmov      d0, #30.00000000
+02CCC5B4  62008052  mov       w2, #3
+02CCC5B8  03008052  mov       w3, #0
+02CCC5BC  e9d77894  bl        #0x4b02560 ; objc:xdsDeprecated_customFontOfSize:weight:scalesWithDynamicType: (selref 0x652c8a0)
+02CCC5C0  fd031daa  mov       x29, x29
+02CCC5C4  f0df7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCC5C8  f80300aa  mov       x24, x0
+02CCC5CC  60d744f9  ldr       x0, [x27, #0x9a8]
+02CCC5D0  00d0671e  fmov      d0, #30.00000000
+02CCC5D4  62008052  mov       w2, #3
+02CCC5D8  03008052  mov       w3, #0
+02CCC5DC  e1d77894  bl        #0x4b02560 ; objc:xdsDeprecated_customFontOfSize:weight:scalesWithDynamicType: (selref 0x652c8a0)
+02CCC5E0  fd031daa  mov       x29, x29
+02CCC5E4  e8df7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCC5E8  f90300aa  mov       x25, x0
+02CCC5EC  e00318aa  mov       x0, x24
+02CCC5F0  3c677794  bl        #0x4aa62e0 ; objc:lineHeight (selref 0x6515800)
+02CCC5F4  081ca04e  mov       v8.16b, v0.16b
+02CCC5F8  60d744f9  ldr       x0, [x27, #0x9a8]
+02CCC5FC  c1957894  bl        #0x4af1d00 ; objc:tfn_isChirpFontEnabled (selref 0x6528688)
+02CCC600  1f000071  cmp       w0, #0
+02CCC604  0010601e  fmov      d0, #2.00000000
+02CCC608  ea03679e  fmov      d10, xzr
+02CCC60C  491d601e  fcsel     d9, d10, d0, ne
+02CCC610  570d0837  tbnz      w23, #1, #0x2ccc7b8
+02CCC614  8f000014  b         #0x2ccc850
+02CCC618  b9c30190  adrp      x25, #0x6540000
+02CCC61C  20d744f9  ldr       x0, [x25, #0x9a8]
+02CCC620  30d87894  bl        #0x4b026e0 ; objc:xds_content_body (selref 0x652c900)
+02CCC624  fd031daa  mov       x29, x29
+02CCC628  d7df7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCC62C  f80300aa  mov       x24, x0
+02CCC630  20d744f9  ldr       x0, [x25, #0x9a8]
+02CCC634  33d87894  bl        #0x4b02700 ; objc:xds_content_bodyBold (selref 0x652c908)
+02CCC638  fd031daa  mov       x29, x29
+02CCC63C  d2df7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCC640  f90300aa  mov       x25, x0
+02CCC644  e00314aa  mov       x0, x20
+02CCC648  26677794  bl        #0x4aa62e0 ; objc:lineHeight (selref 0x6515800)
+02CCC64C  081ca04e  mov       v8.16b, v0.16b
+02CCC650  77010836  tbz       w23, #1, #0x2ccc67c
+02CCC654  c0d244f9  ldr       x0, [x22, #0x9a0]
+02CCC658  42d87894  bl        #0x4b02760 ; objc:xds_foregroundOnColor (selref 0x652c920)
+02CCC65C  fd031daa  mov       x29, x29
+02CCC660  c9df7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCC664  fa0300aa  mov       x26, x0
+02CCC668  c0d244f9  ldr       x0, [x22, #0x9a0]
+02CCC66C  3dd87894  bl        #0x4b02760 ; objc:xds_foregroundOnColor (selref 0x652c920)
+02CCC670  fd031daa  mov       x29, x29
+02CCC674  c4df7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCC678  0a000014  b         #0x2ccc6a0
+02CCC67C  e00315aa  mov       x0, x21
+02CCC680  58907894  bl        #0x4af07e0 ; objc:textColor (selref 0x6528140)
+02CCC684  fd031daa  mov       x29, x29
+02CCC688  bfdf7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCC68C  fa0300aa  mov       x26, x0
+02CCC690  e00315aa  mov       x0, x21
+02CCC694  53907894  bl        #0x4af07e0 ; objc:textColor (selref 0x6528140)
+02CCC698  fd031daa  mov       x29, x29
+02CCC69C  badf7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCC6A0  fb0300aa  mov       x27, x0
+02CCC6A4  e903679e  fmov      d9, xzr
+02CCC6A8  ea03679e  fmov      d10, xzr
+02CCC6AC  171040b7  tbnz      x23, #0x28, #0x2ccc8ac
+02CCC6B0  9e000014  b         #0x2ccc928
+02CCC6B4  5f1b00f1  cmp       x26, #6
+02CCC6B8  a0030054  b.eq      #0x2ccc72c
+02CCC6BC  5f1700f1  cmp       x26, #5
+02CCC6C0  a0180054  b.eq      #0x2ccc9d4
+02CCC6C4  5f1300f1  cmp       x26, #4
+02CCC6C8  61050054  b.ne      #0x2ccc774
+02CCC6CC  bbc30190  adrp      x27, #0x6540000
+02CCC6D0  60d744f9  ldr       x0, [x27, #0x9a8]
+02CCC6D4  53d87894  bl        #0x4b02820 ; objc:xds_headline2 (selref 0x652c950)
+02CCC6D8  fd031daa  mov       x29, x29
+02CCC6DC  aadf7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCC6E0  f80300aa  mov       x24, x0
+02CCC6E4  60d744f9  ldr       x0, [x27, #0x9a8]
+02CCC6E8  56d87894  bl        #0x4b02840 ; objc:xds_headline2Bold (selref 0x652c958)
+02CCC6EC  fd031daa  mov       x29, x29
+02CCC6F0  a5df7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCC6F4  f90300aa  mov       x25, x0
+02CCC6F8  60d744f9  ldr       x0, [x27, #0x9a8]
+02CCC6FC  81957894  bl        #0x4af1d00 ; objc:tfn_isChirpFontEnabled (selref 0x6528688)
+02CCC700  1f000071  cmp       w0, #0
+02CCC704  0010601e  fmov      d0, #2.00000000
+02CCC708  ea03679e  fmov      d10, xzr
+02CCC70C  491d601e  fcsel     d9, d10, d0, ne
+02CCC710  e00318aa  mov       x0, x24
+02CCC714  f3667794  bl        #0x4aa62e0 ; objc:lineHeight (selref 0x6515800)
+02CCC718  081ca04e  mov       v8.16b, v0.16b
+02CCC71C  d0d97594  bl        #0x4a42e5c ; indirect:_TFN_CTExtraLineHeight
+02CCC720  0829601e  fadd      d8, d8, d0
+02CCC724  b7040837  tbnz      w23, #1, #0x2ccc7b8
+02CCC728  4a000014  b         #0x2ccc850
+02CCC72C  b9c30190  adrp      x25, #0x6540000
+02CCC730  20d744f9  ldr       x0, [x25, #0x9a8]
+02CCC734  6bd87894  bl        #0x4b028e0 ; objc:xds_subtext2 (selref 0x652c980)
+02CCC738  fd031daa  mov       x29, x29
+02CCC73C  92df7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCC740  f80300aa  mov       x24, x0
+02CCC744  20d744f9  ldr       x0, [x25, #0x9a8]
+02CCC748  6ed87894  bl        #0x4b02900 ; objc:xds_subtext2Bold (selref 0x652c988)
+02CCC74C  fd031daa  mov       x29, x29
+02CCC750  8ddf7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCC754  f90300aa  mov       x25, x0
+02CCC758  e00318aa  mov       x0, x24
+02CCC75C  e1667794  bl        #0x4aa62e0 ; objc:lineHeight (selref 0x6515800)
+02CCC760  081ca04e  mov       v8.16b, v0.16b
+02CCC764  e903679e  fmov      d9, xzr
+02CCC768  ea03679e  fmov      d10, xzr
+02CCC76C  77020837  tbnz      w23, #1, #0x2ccc7b8
+02CCC770  3a000014  b         #0x2ccc858
+02CCC774  b9c30190  adrp      x25, #0x6540000
+02CCC778  20d744f9  ldr       x0, [x25, #0x9a8]
+02CCC77C  d9d77894  bl        #0x4b026e0 ; objc:xds_content_body (selref 0x652c900)
+02CCC780  fd031daa  mov       x29, x29
+02CCC784  80df7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCC788  f80300aa  mov       x24, x0
+02CCC78C  20d744f9  ldr       x0, [x25, #0x9a8]
+02CCC790  dcd77894  bl        #0x4b02700 ; objc:xds_content_bodyBold (selref 0x652c908)
+02CCC794  fd031daa  mov       x29, x29
+02CCC798  7bdf7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCC79C  f90300aa  mov       x25, x0
+02CCC7A0  e00314aa  mov       x0, x20
+02CCC7A4  cf667794  bl        #0x4aa62e0 ; objc:lineHeight (selref 0x6515800)
+02CCC7A8  081ca04e  mov       v8.16b, v0.16b
+02CCC7AC  ea03679e  fmov      d10, xzr
+02CCC7B0  e903679e  fmov      d9, xzr
+02CCC7B4  f7040836  tbz       w23, #1, #0x2ccc850
+02CCC7B8  c0d244f9  ldr       x0, [x22, #0x9a0]
+02CCC7BC  e9d77894  bl        #0x4b02760 ; objc:xds_foregroundOnColor (selref 0x652c920)
+02CCC7C0  fd031daa  mov       x29, x29
+02CCC7C4  70df7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCC7C8  fa0300aa  mov       x26, x0
+02CCC7CC  e00315aa  mov       x0, x21
+02CCC7D0  54907894  bl        #0x4af0920 ; objc:textDetailsDarkBackgroundColor (selref 0x6528190)
+02CCC7D4  fd031daa  mov       x29, x29
+02CCC7D8  6bdf7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCC7DC  32000014  b         #0x2ccc8a4
+02CCC7E0  bbc30190  adrp      x27, #0x6540000
+02CCC7E4  60d744f9  ldr       x0, [x27, #0x9a8]
+02CCC7E8  aed77894  bl        #0x4b026a0 ; objc:xds_body (selref 0x652c8f0)
+02CCC7EC  fd031daa  mov       x29, x29
+02CCC7F0  65df7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCC7F4  f80300aa  mov       x24, x0
+02CCC7F8  60d744f9  ldr       x0, [x27, #0x9a8]
+02CCC7FC  b1d77894  bl        #0x4b026c0 ; objc:xds_bodyBold (selref 0x652c8f8)
+02CCC800  fd031daa  mov       x29, x29
+02CCC804  60df7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCC808  f90300aa  mov       x25, x0
+02CCC80C  e00318aa  mov       x0, x24
+02CCC810  b4667794  bl        #0x4aa62e0 ; objc:lineHeight (selref 0x6515800)
+02CCC814  081ca04e  mov       v8.16b, v0.16b
+02CCC818  91d97594  bl        #0x4a42e5c ; indirect:_TFN_CTExtraLineHeight
+02CCC81C  0829601e  fadd      d8, d8, d0
+02CCC820  60d744f9  ldr       x0, [x27, #0x9a8]
+02CCC824  37957894  bl        #0x4af1d00 ; objc:tfn_isChirpFontEnabled (selref 0x6528688)
+02CCC828  1f000071  cmp       w0, #0
+02CCC82C  0010601e  fmov      d0, #2.00000000
+02CCC830  e103679e  fmov      d1, xzr
+02CCC834  291c601e  fcsel     d9, d1, d0, ne
+02CCC838  e00318aa  mov       x0, x24
+02CCC83C  a9667794  bl        #0x4aa62e0 ; objc:lineHeight (selref 0x6515800)
+02CCC840  0110611e  fmov      d1, #3.00000000
+02CCC844  0018611e  fdiv      d0, d0, d1
+02CCC848  0a40651e  frintm    d10, d0
+02CCC84C  77fb0f37  tbnz      w23, #1, #0x2ccc7b8
+02CCC850  5f1b00f1  cmp       x26, #6
+02CCC854  61010054  b.ne      #0x2ccc880
+02CCC858  e00315aa  mov       x0, x21
+02CCC85C  29907894  bl        #0x4af0900 ; objc:textDetailsColor (selref 0x6528188)
+02CCC860  fd031daa  mov       x29, x29
+02CCC864  48df7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCC868  fa0300aa  mov       x26, x0
+02CCC86C  e00315aa  mov       x0, x21
+02CCC870  24907894  bl        #0x4af0900 ; objc:textDetailsColor (selref 0x6528188)
+02CCC874  fd031daa  mov       x29, x29
+02CCC878  43df7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCC87C  0a000014  b         #0x2ccc8a4
+02CCC880  e00315aa  mov       x0, x21
+02CCC884  d78f7894  bl        #0x4af07e0 ; objc:textColor (selref 0x6528140)
+02CCC888  fd031daa  mov       x29, x29
+02CCC88C  3edf7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCC890  fa0300aa  mov       x26, x0
+02CCC894  e00315aa  mov       x0, x21
+02CCC898  12917894  bl        #0x4af0ce0 ; objc:textLinkColor (selref 0x6528280)
+02CCC89C  fd031daa  mov       x29, x29
+02CCC8A0  39df7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCC8A4  fb0300aa  mov       x27, x0
+02CCC8A8  170440b6  tbz       x23, #0x28, #0x2ccc928
+02CCC8AC  e00313aa  mov       x0, x19
+02CCC8B0  b4567794  bl        #0x4aa2380 ; objc:isStaleTweet (selref 0x6514828)
+02CCC8B4  a0030034  cbz       w0, #0x2ccc928
+02CCC8B8  e00315aa  mov       x0, x21
+02CCC8BC  31917894  bl        #0x4af0d80 ; objc:textPlaceholderColor (selref 0x65282a8)
+02CCC8C0  fd031daa  mov       x29, x29
+02CCC8C4  30df7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCC8C8  f70700f9  str       x23, [sp, #8]
+02CCC8CC  f70318aa  mov       x23, x24
+02CCC8D0  f80319aa  mov       x24, x25
+02CCC8D4  f90314aa  mov       x25, x20
+02CCC8D8  f40313aa  mov       x20, x19
+02CCC8DC  f3031caa  mov       x19, x28
+02CCC8E0  fc0300aa  mov       x28, x0
+02CCC8E4  e0031aaa  mov       x0, x26
+02CCC8E8  1bdf7594  bl        #0x4a44554 ; indirect:_objc_release
+02CCC8EC  e00315aa  mov       x0, x21
+02CCC8F0  24917894  bl        #0x4af0d80 ; objc:textPlaceholderColor (selref 0x65282a8)
+02CCC8F4  fd031daa  mov       x29, x29
+02CCC8F8  23df7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCC8FC  f60300aa  mov       x22, x0
+02CCC900  e0031baa  mov       x0, x27
+02CCC904  14df7594  bl        #0x4a44554 ; indirect:_objc_release
+02CCC908  fa031caa  mov       x26, x28
+02CCC90C  fc0313aa  mov       x28, x19
+02CCC910  f30314aa  mov       x19, x20
+02CCC914  f40319aa  mov       x20, x25
+02CCC918  f90318aa  mov       x25, x24
+02CCC91C  f80317aa  mov       x24, x23
+02CCC920  f70740f9  ldr       x23, [sp, #8]
+02CCC924  fb0316aa  mov       x27, x22
+02CCC928  f60641d3  ubfx      x22, x23, #1, #1
+02CCC92C  a8c301f0  adrp      x8, #0x6543000
+02CCC930  00c943f9  ldr       x0, [x8, #0x790]
+02CCC934  b1de7594  bl        #0x4a443f8 ; indirect:_objc_alloc
+02CCC938  e003679e  fmov      d0, xzr
+02CCC93C  e20318aa  mov       x2, x24
+02CCC940  e30319aa  mov       x3, x25
+02CCC944  011da84e  mov       v1.16b, v8.16b
+02CCC948  221da94e  mov       v2.16b, v9.16b
+02CCC94C  431daa4e  mov       v3.16b, v10.16b
+02CCC950  e4031aaa  mov       x4, x26
+02CCC954  e5031baa  mov       x5, x27
+02CCC958  e6031caa  mov       x6, x28
+02CCC95C  e70316aa  mov       x7, x22
+02CCC960  10227794  bl        #0x4a951a0 ; objc:initWithFont:boldFont:kerning:lineHeight:lineSpacing:emptyLineMaxHeight:textColor:linkTextColor:suffixTokenTextColor:darkBackground: (selref 0x65113b0)
+02CCC964  f60300aa  mov       x22, x0
+02CCC968  e0031caa  mov       x0, x28
+02CCC96C  fade7594  bl        #0x4a44554 ; indirect:_objc_release
+02CCC970  e0031baa  mov       x0, x27
+02CCC974  f8de7594  bl        #0x4a44554 ; indirect:_objc_release
+02CCC978  e0031aaa  mov       x0, x26
+02CCC97C  f6de7594  bl        #0x4a44554 ; indirect:_objc_release
+02CCC980  e00319aa  mov       x0, x25
+02CCC984  f4de7594  bl        #0x4a44554 ; indirect:_objc_release
+02CCC988  e00318aa  mov       x0, x24
+02CCC98C  f2de7594  bl        #0x4a44554 ; indirect:_objc_release
+02CCC990  e00315aa  mov       x0, x21
+02CCC994  f0de7594  bl        #0x4a44554 ; indirect:_objc_release
+02CCC998  e00314aa  mov       x0, x20
+02CCC99C  eede7594  bl        #0x4a44554 ; indirect:_objc_release
+02CCC9A0  e00313aa  mov       x0, x19
+02CCC9A4  ecde7594  bl        #0x4a44554 ; indirect:_objc_release
+02CCC9A8  e00316aa  mov       x0, x22
+02CCC9AC  fd7b48a9  ldp       x29, x30, [sp, #0x80]
+02CCC9B0  f44f47a9  ldp       x20, x19, [sp, #0x70]
+02CCC9B4  f65746a9  ldp       x22, x21, [sp, #0x60]
+02CCC9B8  f85f45a9  ldp       x24, x23, [sp, #0x50]
+02CCC9BC  fa6744a9  ldp       x26, x25, [sp, #0x40]
+02CCC9C0  fc6f43a9  ldp       x28, x27, [sp, #0x30]
+02CCC9C4  e923426d  ldp       d9, d8, [sp, #0x20]
+02CCC9C8  eb2b416d  ldp       d11, d10, [sp, #0x10]
+02CCC9CC  ff430291  add       sp, sp, #0x90
+02CCC9D0  9cde7514  b         #0x4a44440 ; indirect:_objc_autoreleaseReturnValue
+02CCC9D4  b9c30190  adrp      x25, #0x6540000
+02CCC9D8  20d744f9  ldr       x0, [x25, #0x9a8]
+02CCC9DC  49d77894  bl        #0x4b02700 ; objc:xds_content_bodyBold (selref 0x652c908)
+02CCC9E0  fd031daa  mov       x29, x29
+02CCC9E4  e8de7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCC9E8  11ffff17  b         #0x2ccc62c
+## 0x2ccd91c..0x2ccdb18
+02CCD91C  ed33b86d  stp       d13, d12, [sp, #-0x80]!
+02CCD920  eb2b016d  stp       d11, d10, [sp, #0x10]
+02CCD924  e923026d  stp       d9, d8, [sp, #0x20]
+02CCD928  fa6703a9  stp       x26, x25, [sp, #0x30]
+02CCD92C  f85f04a9  stp       x24, x23, [sp, #0x40]
+02CCD930  f65705a9  stp       x22, x21, [sp, #0x50]
+02CCD934  f44f06a9  stp       x20, x19, [sp, #0x60]
+02CCD938  fd7b07a9  stp       x29, x30, [sp, #0x70]
+02CCD93C  fdc30191  add       x29, sp, #0x70
+02CCD940  f30302aa  mov       x19, x2
+02CCD944  f40300aa  mov       x20, x0
+02CCD948  e00302aa  mov       x0, x2
+02CCD94C  05db7594  bl        #0x4a44560 ; indirect:_objc_retain
+02CCD950  08c401f0  adrp      x8, #0x6550000
+02CCD954  17858eb9  ldrsw     x23, [x8, #0xe84]
+02CCD958  886a77f8  ldr       x8, [x20, x23]
+02CCD95C  680000b4  cbz       x8, #0x2ccd968
+02CCD960  16008052  mov       w22, #0
+02CCD964  05000014  b         #0x2ccd978
+02CCD968  e00314aa  mov       x0, x20
+02CCD96C  15437794  bl        #0x4a9e5c0 ; objc:isDisplayTextCachingEnabled (selref 0x65138b8)
+02CCD970  f60300aa  mov       x22, x0
+02CCD974  886a77f8  ldr       x8, [x20, x23]
+02CCD978  1f0d00f1  cmp       x8, #3
+02CCD97C  95029f9a  csel      x21, x20, xzr, eq
+02CCD980  e00315aa  mov       x0, x21
+02CCD984  f7da7594  bl        #0x4a44560 ; indirect:_objc_retain
+02CCD988  e00314aa  mov       x0, x20
+02CCD98C  9d6b7694  bl        #0x4a68800 ; objc:bounds (selref 0x6506148)
+02CCD990  081ca04e  mov       v8.16b, v0.16b
+02CCD994  291ca14e  mov       v9.16b, v1.16b
+02CCD998  4a1ca24e  mov       v10.16b, v2.16b
+02CCD99C  6b1ca34e  mov       v11.16b, v3.16b
+02CCD9A0  08c401f0  adrp      x8, #0x6550000
+02CCD9A4  08918eb9  ldrsw     x8, [x8, #0xe90]
+02CCD9A8  806a68f8  ldr       x0, [x20, x8]
+02CCD9AC  65517794  bl        #0x4aa1f40 ; objc:isSelectionPaddingEnabled (selref 0x6514718)
+02CCD9B0  ec03679e  fmov      d12, xzr
+02CCD9B4  ed03679e  fmov      d13, xzr
+02CCD9B8  a0000034  cbz       w0, #0x2ccd9cc
+02CCD9BC  a8c301f0  adrp      x8, #0x6544000
+02CCD9C0  004d46f9  ldr       x0, [x8, #0xc98]
+02CCD9C4  97ef7794  bl        #0x4ac9820 ; objc:selectionPadding (selref 0x651e550)
+02CCD9C8  0d28601e  fadd      d13, d0, d0
+02CCD9CC  001da84e  mov       v0.16b, v8.16b
+02CCD9D0  211da94e  mov       v1.16b, v9.16b
+02CCD9D4  421daa4e  mov       v2.16b, v10.16b
+02CCD9D8  631dab4e  mov       v3.16b, v11.16b
+02CCD9DC  c2d27594  bl        #0x4a424e4 ; indirect:_CGRectGetWidth
+02CCD9E0  00386d1e  fsub      d0, d0, d13
+02CCD9E4  08686c1e  fmaxnm    d8, d0, d12
+02CCD9E8  08c401f0  adrp      x8, #0x6550000
+02CCD9EC  1a958eb9  ldrsw     x26, [x8, #0xe94]
+02CCD9F0  806a7af8  ldr       x0, [x20, x26]
+02CCD9F4  08c401f0  adrp      x8, #0x6550000
+02CCD9F8  08998eb9  ldrsw     x8, [x8, #0xe98]
+02CCD9FC  816a68f8  ldr       x1, [x20, x8]
+02CCDA00  08c401f0  adrp      x8, #0x6550000
+02CCDA04  199d8eb9  ldrsw     x25, [x8, #0xe9c]
+02CCDA08  826a77f8  ldr       x2, [x20, x23]
+02CCDA0C  e30313aa  mov       x3, x19
+02CCDA10  c2faff97  bl        #0x2ccc518
+02CCDA14  fd031daa  mov       x29, x29
+02CCDA18  dbda7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCDA1C  f70300aa  mov       x23, x0
+02CCDA20  a8c301d0  adrp      x8, #0x6543000
+02CCDA24  00cd43f9  ldr       x0, [x8, #0x798]
+02CCDA28  7ada7594  bl        #0x4a44410 ; indirect:_objc_alloc_init
+02CCDA2C  f80300aa  mov       x24, x0
+02CCDA30  826a79f8  ldr       x2, [x20, x25]
+02CCDA34  13527894  bl        #0x4ae2280 ; objc:setTextOptions: (selref 0x65247e8)
+02CCDA38  e00318aa  mov       x0, x24
+02CCDA3C  001da84e  mov       v0.16b, v8.16b
+02CCDA40  185f7894  bl        #0x4ae56a0 ; objc:setWidth: (selref 0x65254f0)
+02CCDA44  e00318aa  mov       x0, x24
+02CCDA48  e20317aa  mov       x2, x23
+02CCDA4C  9d157894  bl        #0x4ad30c0 ; objc:setFontOptions: (selref 0x6520b78)
+02CCDA50  08c401f0  adrp      x8, #0x6550000
+02CCDA54  08a18eb9  ldrsw     x8, [x8, #0xea0]
+02CCDA58  826a6838  ldrb      w2, [x20, x8]
+02CCDA5C  e00318aa  mov       x0, x24
+02CCDA60  a0427894  bl        #0x4ade4e0 ; objc:setRichTextEnabled: (selref 0x6523880)
+02CCDA64  e00314aa  mov       x0, x20
+02CCDA68  aea37894  bl        #0x4af6920 ; objc:trailingString (selref 0x6529990)
+02CCDA6C  fd031daa  mov       x29, x29
+02CCDA70  c5da7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCDA74  f90300aa  mov       x25, x0
+02CCDA78  e00318aa  mov       x0, x24
+02CCDA7C  e20319aa  mov       x2, x25
+02CCDA80  30567894  bl        #0x4ae3340 ; objc:setTrailingString: (selref 0x6524c18)
+02CCDA84  e00319aa  mov       x0, x25
+02CCDA88  b3da7594  bl        #0x4a44554 ; indirect:_objc_release
+02CCDA8C  e00318aa  mov       x0, x24
+02CCDA90  e20315aa  mov       x2, x21
+02CCDA94  23057894  bl        #0x4acef20 ; objc:setColorProviderView: (selref 0x651fb10)
+02CCDA98  08c401f0  adrp      x8, #0x6550000
+02CCDA9C  08a58eb9  ldrsw     x8, [x8, #0xea4]
+02CCDAA0  826a68f8  ldr       x2, [x20, x8]
+02CCDAA4  e00318aa  mov       x0, x24
+02CCDAA8  2efa7794  bl        #0x4acc360 ; objc:setAttachmentDelegate: (selref 0x651f020)
+02CCDAAC  e00318aa  mov       x0, x24
+02CCDAB0  e20316aa  mov       x2, x22
+02CCDAB4  63017894  bl        #0x4ace040 ; objc:setCachingEnabled: (selref 0x651f758)
+02CCDAB8  806a7af8  ldr       x0, [x20, x26]
+02CCDABC  e20318aa  mov       x2, x24
+02CCDAC0  405c7694  bl        #0x4a64bc0 ; objc:attributedTextModelForOptions: (selref 0x6505238)
+02CCDAC4  fd031daa  mov       x29, x29
+02CCDAC8  afda7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCDACC  f40300aa  mov       x20, x0
+02CCDAD0  e00318aa  mov       x0, x24
+02CCDAD4  a0da7594  bl        #0x4a44554 ; indirect:_objc_release
+02CCDAD8  e00317aa  mov       x0, x23
+02CCDADC  9eda7594  bl        #0x4a44554 ; indirect:_objc_release
+02CCDAE0  e00315aa  mov       x0, x21
+02CCDAE4  9cda7594  bl        #0x4a44554 ; indirect:_objc_release
+02CCDAE8  e00313aa  mov       x0, x19
+02CCDAEC  9ada7594  bl        #0x4a44554 ; indirect:_objc_release
+02CCDAF0  e00314aa  mov       x0, x20
+02CCDAF4  fd7b47a9  ldp       x29, x30, [sp, #0x70]
+02CCDAF8  f44f46a9  ldp       x20, x19, [sp, #0x60]
+02CCDAFC  f65745a9  ldp       x22, x21, [sp, #0x50]
+02CCDB00  f85f44a9  ldp       x24, x23, [sp, #0x40]
+02CCDB04  fa6743a9  ldp       x26, x25, [sp, #0x30]
+02CCDB08  e923426d  ldp       d9, d8, [sp, #0x20]
+02CCDB0C  eb2b416d  ldp       d11, d10, [sp, #0x10]
+02CCDB10  ed33c86c  ldp       d13, d12, [sp], #0x80
+02CCDB14  4bda7514  b         #0x4a44440 ; indirect:_objc_autoreleaseReturnValue
+
+## body-renderer-layout.txt
+## 0x2cccbd0..0x2cccbdc
+02CCCBD0  a8c30190  adrp      x8, #0x6540000
+02CCCBD4  00cd46f9  ldr       x0, [x8, #0xd98]
+02CCCBD8  12f37714  b         #0x4ac9820 ; objc:selectionPadding (selref 0x651e550)
+## 0x2cccbdc..0x2cccbe4
+02CCCBDC  0010631e  fmov      d0, #6.00000000
+02CCCBE0  c0035fd6  ret
+## 0x2ccd570..0x2ccd5fc
+02CCD570  5f1800f1  cmp       x2, #6
+02CCD574  28040054  b.hi      #0x2ccd5f8
+02CCD578  f44fbea9  stp       x20, x19, [sp, #-0x20]!
+02CCD57C  fd7b01a9  stp       x29, x30, [sp, #0x10]
+02CCD580  fd430091  add       x29, sp, #0x10
+02CCD584  28008052  mov       w8, #1
+02CCD588  0821c29a  lsl       x8, x8, x2
+02CCD58C  290f8052  mov       w9, #0x79
+02CCD590  1f0109ea  tst       x8, x9
+02CCD594  40010054  b.eq      #0x2ccd5bc
+02CCD598  a8c301f0  adrp      x8, #0x6544000
+02CCD59C  004946f9  ldr       x0, [x8, #0xc90]
+02CCD5A0  96db7594  bl        #0x4a443f8 ; indirect:_objc_alloc
+02CCD5A4  a88f01f0  adrp      x8, #0x5ec4000
+02CCD5A8  081d43f9  ldr       x8, [x8, #0x638]
+02CCD5AC  0005406d  ldp       d0, d1, [x8]
+02CCD5B0  020d416d  ldp       d2, d3, [x8, #0x10]
+02CCD5B4  231f7794  bl        #0x4a95240 ; objc:initWithFrame: (selref 0x65113d8)
+02CCD5B8  0d000014  b         #0x2ccd5ec
+02CCD5BC  f30304aa  mov       x19, x4
+02CCD5C0  f40303aa  mov       x20, x3
+02CCD5C4  a8c301f0  adrp      x8, #0x6544000
+02CCD5C8  004546f9  ldr       x0, [x8, #0xc88]
+02CCD5CC  8bdb7594  bl        #0x4a443f8 ; indirect:_objc_alloc
+02CCD5D0  a88f01f0  adrp      x8, #0x5ec4000
+02CCD5D4  081d43f9  ldr       x8, [x8, #0x638]
+02CCD5D8  0005406d  ldp       d0, d1, [x8]
+02CCD5DC  020d416d  ldp       d2, d3, [x8, #0x10]
+02CCD5E0  e20314aa  mov       x2, x20
+02CCD5E4  e30313aa  mov       x3, x19
+02CCD5E8  fe1f7794  bl        #0x4a955e0 ; objc:initWithFrame:textKit2Enabled:askGrokEnabled: (selref 0x65114c0)
+02CCD5EC  fd7b41a9  ldp       x29, x30, [sp, #0x10]
+02CCD5F0  f44fc2a8  ldp       x20, x19, [sp], #0x20
+02CCD5F4  93db7514  b         #0x4a44440 ; indirect:_objc_autoreleaseReturnValue
+02CCD5F8  92db7514  b         #0x4a44440 ; indirect:_objc_autoreleaseReturnValue
+## 0x2ccdc60..0x2ccdcc0
+02CCDC60  ffc300d1  sub       sp, sp, #0x30
+02CCDC64  f44f01a9  stp       x20, x19, [sp, #0x10]
+02CCDC68  fd7b02a9  stp       x29, x30, [sp, #0x20]
+02CCDC6C  fd830091  add       x29, sp, #0x20
+02CCDC70  f30300aa  mov       x19, x0
+02CCDC74  c8c301f0  adrp      x8, #0x6548000
+02CCDC78  08ed41f9  ldr       x8, [x8, #0x3d8]
+02CCDC7C  e02300a9  stp       x0, x8, [sp]
+02CCDC80  48c20190  adrp      x8, #0x6515000
+02CCDC84  019142f9  ldr       x1, [x8, #0x520]
+02CCDC88  e0030091  mov       x0, sp
+02CCDC8C  20da7594  bl        #0x4a4450c ; indirect:_objc_msgSendSuper2
+02CCDC90  e00313aa  mov       x0, x19
+02CCDC94  0b3c7694  bl        #0x4a5ccc0 ; objc:_updateContentIfNeeded (selref 0x6503278)
+02CCDC98  e00313aa  mov       x0, x19
+02CCDC9C  99697694  bl        #0x4a68300 ; objc:bodyTextViewFrame (selref 0x6506008)
+02CCDCA0  08c401f0  adrp      x8, #0x6550000
+02CCDCA4  08918eb9  ldrsw     x8, [x8, #0xe90]
+02CCDCA8  606a68f8  ldr       x0, [x19, x8]
+02CCDCAC  a5157894  bl        #0x4ad3340 ; objc:setFrame: (selref 0x6520c18)
+02CCDCB0  fd7b42a9  ldp       x29, x30, [sp, #0x20]
+02CCDCB4  f44f41a9  ldp       x20, x19, [sp, #0x10]
+02CCDCB8  ffc30091  add       sp, sp, #0x30
+02CCDCBC  c0035fd6  ret
+## 0x2ccd760..0x2ccd91c
+02CCD760  f85fbca9  stp       x24, x23, [sp, #-0x40]!
+02CCD764  f65701a9  stp       x22, x21, [sp, #0x10]
+02CCD768  f44f02a9  stp       x20, x19, [sp, #0x20]
+02CCD76C  fd7b03a9  stp       x29, x30, [sp, #0x30]
+02CCD770  fdc30091  add       x29, sp, #0x30
+02CCD774  08c401f0  adrp      x8, #0x6550000
+02CCD778  15b18eb9  ldrsw     x21, [x8, #0xeb0]
+02CCD77C  08687538  ldrb      w8, [x0, x21]
+02CCD780  1f050071  cmp       w8, #1
+02CCD784  e1060054  b.ne      #0x2ccd860
+02CCD788  f30300aa  mov       x19, x0
+02CCD78C  d5797694  bl        #0x4a6bee0 ; objc:calculatedLayoutMetrics (selref 0x6506f00)
+02CCD790  fd031daa  mov       x29, x29
+02CCD794  7cdb7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCD798  f40300aa  mov       x20, x0
+02CCD79C  71447794  bl        #0x4a9e960 ; objc:isEmptyLayoutMetrics (selref 0x65139a0)
+02CCD7A0  200b0037  tbnz      w0, #0, #0x2ccd904
+02CCD7A4  7f6a3538  strb      wzr, [x19, x21]
+02CCD7A8  08c401f0  adrp      x8, #0x6550000
+02CCD7AC  08958eb9  ldrsw     x8, [x8, #0xe94]
+02CCD7B0  686a68f8  ldr       x8, [x19, x8]
+02CCD7B4  080600b4  cbz       x8, #0x2ccd874
+02CCD7B8  e00313aa  mov       x0, x19
+02CCD7BC  116c7694  bl        #0x4a68800 ; objc:bounds (selref 0x6506148)
+02CCD7C0  401ca24e  mov       v0.16b, v2.16b
+02CCD7C4  08c401f0  adrp      x8, #0x6550000
+02CCD7C8  17918eb9  ldrsw     x23, [x8, #0xe90]
+02CCD7CC  606a77f8  ldr       x0, [x19, x23]
+02CCD7D0  043b7894  bl        #0x4adc3e0 ; objc:setPreferredMaxLayoutWidth: (selref 0x6523040)
+02CCD7D4  e00313aa  mov       x0, x19
+02CCD7D8  e20314aa  mov       x2, x20
+02CCD7DC  710a7694  bl        #0x4a501a0 ; objc:_attributedTextModelWithLayoutMetrics: (selref 0x64fffb0)
+02CCD7E0  fd031daa  mov       x29, x29
+02CCD7E4  68db7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCD7E8  f50300aa  mov       x21, x0
+02CCD7EC  606a77f8  ldr       x0, [x19, x23]
+02CCD7F0  e20315aa  mov       x2, x21
+02CCD7F4  93527894  bl        #0x4ae2240 ; objc:setTextModel: (selref 0x65247d8)
+02CCD7F8  e00315aa  mov       x0, x21
+02CCD7FC  56db7594  bl        #0x4a44554 ; indirect:_objc_release
+02CCD800  e00313aa  mov       x0, x19
+02CCD804  1f107694  bl        #0x4a51880 ; objc:_filteredDisplayTextRanges (selref 0x6500568)
+02CCD808  fd031daa  mov       x29, x29
+02CCD80C  5edb7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCD810  f50300aa  mov       x21, x0
+02CCD814  606a77f8  ldr       x0, [x19, x23]
+02CCD818  e20315aa  mov       x2, x21
+02CCD81C  19f67794  bl        #0x4acb080 ; objc:setActiveRanges: (selref 0x651eb68)
+02CCD820  e00315aa  mov       x0, x21
+02CCD824  4cdb7594  bl        #0x4a44554 ; indirect:_objc_release
+02CCD828  08c401f0  adrp      x8, #0x6550000
+02CCD82C  08998eb9  ldrsw     x8, [x8, #0xe98]
+02CCD830  766a68f8  ldr       x22, [x19, x8]
+02CCD834  88c301f0  adrp      x8, #0x6540000
+02CCD838  00d144f9  ldr       x0, [x8, #0x9a0]
+02CCD83C  89a97894  bl        #0x4af7e60 ; objc:twitterColors (selref 0x6529ee0)
+02CCD840  fd031daa  mov       x29, x29
+02CCD844  50db7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCD848  f50300aa  mov       x21, x0
+02CCD84C  96020837  tbnz      w22, #1, #0x2ccd89c
+02CCD850  fcff7694  bl        #0x4a8d840 ; objc:highlightBackgroundColor (selref 0x650f558)
+02CCD854  fd031daa  mov       x29, x29
+02CCD858  4bdb7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCD85C  13000014  b         #0x2ccd8a8
+02CCD860  fd7b43a9  ldp       x29, x30, [sp, #0x30]
+02CCD864  f44f42a9  ldp       x20, x19, [sp, #0x20]
+02CCD868  f65741a9  ldp       x22, x21, [sp, #0x10]
+02CCD86C  f85fc4a8  ldp       x24, x23, [sp], #0x40
+02CCD870  c0035fd6  ret
+02CCD874  08c401f0  adrp      x8, #0x6550000
+02CCD878  15918eb9  ldrsw     x21, [x8, #0xe90]
+02CCD87C  606a75f8  ldr       x0, [x19, x21]
+02CCD880  020080d2  mov       x2, #0
+02CCD884  6f527894  bl        #0x4ae2240 ; objc:setTextModel: (selref 0x65247d8)
+02CCD888  606a75f8  ldr       x0, [x19, x21]
+02CCD88C  229001b0  adrp      x2, #0x5ed2000
+02CCD890  42c840f9  ldr       x2, [x2, #0x190]
+02CCD894  fbf57794  bl        #0x4acb080 ; objc:setActiveRanges: (selref 0x651eb68)
+02CCD898  19000014  b         #0x2ccd8fc
+02CCD89C  f1ff7694  bl        #0x4a8d860 ; objc:highlightDarkBackgroundColor (selref 0x650f560)
+02CCD8A0  fd031daa  mov       x29, x29
+02CCD8A4  38db7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCD8A8  f60300aa  mov       x22, x0
+02CCD8AC  606a77f8  ldr       x0, [x19, x23]
+02CCD8B0  e20316aa  mov       x2, x22
+02CCD8B4  43477894  bl        #0x4adf5c0 ; objc:setSelectionColor: (selref 0x6523cb8)
+02CCD8B8  e00316aa  mov       x0, x22
+02CCD8BC  26db7594  bl        #0x4a44554 ; indirect:_objc_release
+02CCD8C0  e00315aa  mov       x0, x21
+02CCD8C4  24db7594  bl        #0x4a44554 ; indirect:_objc_release
+02CCD8C8  08c401f0  adrp      x8, #0x6550000
+02CCD8CC  16ad8eb9  ldrsw     x22, [x8, #0xeac]
+02CCD8D0  686a76f8  ldr       x8, [x19, x22]
+02CCD8D4  480100b4  cbz       x8, #0x2ccd8fc
+02CCD8D8  606a77f8  ldr       x0, [x19, x23]
+02CCD8DC  098d7894  bl        #0x4af0d00 ; objc:textModel (selref 0x6528288)
+02CCD8E0  fd031daa  mov       x29, x29
+02CCD8E4  28db7594  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+02CCD8E8  f50300aa  mov       x21, x0
+02CCD8EC  626a76f8  ldr       x2, [x19, x22]
+02CCD8F0  942c7894  bl        #0x4ad8b40 ; objc:setMaxLines: (selref 0x6522218)
+02CCD8F4  e00315aa  mov       x0, x21
+02CCD8F8  17db7594  bl        #0x4a44554 ; indirect:_objc_release
+02CCD8FC  e00313aa  mov       x0, x19
+02CCD900  203d7794  bl        #0x4a9cd80 ; objc:invalidateIntrinsicContentSize (selref 0x65132a8)
+02CCD904  e00314aa  mov       x0, x20
+02CCD908  fd7b43a9  ldp       x29, x30, [sp, #0x30]
+02CCD90C  f44f42a9  ldp       x20, x19, [sp, #0x20]
+02CCD910  f65741a9  ldp       x22, x21, [sp, #0x10]
+02CCD914  f85fc4a8  ldp       x24, x23, [sp], #0x40
+02CCD918  0fdb7514  b         #0x4a44554 ; indirect:_objc_release
+
+## attributes-generation.txt
+## 0x972d38..0x9738b0
+00972D38  e923b96d  stp       d9, d8, [sp, #-0x70]!
+00972D3C  fc6f01a9  stp       x28, x27, [sp, #0x10]
+00972D40  fa6702a9  stp       x26, x25, [sp, #0x20]
+00972D44  f85f03a9  stp       x24, x23, [sp, #0x30]
+00972D48  f65704a9  stp       x22, x21, [sp, #0x40]
+00972D4C  f44f05a9  stp       x20, x19, [sp, #0x50]
+00972D50  fd7b06a9  stp       x29, x30, [sp, #0x60]
+00972D54  fd830191  add       x29, sp, #0x60
+00972D58  ff8313d1  sub       sp, sp, #0x4e0
+00972D5C  fc0302aa  mov       x28, x2
+00972D60  f60300aa  mov       x22, x0
+00972D64  e8aa02d0  adrp      x8, #0x5ed0000
+00972D68  081546f9  ldr       x8, [x8, #0xc28]
+00972D6C  080140f9  ldr       x8, [x8]
+00972D70  a80319f8  stur      x8, [x29, #-0x70]
+00972D74  e00302aa  mov       x0, x2
+00972D78  fa450395  bl        #0x4a44560 ; indirect:_objc_retain
+00972D7C  e0031caa  mov       x0, x28
+00972D80  e8f70595  bl        #0x4af0d20 ; objc:textOptions (selref 0x6528290)
+00972D84  e20300aa  mov       x2, x0
+00972D88  e00316aa  mov       x0, x22
+00972D8C  23008052  mov       w3, #1
+00972D90  b4950395  bl        #0x4a58460 ; objc:_tfn_displayTextCacheEntryForOptions:prepopulateDisplayTextCacheIfDoesNotExist: (selref 0x6502060)
+00972D94  fd031daa  mov       x29, x29
+00972D98  fb450395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+00972D9C  f30300aa  mov       x19, x0
+00972DA0  e00316aa  mov       x0, x22
+00972DA4  2fa10395  bl        #0x4a5b260 ; objc:_tfn_shouldBeRenderedFromRight (selref 0x6502be0)
+00972DA8  1f000071  cmp       w0, #0
+00972DAC  48008052  mov       w8, #2
+00972DB0  15119f9a  csel      x21, x8, xzr, ne
+00972DB4  68de02d0  adrp      x8, #0x6540000
+00972DB8  000947f9  ldr       x0, [x8, #0xe10]
+00972DBC  8f450395  bl        #0x4a443f8 ; indirect:_objc_alloc
+00972DC0  f70300aa  mov       x23, x0
+00972DC4  f30700f9  str       x19, [sp, #8]
+00972DC8  e00313aa  mov       x0, x19
+00972DCC  4df60595  bl        #0x4af0700 ; objc:text (selref 0x6528108)
+00972DD0  fd031daa  mov       x29, x29
+00972DD4  ec450395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+00972DD8  f40300aa  mov       x20, x0
+00972DDC  e0031caa  mov       x0, x28
+00972DE0  084d0495  bl        #0x4a86200 ; objc:fontOptions (selref 0x650d7c8)
+00972DE4  fd031daa  mov       x29, x29
+00972DE8  e7450395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+00972DEC  f80300aa  mov       x24, x0
+00972DF0  bc4c0495  bl        #0x4a860e0 ; objc:font (selref 0x650d780)
+00972DF4  fd031daa  mov       x29, x29
+00972DF8  e3450395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+00972DFC  f90300aa  mov       x25, x0
+00972E00  e0031caa  mov       x0, x28
+00972E04  ff4c0495  bl        #0x4a86200 ; objc:fontOptions (selref 0x650d7c8)
+00972E08  fd031daa  mov       x29, x29
+00972E0C  de450395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+00972E10  fa0300aa  mov       x26, x0
+00972E14  33cd0495  bl        #0x4aa62e0 ; objc:lineHeight (selref 0x6515800)
+00972E18  081ca04e  mov       v8.16b, v0.16b
+00972E1C  e0031caa  mov       x0, x28
+00972E20  f84c0495  bl        #0x4a86200 ; objc:fontOptions (selref 0x650d7c8)
+00972E24  fd031daa  mov       x29, x29
+00972E28  d7450395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+00972E2C  fb0300aa  mov       x27, x0
+00972E30  3ccd0495  bl        #0x4aa6320 ; objc:lineSpacing (selref 0x6515810)
+00972E34  021ca04e  mov       v2.16b, v0.16b
+00972E38  e003679e  fmov      d0, xzr
+00972E3C  e00317aa  mov       x0, x23
+00972E40  e20314aa  mov       x2, x20
+00972E44  e30319aa  mov       x3, x25
+00972E48  e40315aa  mov       x4, x21
+00972E4C  050080d2  mov       x5, #0
+00972E50  011da84e  mov       v1.16b, v8.16b
+00972E54  ab990495  bl        #0x4a99500 ; objc:initWithString:font:alignment:lineBreakMode:paragraphSpacing:lineHeight:lineSpacing: (selref 0x6512488)
+00972E58  e10300aa  mov       x1, x0
+00972E5C  e0031baa  mov       x0, x27
+00972E60  fb0301aa  mov       x27, x1
+00972E64  bc450395  bl        #0x4a44554 ; indirect:_objc_release
+00972E68  e0031aaa  mov       x0, x26
+00972E6C  ba450395  bl        #0x4a44554 ; indirect:_objc_release
+00972E70  e00319aa  mov       x0, x25
+00972E74  b8450395  bl        #0x4a44554 ; indirect:_objc_release
+00972E78  e00318aa  mov       x0, x24
+00972E7C  b6450395  bl        #0x4a44554 ; indirect:_objc_release
+00972E80  e00314aa  mov       x0, x20
+00972E84  b4450395  bl        #0x4a44554 ; indirect:_objc_release
+00972E88  e0031caa  mov       x0, x28
+00972E8C  dd4c0495  bl        #0x4a86200 ; objc:fontOptions (selref 0x650d7c8)
+00972E90  fd031daa  mov       x29, x29
+00972E94  bc450395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+00972E98  f40300aa  mov       x20, x0
+00972E9C  59c40495  bl        #0x4aa4000 ; objc:kerning (selref 0x6514f48)
+00972EA0  e0031baa  mov       x0, x27
+00972EA4  57900595  bl        #0x4ad7000 ; objc:setKerning: (selref 0x6521b48)
+00972EA8  e00314aa  mov       x0, x20
+00972EAC  aa450395  bl        #0x4a44554 ; indirect:_objc_release
+00972EB0  e0031caa  mov       x0, x28
+00972EB4  d34c0495  bl        #0x4a86200 ; objc:fontOptions (selref 0x650d7c8)
+00972EB8  fd031daa  mov       x29, x29
+00972EBC  b2450395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+00972EC0  f40300aa  mov       x20, x0
+00972EC4  a7360495  bl        #0x4a80960 ; objc:emptyLineMaxHeight (selref 0x650c1a0)
+00972EC8  081ca04e  mov       v8.16b, v0.16b
+00972ECC  e00314aa  mov       x0, x20
+00972ED0  a1450395  bl        #0x4a44554 ; indirect:_objc_release
+00972ED4  0821601e  fcmp      d8, #0.0
+00972ED8  ed010054  b.le      #0x972f14
+00972EDC  e00316aa  mov       x0, x22
+00972EE0  8e450395  bl        #0x4a44518 ; indirect:_objc_opt_class
+00972EE4  f40300aa  mov       x20, x0
+00972EE8  e0031caa  mov       x0, x28
+00972EEC  c54c0495  bl        #0x4a86200 ; objc:fontOptions (selref 0x650d7c8)
+00972EF0  fd031daa  mov       x29, x29
+00972EF4  a4450395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+00972EF8  f60300aa  mov       x22, x0
+00972EFC  99360495  bl        #0x4a80960 ; objc:emptyLineMaxHeight (selref 0x650c1a0)
+00972F00  e00314aa  mov       x0, x20
+00972F04  e2031baa  mov       x2, x27
+00972F08  76910395  bl        #0x4a574e0 ; objc:_tfn_addEmptyLineMaxHeight:toAttributedString: (selref 0x6501c80)
+00972F0C  e00316aa  mov       x0, x22
+00972F10  91450395  bl        #0x4a44554 ; indirect:_objc_release
+00972F14  e0031caa  mov       x0, x28
+00972F18  8ab20495  bl        #0x4a9f940 ; objc:isHighlighted (selref 0x6513d98)
+00972F1C  60010037  tbnz      w0, #0, #0x972f48
+00972F20  e0031caa  mov       x0, x28
+00972F24  b74c0495  bl        #0x4a86200 ; objc:fontOptions (selref 0x650d7c8)
+00972F28  fd031daa  mov       x29, x29
+00972F2C  96450395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+00972F30  f40300aa  mov       x20, x0
+00972F34  ebac0495  bl        #0x4a9e2e0 ; objc:isDarkBackground (selref 0x6513800)
+00972F38  f60300aa  mov       x22, x0
+00972F3C  e00314aa  mov       x0, x20
+00972F40  85450395  bl        #0x4a44554 ; indirect:_objc_release
+00972F44  16010034  cbz       w22, #0x972f64
+00972F48  68de02d0  adrp      x8, #0x6540000
+00972F4C  00d144f9  ldr       x0, [x8, #0x9a0]
+00972F50  043e0695  bl        #0x4b02760 ; objc:xds_foregroundOnColor (selref 0x652c920)
+00972F54  fd031daa  mov       x29, x29
+00972F58  8b450395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+00972F5C  f30300aa  mov       x19, x0
+00972F60  0c000014  b         #0x972f90
+00972F64  e0031caa  mov       x0, x28
+00972F68  a64c0495  bl        #0x4a86200 ; objc:fontOptions (selref 0x650d7c8)
+00972F6C  fd031daa  mov       x29, x29
+00972F70  85450395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+00972F74  f40300aa  mov       x20, x0
+00972F78  1af60595  bl        #0x4af07e0 ; objc:textColor (selref 0x6528140)
+00972F7C  fd031daa  mov       x29, x29
+00972F80  81450395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+00972F84  f30300aa  mov       x19, x0
+00972F88  e00314aa  mov       x0, x20
+00972F8C  72450395  bl        #0x4a44554 ; indirect:_objc_release
+00972F90  e0031baa  mov       x0, x27
+00972F94  f30300f9  str       x19, [sp]
+00972F98  e20313aa  mov       x2, x19
+00972F9C  c96f0595  bl        #0x4aceec0 ; objc:setColor: (selref 0x651faf8)
+00972FA0  e0031baa  mov       x0, x27
+00972FA4  57cb0495  bl        #0x4aa5d00 ; objc:length (selref 0x6515688)
+00972FA8  f80300aa  mov       x24, x0
+00972FAC  e00740f9  ldr       x0, [sp, #8]
+00972FB0  dc6a0495  bl        #0x4a8db20 ; objc:hitHighlightRanges (selref 0x650f610)
+00972FB4  fd031daa  mov       x29, x29
+00972FB8  73450395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+00972FBC  e00f00f9  str       x0, [sp, #0x18]
+00972FC0  000700b4  cbz       x0, #0x9730a0
+00972FC4  00e4004f  movi      v0.16b, #0
+00972FC8  e0830cad  stp       q0, q0, [sp, #0x190]
+00972FCC  e0830bad  stp       q0, q0, [sp, #0x170]
+00972FD0  e2c30591  add       x2, sp, #0x170
+00972FD4  a3c303d1  sub       x3, x29, #0xf0
+00972FD8  e00f40f9  ldr       x0, [sp, #0x18]
+00972FDC  04028052  mov       w4, #0x10
+00972FE0  000c0495  bl        #0x4a75fe0 ; objc:countByEnumeratingWithState:objects:count: (selref 0x6509740)
+00972FE4  e00500b4  cbz       x0, #0x9730a0
+00972FE8  f40300aa  mov       x20, x0
+00972FEC  e8c340f9  ldr       x8, [sp, #0x180]
+00972FF0  130140f9  ldr       x19, [x8]
+00972FF4  150080d2  mov       x21, #0
+00972FF8  e8c340f9  ldr       x8, [sp, #0x180]
+00972FFC  080140f9  ldr       x8, [x8]
+00973000  1f0113eb  cmp       x8, x19
+00973004  60000054  b.eq      #0x973010
+00973008  e00f40f9  ldr       x0, [sp, #0x18]
+0097300C  1f450395  bl        #0x4a44488 ; indirect:_objc_enumerationMutation
+00973010  e8bf40f9  ldr       x8, [sp, #0x178]
+00973014  007975f8  ldr       x0, [x8, x21, lsl #3]
+00973018  4a2c0595  bl        #0x4abe140 ; objc:rangeInDisplayText (selref 0x651b798)
+0097301C  0800018b  add       x8, x0, x1
+00973020  1f0118eb  cmp       x8, x24
+00973024  a8020054  b.hi      #0x973078
+00973028  f60300aa  mov       x22, x0
+0097302C  f70301aa  mov       x23, x1
+00973030  e0031caa  mov       x0, x28
+00973034  734c0495  bl        #0x4a86200 ; objc:fontOptions (selref 0x650d7c8)
+00973038  fd031daa  mov       x29, x29
+0097303C  52450395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+00973040  f90300aa  mov       x25, x0
+00973044  cfd40395  bl        #0x4a68380 ; objc:boldFont (selref 0x6506028)
+00973048  fd031daa  mov       x29, x29
+0097304C  4e450395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+00973050  fa0300aa  mov       x26, x0
+00973054  e0031baa  mov       x0, x27
+00973058  e2031aaa  mov       x2, x26
+0097305C  e30316aa  mov       x3, x22
+00973060  e40317aa  mov       x4, x23
+00973064  0f800595  bl        #0x4ad30a0 ; objc:setFont:inRange: (selref 0x6520b70)
+00973068  e0031aaa  mov       x0, x26
+0097306C  3a450395  bl        #0x4a44554 ; indirect:_objc_release
+00973070  e00319aa  mov       x0, x25
+00973074  38450395  bl        #0x4a44554 ; indirect:_objc_release
+00973078  b5060091  add       x21, x21, #1
+0097307C  9f0215eb  cmp       x20, x21
+00973080  c1fbff54  b.ne      #0x972ff8
+00973084  e2c30591  add       x2, sp, #0x170
+00973088  a3c303d1  sub       x3, x29, #0xf0
+0097308C  e00f40f9  ldr       x0, [sp, #0x18]
+00973090  04028052  mov       w4, #0x10
+00973094  d30b0495  bl        #0x4a75fe0 ; objc:countByEnumeratingWithState:objects:count: (selref 0x6509740)
+00973098  f40300aa  mov       x20, x0
+0097309C  c0faffb5  cbnz      x0, #0x972ff4
+009730A0  e0031caa  mov       x0, x28
+009730A4  27b20495  bl        #0x4a9f940 ; objc:isHighlighted (selref 0x6513d98)
+009730A8  fb7302a9  stp       x27, x28, [sp, #0x20]
+009730AC  40120037  tbnz      w0, #0, #0x9732f4
+009730B0  e0031caa  mov       x0, x28
+009730B4  534c0495  bl        #0x4a86200 ; objc:fontOptions (selref 0x650d7c8)
+009730B8  fd031daa  mov       x29, x29
+009730BC  32450395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+009730C0  f40300aa  mov       x20, x0
+009730C4  efcc0495  bl        #0x4aa6480 ; objc:linkTextColor (selref 0x6515868)
+009730C8  fd031daa  mov       x29, x29
+009730CC  2e450395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+009730D0  f60300aa  mov       x22, x0
+009730D4  e20340f9  ldr       x2, [sp]
+009730D8  2afb0595  bl        #0x4af1d80 ; objc:tfn_isEqualToDynamicColor: (selref 0x65286a8)
+009730DC  f70300aa  mov       x23, x0
+009730E0  e00316aa  mov       x0, x22
+009730E4  1c450395  bl        #0x4a44554 ; indirect:_objc_release
+009730E8  e00314aa  mov       x0, x20
+009730EC  1a450395  bl        #0x4a44554 ; indirect:_objc_release
+009730F0  37100037  tbnz      w23, #0, #0x9732f4
+009730F4  e00740f9  ldr       x0, [sp, #8]
+009730F8  722c0595  bl        #0x4abe2c0 ; objc:ranges (selref 0x651b7f8)
+009730FC  fd031daa  mov       x29, x29
+00973100  21450395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+00973104  f40300aa  mov       x20, x0
+00973108  62ad02f0  adrp      x2, #0x5f22000
+0097310C  42400d91  add       x2, x2, #0x350
+00973110  d4000695  bl        #0x4af3460 ; objc:tfs_filterWithBlock: (selref 0x6528c60)
+00973114  fd031daa  mov       x29, x29
+00973118  1b450395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+0097311C  f90300aa  mov       x25, x0
+00973120  e00314aa  mov       x0, x20
+00973124  0c450395  bl        #0x4a44554 ; indirect:_objc_release
+00973128  e0031caa  mov       x0, x28
+0097312C  354c0495  bl        #0x4a86200 ; objc:fontOptions (selref 0x650d7c8)
+00973130  fd031daa  mov       x29, x29
+00973134  14450395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+00973138  f40300aa  mov       x20, x0
+0097313C  e94b0495  bl        #0x4a860e0 ; objc:font (selref 0x650d780)
+00973140  fd031daa  mov       x29, x29
+00973144  10450395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+00973148  f60300aa  mov       x22, x0
+0097314C  2dfe0595  bl        #0x4af2a00 ; objc:tfn_withAccountSpoofingPreventionStyle (selref 0x65289c8)
+00973150  fd031daa  mov       x29, x29
+00973154  0c450395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+00973158  e00b00f9  str       x0, [sp, #0x10]
+0097315C  e00316aa  mov       x0, x22
+00973160  fd440395  bl        #0x4a44554 ; indirect:_objc_release
+00973164  e00314aa  mov       x0, x20
+00973168  fb440395  bl        #0x4a44554 ; indirect:_objc_release
+0097316C  00e4004f  movi      v0.16b, #0
+00973170  e0830aad  stp       q0, q0, [sp, #0x150]
+00973174  e08309ad  stp       q0, q0, [sp, #0x130]
+00973178  e00319aa  mov       x0, x25
+0097317C  f9440395  bl        #0x4a44560 ; indirect:_objc_retain
+00973180  e2c30491  add       x2, sp, #0x130
+00973184  e3430f91  add       x3, sp, #0x3d0
+00973188  e00319aa  mov       x0, x25
+0097318C  04028052  mov       w4, #0x10
+00973190  940b0495  bl        #0x4a75fe0 ; objc:countByEnumeratingWithState:objects:count: (selref 0x6509740)
+00973194  200a00b4  cbz       x0, #0x9732d8
+00973198  fc0300aa  mov       x28, x0
+0097319C  e8a340f9  ldr       x8, [sp, #0x140]
+009731A0  130140f9  ldr       x19, [x8]
+009731A4  88aa02b0  adrp      x8, #0x5ec4000
+009731A8  087946f9  ldr       x8, [x8, #0xcf0]
+009731AC  1b0140f9  ldr       x27, [x8]
+009731B0  fa1340f9  ldr       x26, [sp, #0x20]
+009731B4  150080d2  mov       x21, #0
+009731B8  e8a340f9  ldr       x8, [sp, #0x140]
+009731BC  080140f9  ldr       x8, [x8]
+009731C0  1f0113eb  cmp       x8, x19
+009731C4  60000054  b.eq      #0x9731d0
+009731C8  e00319aa  mov       x0, x25
+009731CC  af440395  bl        #0x4a44488 ; indirect:_objc_enumerationMutation
+009731D0  e89f40f9  ldr       x8, [sp, #0x138]
+009731D4  147975f8  ldr       x20, [x8, x21, lsl #3]
+009731D8  e00314aa  mov       x0, x20
+009731DC  212c0595  bl        #0x4abe260 ; objc:rangeValue (selref 0x651b7e0)
+009731E0  0800018b  add       x8, x0, x1
+009731E4  1f0118eb  cmp       x8, x24
+009731E8  48060054  b.hi      #0x9732b0
+009731EC  e01740f9  ldr       x0, [sp, #0x28]
+009731F0  044c0495  bl        #0x4a86200 ; objc:fontOptions (selref 0x650d7c8)
+009731F4  fd031daa  mov       x29, x29
+009731F8  e3440395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+009731FC  f70300aa  mov       x23, x0
+00973200  a0cc0495  bl        #0x4aa6480 ; objc:linkTextColor (selref 0x6515868)
+00973204  fd031daa  mov       x29, x29
+00973208  df440395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+0097320C  f60300aa  mov       x22, x0
+00973210  e00314aa  mov       x0, x20
+00973214  132c0595  bl        #0x4abe260 ; objc:rangeValue (selref 0x651b7e0)
+00973218  e30300aa  mov       x3, x0
+0097321C  e0031aaa  mov       x0, x26
+00973220  e20316aa  mov       x2, x22
+00973224  e40301aa  mov       x4, x1
+00973228  2e6f0595  bl        #0x4aceee0 ; objc:setColor:inRange: (selref 0x651fb00)
+0097322C  e00316aa  mov       x0, x22
+00973230  c9440395  bl        #0x4a44554 ; indirect:_objc_release
+00973234  e00317aa  mov       x0, x23
+00973238  c7440395  bl        #0x4a44554 ; indirect:_objc_release
+0097323C  e00314aa  mov       x0, x20
+00973240  082c0595  bl        #0x4abe260 ; objc:rangeValue (selref 0x651b7e0)
+00973244  e20300aa  mov       x2, x0
+00973248  e0031aaa  mov       x0, x26
+0097324C  e30301aa  mov       x3, x1
+00973250  6cfc0595  bl        #0x4af2400 ; objc:tfn_setLinkInRange: (selref 0x6528848)
+00973254  e00314aa  mov       x0, x20
+00973258  b22b0595  bl        #0x4abe120 ; objc:rangeFlavor (selref 0x651b790)
+0097325C  1f1000f1  cmp       x0, #4
+00973260  01010054  b.ne      #0x973280
+00973264  e00314aa  mov       x0, x20
+00973268  fe2b0595  bl        #0x4abe260 ; objc:rangeValue (selref 0x651b7e0)
+0097326C  e30300aa  mov       x3, x0
+00973270  e01340f9  ldr       x0, [sp, #0x20]
+00973274  e20b40f9  ldr       x2, [sp, #0x10]
+00973278  e40301aa  mov       x4, x1
+0097327C  897f0595  bl        #0x4ad30a0 ; objc:setFont:inRange: (selref 0x6520b70)
+00973280  e01740f9  ldr       x0, [sp, #0x28]
+00973284  a7f60595  bl        #0x4af0d20 ; objc:textOptions (selref 0x6528290)
+00973288  40016036  tbz       w0, #0xc, #0x9732b0
+0097328C  e00314aa  mov       x0, x20
+00973290  f42b0595  bl        #0x4abe260 ; objc:rangeValue (selref 0x651b7e0)
+00973294  e40300aa  mov       x4, x0
+00973298  e01340f9  ldr       x0, [sp, #0x20]
+0097329C  e2031baa  mov       x2, x27
+009732A0  83c802f0  adrp      x3, #0x6286000
+009732A4  63c03791  add       x3, x3, #0xdf0
+009732A8  e50301aa  mov       x5, x1
+009732AC  fdb10395  bl        #0x4a5faa0 ; objc:addAttribute:value:range: (selref 0x6503df0)
+009732B0  b5060091  add       x21, x21, #1
+009732B4  9f0315eb  cmp       x28, x21
+009732B8  01f8ff54  b.ne      #0x9731b8
+009732BC  e2c30491  add       x2, sp, #0x130
+009732C0  e3430f91  add       x3, sp, #0x3d0
+009732C4  e00319aa  mov       x0, x25
+009732C8  04028052  mov       w4, #0x10
+009732CC  450b0495  bl        #0x4a75fe0 ; objc:countByEnumeratingWithState:objects:count: (selref 0x6509740)
+009732D0  fc0300aa  mov       x28, x0
+009732D4  00f7ffb5  cbnz      x0, #0x9731b4
+009732D8  e00319aa  mov       x0, x25
+009732DC  9e440395  bl        #0x4a44554 ; indirect:_objc_release
+009732E0  e00b40f9  ldr       x0, [sp, #0x10]
+009732E4  9c440395  bl        #0x4a44554 ; indirect:_objc_release
+009732E8  e00319aa  mov       x0, x25
+009732EC  9a440395  bl        #0x4a44554 ; indirect:_objc_release
+009732F0  fb7342a9  ldp       x27, x28, [sp, #0x20]
+009732F4  00e4004f  movi      v0.16b, #0
+009732F8  e08308ad  stp       q0, q0, [sp, #0x110]
+009732FC  e08307ad  stp       q0, q0, [sp, #0xf0]
+00973300  e00740f9  ldr       x0, [sp, #8]
+00973304  3f660495  bl        #0x4a8cc00 ; objc:hashflags (selref 0x650f248)
+00973308  fd031daa  mov       x29, x29
+0097330C  9e440395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+00973310  f60300aa  mov       x22, x0
+00973314  e2c30391  add       x2, sp, #0xf0
+00973318  e3430d91  add       x3, sp, #0x350
+0097331C  04028052  mov       w4, #0x10
+00973320  300b0495  bl        #0x4a75fe0 ; objc:countByEnumeratingWithState:objects:count: (selref 0x6509740)
+00973324  c00500b4  cbz       x0, #0x9733dc
+00973328  f40300aa  mov       x20, x0
+0097332C  e88340f9  ldr       x8, [sp, #0x100]
+00973330  130140f9  ldr       x19, [x8]
+00973334  150080d2  mov       x21, #0
+00973338  e88340f9  ldr       x8, [sp, #0x100]
+0097333C  080140f9  ldr       x8, [x8]
+00973340  1f0113eb  cmp       x8, x19
+00973344  60000054  b.eq      #0x973350
+00973348  e00316aa  mov       x0, x22
+0097334C  4f440395  bl        #0x4a44488 ; indirect:_objc_enumerationMutation
+00973350  e87f40f9  ldr       x8, [sp, #0xf8]
+00973354  177975f8  ldr       x23, [x8, x21, lsl #3]
+00973358  e00317aa  mov       x0, x23
+0097335C  592b0595  bl        #0x4abe0c0 ; objc:range (selref 0x651b778)
+00973360  0800018b  add       x8, x0, x1
+00973364  1f0118eb  cmp       x8, x24
+00973368  68020054  b.hi      #0x9733b4
+0097336C  e0031caa  mov       x0, x28
+00973370  a44b0495  bl        #0x4a86200 ; objc:fontOptions (selref 0x650d7c8)
+00973374  fd031daa  mov       x29, x29
+00973378  83440395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+0097337C  f90300aa  mov       x25, x0
+00973380  584b0495  bl        #0x4a860e0 ; objc:font (selref 0x650d780)
+00973384  fd031daa  mov       x29, x29
+00973388  7f440395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+0097338C  fa0300aa  mov       x26, x0
+00973390  940e0595  bl        #0x4ab6de0 ; objc:pointSize (selref 0x6519ac0)
+00973394  e0031baa  mov       x0, x27
+00973398  e20317aa  mov       x2, x23
+0097339C  03008052  mov       w3, #0
+009733A0  d8b10395  bl        #0x4a5fb00 ; objc:addAttributesWithHashflagRange:pointSize:insertPlaceholderStringIfNeeded: (selref 0x6503e08)
+009733A4  e0031aaa  mov       x0, x26
+009733A8  6b440395  bl        #0x4a44554 ; indirect:_objc_release
+009733AC  e00319aa  mov       x0, x25
+009733B0  69440395  bl        #0x4a44554 ; indirect:_objc_release
+009733B4  b5060091  add       x21, x21, #1
+009733B8  9f0215eb  cmp       x20, x21
+009733BC  e1fbff54  b.ne      #0x973338
+009733C0  e2c30391  add       x2, sp, #0xf0
+009733C4  e3430d91  add       x3, sp, #0x350
+009733C8  e00316aa  mov       x0, x22
+009733CC  04028052  mov       w4, #0x10
+009733D0  040b0495  bl        #0x4a75fe0 ; objc:countByEnumeratingWithState:objects:count: (selref 0x6509740)
+009733D4  f40300aa  mov       x20, x0
+009733D8  e0faffb5  cbnz      x0, #0x973334
+009733DC  e00316aa  mov       x0, x22
+009733E0  5d440395  bl        #0x4a44554 ; indirect:_objc_release
+009733E4  00e4004f  movi      v0.16b, #0
+009733E8  e08306ad  stp       q0, q0, [sp, #0xd0]
+009733EC  e08305ad  stp       q0, q0, [sp, #0xb0]
+009733F0  e00740f9  ldr       x0, [sp, #8]
+009733F4  43020495  bl        #0x4a73d00 ; objc:conjunctionRanges (selref 0x6508e88)
+009733F8  fd031daa  mov       x29, x29
+009733FC  62440395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+00973400  f60300aa  mov       x22, x0
+00973404  e2c30291  add       x2, sp, #0xb0
+00973408  e3430b91  add       x3, sp, #0x2d0
+0097340C  04028052  mov       w4, #0x10
+00973410  f40a0495  bl        #0x4a75fe0 ; objc:countByEnumeratingWithState:objects:count: (selref 0x6509740)
+00973414  200600b4  cbz       x0, #0x9734d8
+00973418  f40300aa  mov       x20, x0
+0097341C  e86340f9  ldr       x8, [sp, #0xc0]
+00973420  130140f9  ldr       x19, [x8]
+00973424  150080d2  mov       x21, #0
+00973428  e86340f9  ldr       x8, [sp, #0xc0]
+0097342C  080140f9  ldr       x8, [x8]
+00973430  1f0113eb  cmp       x8, x19
+00973434  60000054  b.eq      #0x973440
+00973438  e00316aa  mov       x0, x22
+0097343C  13440395  bl        #0x4a44488 ; indirect:_objc_enumerationMutation
+00973440  e85f40f9  ldr       x8, [sp, #0xb8]
+00973444  177975f8  ldr       x23, [x8, x21, lsl #3]
+00973448  e00317aa  mov       x0, x23
+0097344C  852b0595  bl        #0x4abe260 ; objc:rangeValue (selref 0x651b7e0)
+00973450  0800018b  add       x8, x0, x1
+00973454  1f0118eb  cmp       x8, x24
+00973458  c8020054  b.hi      #0x9734b0
+0097345C  68de02b0  adrp      x8, #0x6540000
+00973460  00d144f9  ldr       x0, [x8, #0x9a0]
+00973464  7f120695  bl        #0x4af7e60 ; objc:twitterColors (selref 0x6529ee0)
+00973468  fd031daa  mov       x29, x29
+0097346C  46440395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+00973470  f90300aa  mov       x25, x0
+00973474  23f50595  bl        #0x4af0900 ; objc:textDetailsColor (selref 0x6528188)
+00973478  fd031daa  mov       x29, x29
+0097347C  42440395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+00973480  fa0300aa  mov       x26, x0
+00973484  e00317aa  mov       x0, x23
+00973488  762b0595  bl        #0x4abe260 ; objc:rangeValue (selref 0x651b7e0)
+0097348C  e30300aa  mov       x3, x0
+00973490  e0031baa  mov       x0, x27
+00973494  e2031aaa  mov       x2, x26
+00973498  e40301aa  mov       x4, x1
+0097349C  916e0595  bl        #0x4aceee0 ; objc:setColor:inRange: (selref 0x651fb00)
+009734A0  e0031aaa  mov       x0, x26
+009734A4  2c440395  bl        #0x4a44554 ; indirect:_objc_release
+009734A8  e00319aa  mov       x0, x25
+009734AC  2a440395  bl        #0x4a44554 ; indirect:_objc_release
+009734B0  b5060091  add       x21, x21, #1
+009734B4  9f0215eb  cmp       x20, x21
+009734B8  81fbff54  b.ne      #0x973428
+009734BC  e2c30291  add       x2, sp, #0xb0
+009734C0  e3430b91  add       x3, sp, #0x2d0
+009734C4  e00316aa  mov       x0, x22
+009734C8  04028052  mov       w4, #0x10
+009734CC  c50a0495  bl        #0x4a75fe0 ; objc:countByEnumeratingWithState:objects:count: (selref 0x6509740)
+009734D0  f40300aa  mov       x20, x0
+009734D4  80faffb5  cbnz      x0, #0x973424
+009734D8  e00316aa  mov       x0, x22
+009734DC  1e440395  bl        #0x4a44554 ; indirect:_objc_release
+009734E0  e0031caa  mov       x0, x28
+009734E4  f7b90495  bl        #0x4aa1cc0 ; objc:isRichTextEnabled (selref 0x6514678)
+009734E8  200e0034  cbz       w0, #0x9736ac
+009734EC  00e4004f  movi      v0.16b, #0
+009734F0  e08304ad  stp       q0, q0, [sp, #0x90]
+009734F4  e08303ad  stp       q0, q0, [sp, #0x70]
+009734F8  e00740f9  ldr       x0, [sp, #8]
+009734FC  59480595  bl        #0x4ac5660 ; objc:richTextRanges (selref 0x651d4e0)
+00973500  fd031daa  mov       x29, x29
+00973504  20440395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+00973508  f90300aa  mov       x25, x0
+0097350C  e2c30191  add       x2, sp, #0x70
+00973510  e3430991  add       x3, sp, #0x250
+00973514  04028052  mov       w4, #0x10
+00973518  b20a0495  bl        #0x4a75fe0 ; objc:countByEnumeratingWithState:objects:count: (selref 0x6509740)
+0097351C  200c00b4  cbz       x0, #0x9736a0
+00973520  fa0300aa  mov       x26, x0
+00973524  e84340f9  ldr       x8, [sp, #0x80]
+00973528  130140f9  ldr       x19, [x8]
+0097352C  481502f0  adrp      x8, #0x4c1e000
+00973530  084543fd  ldr       d8, [x8, #0x688]
+00973534  f90b00f9  str       x25, [sp, #0x10]
+00973538  150080d2  mov       x21, #0
+0097353C  e84340f9  ldr       x8, [sp, #0x80]
+00973540  080140f9  ldr       x8, [x8]
+00973544  1f0113eb  cmp       x8, x19
+00973548  60000054  b.eq      #0x973554
+0097354C  e00319aa  mov       x0, x25
+00973550  ce430395  bl        #0x4a44488 ; indirect:_objc_enumerationMutation
+00973554  e83f40f9  ldr       x8, [sp, #0x78]
+00973558  147975f8  ldr       x20, [x8, x21, lsl #3]
+0097355C  e00314aa  mov       x0, x20
+00973560  402b0595  bl        #0x4abe260 ; objc:rangeValue (selref 0x651b7e0)
+00973564  0800018b  add       x8, x0, x1
+00973568  1f0118eb  cmp       x8, x24
+0097356C  68080054  b.hi      #0x973678
+00973570  f60300aa  mov       x22, x0
+00973574  fb0301aa  mov       x27, x1
+00973578  e00314aa  mov       x0, x20
+0097357C  41480595  bl        #0x4ac5680 ; objc:richTextTag (selref 0x651d4e8)
+00973580  fd031daa  mov       x29, x29
+00973584  00440395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+00973588  fc0300aa  mov       x28, x0
+0097358C  2da90495  bl        #0x4a9da40 ; objc:isBold (selref 0x65135d8)
+00973590  a0010034  cbz       w0, #0x9735c4
+00973594  e0031caa  mov       x0, x28
+00973598  f2b10495  bl        #0x4a9fd60 ; objc:isItalic (selref 0x6513ea0)
+0097359C  40010034  cbz       w0, #0x9735c4
+009735A0  e01740f9  ldr       x0, [sp, #0x28]
+009735A4  174b0495  bl        #0x4a86200 ; objc:fontOptions (selref 0x650d7c8)
+009735A8  fd031daa  mov       x29, x29
+009735AC  f6430395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+009735B0  f40300aa  mov       x20, x0
+009735B4  73d30395  bl        #0x4a68380 ; objc:boldFont (selref 0x6506028)
+009735B8  fd031daa  mov       x29, x29
+009735BC  f2430395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+009735C0  19000014  b         #0x973624
+009735C4  e0031caa  mov       x0, x28
+009735C8  1ea90495  bl        #0x4a9da40 ; objc:isBold (selref 0x65135d8)
+009735CC  60010034  cbz       w0, #0x9735f8
+009735D0  e01740f9  ldr       x0, [sp, #0x28]
+009735D4  0b4b0495  bl        #0x4a86200 ; objc:fontOptions (selref 0x650d7c8)
+009735D8  fd031daa  mov       x29, x29
+009735DC  ea430395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+009735E0  f40300aa  mov       x20, x0
+009735E4  67d30395  bl        #0x4a68380 ; objc:boldFont (selref 0x6506028)
+009735E8  fd031daa  mov       x29, x29
+009735EC  e6430395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+009735F0  f70300aa  mov       x23, x0
+009735F4  15000014  b         #0x973648
+009735F8  e0031caa  mov       x0, x28
+009735FC  d9b10495  bl        #0x4a9fd60 ; objc:isItalic (selref 0x6513ea0)
+00973600  60030034  cbz       w0, #0x97366c
+00973604  e01740f9  ldr       x0, [sp, #0x28]
+00973608  fe4a0495  bl        #0x4a86200 ; objc:fontOptions (selref 0x650d7c8)
+0097360C  fd031daa  mov       x29, x29
+00973610  dd430395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+00973614  f40300aa  mov       x20, x0
+00973618  b24a0495  bl        #0x4a860e0 ; objc:font (selref 0x650d780)
+0097361C  fd031daa  mov       x29, x29
+00973620  d9430395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+00973624  f90300aa  mov       x25, x0
+00973628  001da84e  mov       v0.16b, v8.16b
+0097362C  95fd0595  bl        #0x4af2c80 ; objc:tfn_withObliqueness: (selref 0x6528a68)
+00973630  fd031daa  mov       x29, x29
+00973634  d4430395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+00973638  f70300aa  mov       x23, x0
+0097363C  e00319aa  mov       x0, x25
+00973640  f90b40f9  ldr       x25, [sp, #0x10]
+00973644  c4430395  bl        #0x4a44554 ; indirect:_objc_release
+00973648  e00314aa  mov       x0, x20
+0097364C  c2430395  bl        #0x4a44554 ; indirect:_objc_release
+00973650  e01340f9  ldr       x0, [sp, #0x20]
+00973654  e20317aa  mov       x2, x23
+00973658  e30316aa  mov       x3, x22
+0097365C  e4031baa  mov       x4, x27
+00973660  907e0595  bl        #0x4ad30a0 ; objc:setFont:inRange: (selref 0x6520b70)
+00973664  e00317aa  mov       x0, x23
+00973668  bb430395  bl        #0x4a44554 ; indirect:_objc_release
+0097366C  e0031caa  mov       x0, x28
+00973670  b9430395  bl        #0x4a44554 ; indirect:_objc_release
+00973674  fc1740f9  ldr       x28, [sp, #0x28]
+00973678  b5060091  add       x21, x21, #1
+0097367C  5f0315eb  cmp       x26, x21
+00973680  e1f5ff54  b.ne      #0x97353c
+00973684  e2c30191  add       x2, sp, #0x70
+00973688  e3430991  add       x3, sp, #0x250
+0097368C  e00319aa  mov       x0, x25
+00973690  04028052  mov       w4, #0x10
+00973694  530a0495  bl        #0x4a75fe0 ; objc:countByEnumeratingWithState:objects:count: (selref 0x6509740)
+00973698  fa0300aa  mov       x26, x0
+0097369C  e0f4ffb5  cbnz      x0, #0x973538
+009736A0  e00319aa  mov       x0, x25
+009736A4  ac430395  bl        #0x4a44554 ; indirect:_objc_release
+009736A8  fb1340f9  ldr       x27, [sp, #0x20]
+009736AC  e0031caa  mov       x0, x28
+009736B0  9cf50595  bl        #0x4af0d20 ; objc:textOptions (selref 0x6528290)
+009736B4  e803202a  mvn       w8, w0
+009736B8  1f056df2  tst       x8, #0x180000
+009736BC  810c0054  b.ne      #0x97384c
+009736C0  00e4004f  movi      v0.16b, #0
+009736C4  e08302ad  stp       q0, q0, [sp, #0x50]
+009736C8  e08301ad  stp       q0, q0, [sp, #0x30]
+009736CC  e00740f9  ldr       x0, [sp, #8]
+009736D0  24eb0495  bl        #0x4aae360 ; objc:noteTweetInlineMediaRanges (selref 0x6517820)
+009736D4  fd031daa  mov       x29, x29
+009736D8  ab430395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+009736DC  e2c30091  add       x2, sp, #0x30
+009736E0  e3430791  add       x3, sp, #0x1d0
+009736E4  e00b00f9  str       x0, [sp, #0x10]
+009736E8  04028052  mov       w4, #0x10
+009736EC  3d0a0495  bl        #0x4a75fe0 ; objc:countByEnumeratingWithState:objects:count: (selref 0x6509740)
+009736F0  800a00b4  cbz       x0, #0x973840
+009736F4  f60300aa  mov       x22, x0
+009736F8  e82340f9  ldr       x8, [sp, #0x40]
+009736FC  130140f9  ldr       x19, [x8]
+00973700  88aa02b0  adrp      x8, #0x5ec4000
+00973704  082946f9  ldr       x8, [x8, #0xc50]
+00973708  89aa02b0  adrp      x9, #0x5ec4000
+0097370C  293146f9  ldr       x9, [x9, #0xc60]
+00973710  150140f9  ldr       x21, [x8]
+00973714  3c0140f9  ldr       x28, [x9]
+00973718  190080d2  mov       x25, #0
+0097371C  e82340f9  ldr       x8, [sp, #0x40]
+00973720  080140f9  ldr       x8, [x8]
+00973724  1f0113eb  cmp       x8, x19
+00973728  60000054  b.eq      #0x973734
+0097372C  e00b40f9  ldr       x0, [sp, #0x10]
+00973730  56430395  bl        #0x4a44488 ; indirect:_objc_enumerationMutation
+00973734  e81f40f9  ldr       x8, [sp, #0x38]
+00973738  177979f8  ldr       x23, [x8, x25, lsl #3]
+0097373C  e00317aa  mov       x0, x23
+00973740  c82a0595  bl        #0x4abe260 ; objc:rangeValue (selref 0x651b7e0)
+00973744  0800018b  add       x8, x0, x1
+00973748  1f0118eb  cmp       x8, x24
+0097374C  68060054  b.hi      #0x973818
+00973750  f40300aa  mov       x20, x0
+00973754  fa0301aa  mov       x26, x1
+00973758  88de0290  adrp      x8, #0x6543000
+0097375C  009143f9  ldr       x0, [x8, #0x720]
+00973760  26430395  bl        #0x4a443f8 ; indirect:_objc_alloc
+00973764  fb0300aa  mov       x27, x0
+00973768  e00317aa  mov       x0, x23
+0097376C  f5ea0495  bl        #0x4aae340 ; objc:noteTweetInlineMedia (selref 0x6517818)
+00973770  fd031daa  mov       x29, x29
+00973774  84430395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+00973778  f70300aa  mov       x23, x0
+0097377C  e0031baa  mov       x0, x27
+00973780  e20317aa  mov       x2, x23
+00973784  9f8f0495  bl        #0x4a97600 ; objc:initWithNoteTweetInlineMedia: (selref 0x6511cc8)
+00973788  fb0300aa  mov       x27, x0
+0097378C  e00317aa  mov       x0, x23
+00973790  71430395  bl        #0x4a44554 ; indirect:_objc_release
+00973794  e01740f9  ldr       x0, [sp, #0x28]
+00973798  12c40395  bl        #0x4a647e0 ; objc:attachmentDelegate (selref 0x6505140)
+0097379C  fd031daa  mov       x29, x29
+009737A0  79430395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+009737A4  f70300aa  mov       x23, x0
+009737A8  e0031baa  mov       x0, x27
+009737AC  e20317aa  mov       x2, x23
+009737B0  1c750595  bl        #0x4ad0c20 ; objc:setDelegate: (selref 0x6520250)
+009737B4  e00317aa  mov       x0, x23
+009737B8  67430395  bl        #0x4a44554 ; indirect:_objc_release
+009737BC  f5731ba9  stp       x21, x28, [sp, #0x1b0]
+009737C0  a8c802d0  adrp      x8, #0x6289000
+009737C4  08a13491  add       x8, x8, #0xd28
+009737C8  fb231ca9  stp       x27, x8, [sp, #0x1c0]
+009737CC  68de02b0  adrp      x8, #0x6540000
+009737D0  004542f9  ldr       x0, [x8, #0x488]
+009737D4  e2030791  add       x2, sp, #0x1c0
+009737D8  e3c30691  add       x3, sp, #0x1b0
+009737DC  44008052  mov       w4, #2
+009737E0  a81d0495  bl        #0x4a7ae80 ; objc:dictionaryWithObjects:forKeys:count: (selref 0x650aae8)
+009737E4  fd031daa  mov       x29, x29
+009737E8  67430395  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+009737EC  f70300aa  mov       x23, x0
+009737F0  e01340f9  ldr       x0, [sp, #0x20]
+009737F4  e20317aa  mov       x2, x23
+009737F8  e30314aa  mov       x3, x20
+009737FC  e4031aaa  mov       x4, x26
+00973800  b0b00395  bl        #0x4a5fac0 ; objc:addAttributes:range: (selref 0x6503df8)
+00973804  e00317aa  mov       x0, x23
+00973808  53430395  bl        #0x4a44554 ; indirect:_objc_release
+0097380C  e0031baa  mov       x0, x27
+00973810  fb1340f9  ldr       x27, [sp, #0x20]
+00973814  50430395  bl        #0x4a44554 ; indirect:_objc_release
+00973818  39070091  add       x25, x25, #1
+0097381C  df0219eb  cmp       x22, x25
+00973820  e1f7ff54  b.ne      #0x97371c
+00973824  e2c30091  add       x2, sp, #0x30
+00973828  e3430791  add       x3, sp, #0x1d0
+0097382C  e00b40f9  ldr       x0, [sp, #0x10]
+00973830  04028052  mov       w4, #0x10
+00973834  eb090495  bl        #0x4a75fe0 ; objc:countByEnumeratingWithState:objects:count: (selref 0x6509740)
+00973838  f60300aa  mov       x22, x0
+0097383C  e0f6ffb5  cbnz      x0, #0x973718
+00973840  e00b40f9  ldr       x0, [sp, #0x10]
+00973844  44430395  bl        #0x4a44554 ; indirect:_objc_release
+00973848  fc1740f9  ldr       x28, [sp, #0x28]
+0097384C  e00f40f9  ldr       x0, [sp, #0x18]
+00973850  41430395  bl        #0x4a44554 ; indirect:_objc_release
+00973854  e00340f9  ldr       x0, [sp]
+00973858  3f430395  bl        #0x4a44554 ; indirect:_objc_release
+0097385C  e00740f9  ldr       x0, [sp, #8]
+00973860  3d430395  bl        #0x4a44554 ; indirect:_objc_release
+00973864  e0031caa  mov       x0, x28
+00973868  3b430395  bl        #0x4a44554 ; indirect:_objc_release
+0097386C  a80359f8  ldur      x8, [x29, #-0x70]
+00973870  e9aa02b0  adrp      x9, #0x5ed0000
+00973874  291546f9  ldr       x9, [x9, #0xc28]
+00973878  290140f9  ldr       x9, [x9]
+0097387C  3f0108eb  cmp       x9, x8
+00973880  61010054  b.ne      #0x9738ac
+00973884  e0031baa  mov       x0, x27
+00973888  ff831391  add       sp, sp, #0x4e0
+0097388C  fd7b46a9  ldp       x29, x30, [sp, #0x60]
+00973890  f44f45a9  ldp       x20, x19, [sp, #0x50]
+00973894  f65744a9  ldp       x22, x21, [sp, #0x40]
+00973898  f85f43a9  ldp       x24, x23, [sp, #0x30]
+0097389C  fa6742a9  ldp       x26, x25, [sp, #0x20]
+009738A0  fc6f41a9  ldp       x28, x27, [sp, #0x10]
+009738A4  e923c76c  ldp       d9, d8, [sp], #0x70
+009738A8  e6420315  b         #0x4a44440 ; indirect:_objc_autoreleaseReturnValue
+009738AC  3f400395  bl        #0x4a439a8 ; indirect:___stack_chk_fail
+
+## attribute-class-binding.json
+{
+  "sha256": "ce10ca22abc997bfc3eb7732be33c198175994e24a421219cf0808c6e7882249",
+  "bindings": [
+    {
+      "address": "0x6540e10",
+      "raw": "0x801000000000308f",
+      "pointer_format": 6,
+      "kind": "bind",
+      "ordinal": 12431,
+      "symbol": "_OBJC_CLASS_$_NSMutableAttributedString",
+      "chain_verified": true
+    }
+  ]
+}
+
+
+## attribute-category.json
+{
+  "sha256": "09e830331f35a7806f477cd0cbd497642461c44face5f818d39f9abd0b3040fc",
+  "matches": [
+    {
+      "category": "TFSFillTemplates",
+      "category_address": "0x413d278",
+      "class_reference": {
+        "address": "0x413d280",
+        "raw": "0x8010000000001903",
+        "pointer_format": 6,
+        "kind": "bind",
+        "ordinal": 6403,
+        "symbol": "_OBJC_CLASS_$_NSMutableAttributedString",
+        "chain_verified": true
+      },
+      "owner_symbols": [
+        "_OBJC_CLASS_$_NSMutableAttributedString"
+      ],
+      "kind": "instance",
+      "method_list": "0x2f9a9c0",
+      "entry": "0x2f9aa58",
+      "selector": "initWithString:font:alignment:lineBreakMode:paragraphSpacing:lineHeight:lineSpacing:",
+      "types": "@72@0:8@16@24q32q40d48d56d64",
+      "imp": "0xca12d4",
+      "executable": true
+    }
+  ]
+}
+
+
+## full-attribute-init-category.json
+{
+  "sha256": "09e830331f35a7806f477cd0cbd497642461c44face5f818d39f9abd0b3040fc",
+  "matches": [
+    {
+      "category": "TFSFillTemplates",
+      "category_address": "0x413d278",
+      "class_reference": {
+        "address": "0x413d280",
+        "raw": "0x8010000000001903",
+        "pointer_format": 6,
+        "kind": "bind",
+        "ordinal": 6403,
+        "symbol": "_OBJC_CLASS_$_NSMutableAttributedString",
+        "chain_verified": true
+      },
+      "owner_symbols": [
+        "_OBJC_CLASS_$_NSMutableAttributedString"
+      ],
+      "kind": "instance",
+      "method_list": "0x2f9a9c0",
+      "entry": "0x2f9aa70",
+      "selector": "initWithString:font:alignment:lineBreakMode:paragraphSpacing:lineHeight:lineSpacing:writingDirection:",
+      "types": "@80@0:8@16@24q32q40d48d56d64q72",
+      "imp": "0xca12e4",
+      "executable": true
+    }
+  ]
+}
+
+
+## paragraph-category.json
+{
+  "sha256": "09e830331f35a7806f477cd0cbd497642461c44face5f818d39f9abd0b3040fc",
+  "matches": [
+    {
+      "category": "TFSFillTemplates",
+      "category_address": "0x413d278",
+      "class_reference": {
+        "address": "0x413d280",
+        "raw": "0x8010000000001903",
+        "pointer_format": 6,
+        "kind": "bind",
+        "ordinal": 6403,
+        "symbol": "_OBJC_CLASS_$_NSMutableAttributedString",
+        "chain_verified": true
+      },
+      "owner_symbols": [
+        "_OBJC_CLASS_$_NSMutableAttributedString"
+      ],
+      "kind": "instance",
+      "method_list": "0x2f9a9c0",
+      "entry": "0x2f9ab78",
+      "selector": "_setFont:alignment:lineBreakMode:paragraphSpacing:lineHeight:lineSpacing:writingDirection:",
+      "types": "v72@0:8@16q24q32d40d48d56q64",
+      "imp": "0xca1dcc",
+      "executable": true
+    }
+  ]
+}
+
+
+## paragraph-key-binding.json
+{
+  "sha256": "09e830331f35a7806f477cd0cbd497642461c44face5f818d39f9abd0b3040fc",
+  "bindings": [
+    {
+      "address": "0x3dfa6e0",
+      "raw": "0x8010000000000776",
+      "pointer_format": 6,
+      "kind": "bind",
+      "ordinal": 1910,
+      "symbol": "_kCTParagraphStyleAttributeName",
+      "chain_verified": true
+    }
+  ]
+}
+
+
+## paragraph-specifier-constants.json
+[
+  {
+    "address": "0x3081e20",
+    "raw": "0600000000000000",
+    "value": 6
+  },
+  {
+    "address": "0x3081e28",
+    "raw": "0900000000000000",
+    "value": 9
+  },
+  {
+    "address": "0x3081e30",
+    "raw": "0e00000000000000",
+    "value": 14
+  },
+  {
+    "address": "0x3081e38",
+    "raw": "0f00000000000000",
+    "value": 15
+  },
+  {
+    "address": "0x3081e40",
+    "raw": "1000000000000000",
+    "value": 16
+  },
+  {
+    "address": "0x3081e48",
+    "raw": "0b00000000000000",
+    "value": 11
+  },
+  {
+    "address": "0x3081e50",
+    "raw": "0d00000000000000",
+    "value": 13
+  }
+]
+
+## paragraph-generation.txt
+## 0xca12d4..0xca12dc
+00CA12D4  06008092  mov       x6, #-1
+00CA12D8  02c78914  b         #0x2f12ee0 ; objc:initWithString:font:alignment:lineBreakMode:paragraphSpacing:lineHeight:lineSpacing:writingDirection: (selref 0x43c15b0)
+## 0xca1dcc..0xca1fc8
+00CA1DCC  ff4305d1  sub       sp, sp, #0x150
+00CA1DD0  eb2b0f6d  stp       d11, d10, [sp, #0xf0]
+00CA1DD4  e923106d  stp       d9, d8, [sp, #0x100]
+00CA1DD8  f85f11a9  stp       x24, x23, [sp, #0x110]
+00CA1DDC  f65712a9  stp       x22, x21, [sp, #0x120]
+00CA1DE0  f44f13a9  stp       x20, x19, [sp, #0x130]
+00CA1DE4  fd7b14a9  stp       x29, x30, [sp, #0x140]
+00CA1DE8  fd030591  add       x29, sp, #0x140
+00CA1DEC  f50305aa  mov       x21, x5
+00CA1DF0  491ca24e  mov       v9.16b, v2.16b
+00CA1DF4  281ca14e  mov       v8.16b, v1.16b
+00CA1DF8  0a1ca04e  mov       v10.16b, v0.16b
+00CA1DFC  f60304aa  mov       x22, x4
+00CA1E00  f70303aa  mov       x23, x3
+00CA1E04  f30302aa  mov       x19, x2
+00CA1E08  f40300aa  mov       x20, x0
+00CA1E0C  a88a01f0  adrp      x8, #0x3df8000
+00CA1E10  08ed47f9  ldr       x8, [x8, #0xfd8]
+00CA1E14  080140f9  ldr       x8, [x8]
+00CA1E18  a8831af8  stur      x8, [x29, #-0x58]
+00CA1E1C  e00302aa  mov       x0, x2
+00CA1E20  e6d18894  bl        #0x2ed65b8 ; indirect:_objc_retain
+00CA1E24  e9ab016d  stp       d9, d10, [sp, #0x18]
+00CA1E28  e00314aa  mov       x0, x20
+00CA1E2C  e5f78894  bl        #0x2edfdc0 ; objc:_stringRange (selref 0x43b4968)
+00CA1E30  e30300aa  mov       x3, x0
+00CA1E34  e00314aa  mov       x0, x20
+00CA1E38  e20313aa  mov       x2, x19
+00CA1E3C  e40301aa  mov       x4, x1
+00CA1E40  d86f8a94  bl        #0x2f3dda0 ; objc:setFont:inRange: (selref 0x43cc160)
+00CA1E44  e8927dd3  ubfiz     x8, x23, #3, #0x25
+00CA1E48  094080d2  mov       x9, #0x200
+00CA1E4C  2900a0f2  movk      x9, #1, lsl #16
+00CA1E50  8900c0f2  movk      x9, #4, lsl #32
+00CA1E54  2825c89a  lsr       x8, x9, x8
+00CA1E58  ff1600f1  cmp       x23, #5
+00CA1E5C  08319f1a  csel      w8, w8, wzr, lo
+00CA1E60  e85f0039  strb      w8, [sp, #0x17]
+00CA1E64  df1a00f1  cmp       x22, #6
+00CA1E68  c8329f1a  csel      w8, w22, wzr, lo
+00CA1E6C  e85b0039  strb      w8, [sp, #0x16]
+00CA1E70  a8060091  add       x8, x21, #1
+00CA1E74  1f0900f1  cmp       x8, #2
+00CA1E78  68000054  b.hi      #0xca1e84
+00CA1E7C  08050051  sub       w8, w8, #1
+00CA1E80  e8570039  strb      w8, [sp, #0x15]
+00CA1E84  0821601e  fcmp      d8, #0.0
+00CA1E88  ac000054  b.gt      #0xca1e9c
+00CA1E8C  e00314aa  mov       x0, x20
+00CA1E90  e20313aa  mov       x2, x19
+00CA1E94  b3ed8894  bl        #0x2edd560 ; objc:_lineHeightForFont: (selref 0x43b3f50)
+00CA1E98  081ca04e  mov       v8.16b, v0.16b
+00CA1E9C  e80700fd  str       d8, [sp, #8]
+00CA1EA0  ff0300f9  str       xzr, [sp]
+00CA1EA4  28008052  mov       w8, #1
+00CA1EA8  e95f0091  add       x9, sp, #0x17
+00CA1EAC  ffa302a9  stp       xzr, x8, [sp, #0x28]
+00CA1EB0  e91f00f9  str       x9, [sp, #0x38]
+00CA1EB4  091f0190  adrp      x9, #0x3081000
+00CA1EB8  201147fd  ldr       d0, [x9, #0xe20]
+00CA1EBC  e02300fd  str       d0, [sp, #0x40]
+00CA1EC0  e95b0091  add       x9, sp, #0x16
+00CA1EC4  e8a704a9  stp       x8, x9, [sp, #0x48]
+00CA1EC8  091f0190  adrp      x9, #0x3081000
+00CA1ECC  201547fd  ldr       d0, [x9, #0xe28]
+00CA1ED0  e02f00fd  str       d0, [sp, #0x58]
+00CA1ED4  09018052  mov       w9, #8
+00CA1ED8  ea230091  add       x10, sp, #8
+00CA1EDC  e92b06a9  stp       x9, x10, [sp, #0x60]
+00CA1EE0  0a1f0190  adrp      x10, #0x3081000
+00CA1EE4  401947fd  ldr       d0, [x10, #0xe30]
+00CA1EE8  e03b00fd  str       d0, [sp, #0x70]
+00CA1EEC  ea630091  add       x10, sp, #0x18
+00CA1EF0  e9ab07a9  stp       x9, x10, [sp, #0x78]
+00CA1EF4  0b1f0190  adrp      x11, #0x3081000
+00CA1EF8  601d47fd  ldr       d0, [x11, #0xe38]
+00CA1EFC  e04700fd  str       d0, [sp, #0x88]
+00CA1F00  e92b09a9  stp       x9, x10, [sp, #0x90]
+00CA1F04  0a1f0190  adrp      x10, #0x3081000
+00CA1F08  402147fd  ldr       d0, [x10, #0xe40]
+00CA1F0C  e05300fd  str       d0, [sp, #0xa0]
+00CA1F10  ea030091  mov       x10, sp
+00CA1F14  e9ab0aa9  stp       x9, x10, [sp, #0xa8]
+00CA1F18  0a1f0190  adrp      x10, #0x3081000
+00CA1F1C  402547fd  ldr       d0, [x10, #0xe48]
+00CA1F20  e05f00fd  str       d0, [sp, #0xb8]
+00CA1F24  ea830091  add       x10, sp, #0x20
+00CA1F28  e92b0ca9  stp       x9, x10, [sp, #0xc0]
+00CA1F2C  091f0190  adrp      x9, #0x3081000
+00CA1F30  202947fd  ldr       d0, [x9, #0xe50]
+00CA1F34  e06b00fd  str       d0, [sp, #0xd0]
+00CA1F38  e9570091  add       x9, sp, #0x15
+00CA1F3C  e8a70da9  stp       x8, x9, [sp, #0xd8]
+00CA1F40  e0a30091  add       x0, sp, #0x28
+00CA1F44  01018052  mov       w1, #8
+00CA1F48  1fcd8894  bl        #0x2ed53c4 ; indirect:_CTParagraphStyleCreate
+00CA1F4C  f50300aa  mov       x21, x0
+00CA1F50  c88a01b0  adrp      x8, #0x3dfa000
+00CA1F54  087143f9  ldr       x8, [x8, #0x6e0]
+00CA1F58  160140f9  ldr       x22, [x8]
+00CA1F5C  e00314aa  mov       x0, x20
+00CA1F60  98f78894  bl        #0x2edfdc0 ; objc:_stringRange (selref 0x43b4968)
+00CA1F64  e40300aa  mov       x4, x0
+00CA1F68  e00314aa  mov       x0, x20
+00CA1F6C  e20316aa  mov       x2, x22
+00CA1F70  e30315aa  mov       x3, x21
+00CA1F74  e50301aa  mov       x5, x1
+00CA1F78  ea198994  bl        #0x2ee8720 ; objc:addAttribute:value:range: (selref 0x43b6bc0)
+00CA1F7C  e00315aa  mov       x0, x21
+00CA1F80  e4c98894  bl        #0x2ed4710 ; indirect:_CFRelease
+00CA1F84  e00313aa  mov       x0, x19
+00CA1F88  89d18894  bl        #0x2ed65ac ; indirect:_objc_release
+00CA1F8C  a8835af8  ldur      x8, [x29, #-0x58]
+00CA1F90  a98a01f0  adrp      x9, #0x3df8000
+00CA1F94  29ed47f9  ldr       x9, [x9, #0xfd8]
+00CA1F98  290140f9  ldr       x9, [x9]
+00CA1F9C  3f0108eb  cmp       x9, x8
+00CA1FA0  21010054  b.ne      #0xca1fc4
+00CA1FA4  fd7b54a9  ldp       x29, x30, [sp, #0x140]
+00CA1FA8  f44f53a9  ldp       x20, x19, [sp, #0x130]
+00CA1FAC  f65752a9  ldp       x22, x21, [sp, #0x120]
+00CA1FB0  f85f51a9  ldp       x24, x23, [sp, #0x110]
+00CA1FB4  e923506d  ldp       d9, d8, [sp, #0x100]
+00CA1FB8  eb2b4f6d  ldp       d11, d10, [sp, #0xf0]
+00CA1FBC  ff430591  add       sp, sp, #0x150
+00CA1FC0  c0035fd6  ret
+00CA1FC4  fece8894  bl        #0x2ed5bbc ; indirect:___stack_chk_fail
+## 0xc9fd54..0xc9fd5c
+00C9FD54  0010611e  fmov      d0, #3.00000000 ; _TFN_CTExtraLineHeight
+00C9FD58  c0035fd6  ret
+
+## full-attribute-init.txt
+## 0xca12e4..0xca138c
+00CA12E4  eb2bba6d  stp       d11, d10, [sp, #-0x60]!
+00CA12E8  e923016d  stp       d9, d8, [sp, #0x10]
+00CA12EC  f85f02a9  stp       x24, x23, [sp, #0x20]
+00CA12F0  f65703a9  stp       x22, x21, [sp, #0x30]
+00CA12F4  f44f04a9  stp       x20, x19, [sp, #0x40]
+00CA12F8  fd7b05a9  stp       x29, x30, [sp, #0x50]
+00CA12FC  fd430191  add       x29, sp, #0x50
+00CA1300  f30306aa  mov       x19, x6
+00CA1304  481ca24e  mov       v8.16b, v2.16b
+00CA1308  291ca14e  mov       v9.16b, v1.16b
+00CA130C  0a1ca04e  mov       v10.16b, v0.16b
+00CA1310  f50305aa  mov       x21, x5
+00CA1314  f70304aa  mov       x23, x4
+00CA1318  f40303aa  mov       x20, x3
+00CA131C  f60302aa  mov       x22, x2
+00CA1320  f80300aa  mov       x24, x0
+00CA1324  e00303aa  mov       x0, x3
+00CA1328  a4d48894  bl        #0x2ed65b8 ; indirect:_objc_retain
+00CA132C  e00318aa  mov       x0, x24
+00CA1330  e20316aa  mov       x2, x22
+00CA1334  abc68994  bl        #0x2f12de0 ; objc:initWithString: (selref 0x43c1570)
+00CA1338  f60300aa  mov       x22, x0
+00CA133C  400100b4  cbz       x0, #0xca1364
+00CA1340  e00316aa  mov       x0, x22
+00CA1344  e20314aa  mov       x2, x20
+00CA1348  e30317aa  mov       x3, x23
+00CA134C  e40315aa  mov       x4, x21
+00CA1350  401daa4e  mov       v0.16b, v10.16b
+00CA1354  211da94e  mov       v1.16b, v9.16b
+00CA1358  021da84e  mov       v2.16b, v8.16b
+00CA135C  e50313aa  mov       x5, x19
+00CA1360  30f88894  bl        #0x2edf420 ; objc:_setFont:alignment:lineBreakMode:paragraphSpacing:lineHeight:lineSpacing:writingDirection: (selref 0x43b4700)
+00CA1364  e00314aa  mov       x0, x20
+00CA1368  91d48894  bl        #0x2ed65ac ; indirect:_objc_release
+00CA136C  e00316aa  mov       x0, x22
+00CA1370  fd7b45a9  ldp       x29, x30, [sp, #0x50]
+00CA1374  f44f44a9  ldp       x20, x19, [sp, #0x40]
+00CA1378  f65743a9  ldp       x22, x21, [sp, #0x30]
+00CA137C  f85f42a9  ldp       x24, x23, [sp, #0x20]
+00CA1380  e923416d  ldp       d9, d8, [sp, #0x10]
+00CA1384  eb2bc66c  ldp       d11, d10, [sp], #0x60
+00CA1388  c0035fd6  ret
+
+## lineheight-category.json
+{
+  "sha256": "09e830331f35a7806f477cd0cbd497642461c44face5f818d39f9abd0b3040fc",
+  "matches": [
+    {
+      "category": "TFSFillTemplates",
+      "category_address": "0x413d278",
+      "class_reference": {
+        "address": "0x413d280",
+        "raw": "0x8010000000001903",
+        "pointer_format": 6,
+        "kind": "bind",
+        "ordinal": 6403,
+        "symbol": "_OBJC_CLASS_$_NSMutableAttributedString",
+        "chain_verified": true
+      },
+      "owner_symbols": [
+        "_OBJC_CLASS_$_NSMutableAttributedString"
+      ],
+      "kind": "instance",
+      "method_list": "0x2f9a9c0",
+      "entry": "0x2f9aba8",
+      "selector": "_lineHeightForFont:",
+      "types": "d24@0:8@16",
+      "imp": "0xca2338",
+      "executable": true
+    }
+  ]
+}
+
+
+## lineheight-fallback.txt
+## 0xca2338..0xca2364
+00CA2338  e923be6d  stp       d9, d8, [sp, #-0x20]!
+00CA233C  fd7b01a9  stp       x29, x30, [sp, #0x10]
+00CA2340  fd430091  add       x29, sp, #0x10
+00CA2344  e00302aa  mov       x0, x2
+00CA2348  76ee8994  bl        #0x2f1dd20 ; objc:lineHeight (selref 0x43c4140)
+00CA234C  081ca04e  mov       v8.16b, v0.16b
+00CA2350  81f6ff97  bl        #0xc9fd54 ; _TFN_CTExtraLineHeight
+00CA2354  0029601e  fadd      d0, d8, d0
+00CA2358  fd7b41a9  ldp       x29, x30, [sp, #0x10]
+00CA235C  e923c26c  ldp       d9, d8, [sp], #0x20
+00CA2360  c0035fd6  ret
+
+## body-height-parent.txt
+## 0x30c31c0..0x30c37f0
+030C31C0  ff4303d1  sub       sp, sp, #0xd0
+030C31C4  ef3b036d  stp       d15, d14, [sp, #0x30]
+030C31C8  ed33046d  stp       d13, d12, [sp, #0x40]
+030C31CC  eb2b056d  stp       d11, d10, [sp, #0x50]
+030C31D0  e923066d  stp       d9, d8, [sp, #0x60]
+030C31D4  fc6f07a9  stp       x28, x27, [sp, #0x70]
+030C31D8  fa6708a9  stp       x26, x25, [sp, #0x80]
+030C31DC  f85f09a9  stp       x24, x23, [sp, #0x90]
+030C31E0  f6570aa9  stp       x22, x21, [sp, #0xa0]
+030C31E4  f44f0ba9  stp       x20, x19, [sp, #0xb0]
+030C31E8  fd7b0ca9  stp       x29, x30, [sp, #0xc0]
+030C31EC  fd030391  add       x29, sp, #0xc0
+030C31F0  f30314aa  mov       x19, x20
+030C31F4  e00314aa  mov       x0, x20
+030C31F8  5f076694  bl        #0x4a44f74 ; indirect:_swift_getObjectType
+030C31FC  f40302a9  stp       x20, x0, [sp, #0x20]
+030C3200  88a201d0  adrp      x8, #0x6515000
+030C3204  019142f9  ldr       x1, [x8, #0x520]
+030C3208  e0830091  add       x0, sp, #0x20
+030C320C  c0046694  bl        #0x4a4450c ; indirect:_objc_msgSendSuper2
+030C3210  0effff97  bl        #0x30c2e48
+030C3214  e00314aa  mov       x0, x20
+030C3218  7a956694  bl        #0x4a68800 ; objc:bounds (selref 0x6506148)
+030C321C  b2fc6594  bl        #0x4a424e4 ; indirect:_CGRectGetWidth
+030C3220  091ca04e  mov       v9.16b, v0.16b
+030C3224  e00314aa  mov       x0, x20
+030C3228  76956694  bl        #0x4a68800 ; objc:bounds (selref 0x6506148)
+030C322C  99fc6594  bl        #0x4a42490 ; indirect:_CGRectGetHeight
+030C3230  081ca04e  mov       v8.16b, v0.16b
+030C3234  28b601d0  adrp      x8, #0x6789000
+030C3238  151543f9  ldr       x21, [x8, #0x628]
+030C323C  806a75f8  ldr       x0, [x20, x21]
+030C3240  0800d0d2  mov       x8, #0x800000000000
+030C3244  280ce8f2  movk      x8, #0x4061, lsl #48
+030C3248  0a01679e  fmov      d10, x8
+030C324C  0800d6d2  mov       x8, #0xb00000000000
+030C3250  680ae8f2  movk      x8, #0x4053, lsl #48
+030C3254  0b01679e  fmov      d11, x8
+030C3258  0010651e  fmov      d0, #12.00000000
+030C325C  0110641e  fmov      d1, #8.00000000
+030C3260  421daa4e  mov       v2.16b, v10.16b
+030C3264  631dab4e  mov       v3.16b, v11.16b
+030C3268  36406894  bl        #0x4ad3340 ; objc:setFrame: (selref 0x6520c18)
+030C326C  401daa4e  mov       v0.16b, v10.16b
+030C3270  611dab4e  mov       v1.16b, v11.16b
+030C3274  5f010094  bl        #0x30c37f0
+030C3278  401daa4e  mov       v0.16b, v10.16b
+030C327C  611dab4e  mov       v1.16b, v11.16b
+030C3280  85010094  bl        #0x30c3894
+030C3284  401daa4e  mov       v0.16b, v10.16b
+030C3288  611dab4e  mov       v1.16b, v11.16b
+030C328C  d6010094  bl        #0x30c39e4
+030C3290  28b601d0  adrp      x8, #0x6789000
+030C3294  08c142f9  ldr       x8, [x8, #0x580]
+030C3298  946a68f8  ldr       x20, [x20, x8]
+030C329C  e00314aa  mov       x0, x20
+030C32A0  88716794  bl        #0x4a9f8c0 ; objc:isHidden (selref 0x6513d78)
+030C32A4  1f000071  cmp       w0, #0
+030C32A8  00e4006f  movi      v0.2d, #0000000000000000
+030C32AC  021c6a1e  fcsel     d2, d0, d10, ne
+030C32B0  031c6b1e  fcsel     d3, d0, d11, ne
+030C32B4  01e4006f  movi      v1.2d, #0000000000000000
+030C32B8  e00314aa  mov       x0, x20
+030C32BC  21406894  bl        #0x4ad3340 ; objc:setFrame: (selref 0x6520c18)
+030C32C0  606a75f8  ldr       x0, [x19, x21]
+030C32C4  770d6794  bl        #0x4a868a0 ; objc:frame (selref 0x650d970)
+030C32C8  0a1ca04e  mov       v10.16b, v0.16b
+030C32CC  2b1ca14e  mov       v11.16b, v1.16b
+030C32D0  4c1ca24e  mov       v12.16b, v2.16b
+030C32D4  6d1ca34e  mov       v13.16b, v3.16b
+030C32D8  28b601d0  adrp      x8, #0x6789000
+030C32DC  083d43f9  ldr       x8, [x8, #0x678]
+030C32E0  1f0500b1  cmn       x8, #1
+030C32E4  61250054  b.ne      #0x30c3790
+030C32E8  28b601d0  adrp      x8, #0x6789000
+030C32EC  0e4143fd  ldr       d14, [x8, #0x680]
+030C32F0  e8a301b0  adrp      x8, #0x6540000
+030C32F4  00d546f9  ldr       x0, [x8, #0xda8]
+030C32F8  94046694  bl        #0x4a44548 ; indirect:_objc_opt_self
+030C32FC  401daa4e  mov       v0.16b, v10.16b
+030C3300  611dab4e  mov       v1.16b, v11.16b
+030C3304  821dac4e  mov       v2.16b, v12.16b
+030C3308  a31dad4e  mov       v3.16b, v13.16b
+030C330C  c41dae4e  mov       v4.16b, v14.16b
+030C3310  3c916694  bl        #0x4a67800 ; objc:bezierPathWithRoundedRect:cornerRadius: (selref 0x6505d48)
+030C3314  fd031daa  mov       x29, x29
+030C3318  9b046694  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+030C331C  f50300aa  mov       x21, x0
+030C3320  28b601d0  adrp      x8, #0x6789000
+030C3324  082543f9  ldr       x8, [x8, #0x648]
+030C3328  746a68f8  ldr       x20, [x19, x8]
+030C332C  5d0d6694  bl        #0x4a468a0 ; objc:CGPath (selref 0x64fd970)
+030C3330  fd031daa  mov       x29, x29
+030C3334  94046694  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+030C3338  f60300aa  mov       x22, x0
+030C333C  e00314aa  mov       x0, x20
+030C3340  e20316aa  mov       x2, x22
+030C3344  ff606894  bl        #0x4adb740 ; objc:setPath: (selref 0x6522d18)
+030C3348  e00316aa  mov       x0, x22
+030C334C  82046694  bl        #0x4a44554 ; indirect:_objc_release
+030C3350  e8a301b0  adrp      x8, #0x6540000
+030C3354  00d144f9  ldr       x0, [x8, #0x9a0]
+030C3358  7c046694  bl        #0x4a44548 ; indirect:_objc_opt_self
+030C335C  c1d26894  bl        #0x4af7e60 ; objc:twitterColors (selref 0x6529ee0)
+030C3360  fd031daa  mov       x29, x29
+030C3364  88046694  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+030C3368  f60300aa  mov       x22, x0
+030C336C  1db56894  bl        #0x4af07e0 ; objc:textColor (selref 0x6528140)
+030C3370  fd031daa  mov       x29, x29
+030C3374  84046694  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+030C3378  f70300aa  mov       x23, x0
+030C337C  e00316aa  mov       x0, x22
+030C3380  b4076694  bl        #0x4a45250 ; indirect:_swift_unknownObjectRelease
+030C3384  48da0090  adrp      x8, #0x4c0b000
+030C3388  002141fd  ldr       d0, [x8, #0x240]
+030C338C  e00317aa  mov       x0, x23
+030C3390  44ba6694  bl        #0x4a71ca0 ; objc:colorWithAlphaComponent: (selref 0x6508670)
+030C3394  fd031daa  mov       x29, x29
+030C3398  7b046694  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+030C339C  f60300aa  mov       x22, x0
+030C33A0  e00317aa  mov       x0, x23
+030C33A4  6c046694  bl        #0x4a44554 ; indirect:_objc_release
+030C33A8  e00316aa  mov       x0, x22
+030C33AC  050d6694  bl        #0x4a467c0 ; objc:CGColor (selref 0x64fd938)
+030C33B0  fd031daa  mov       x29, x29
+030C33B4  74046694  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+030C33B8  f70300aa  mov       x23, x0
+030C33BC  e00316aa  mov       x0, x22
+030C33C0  65046694  bl        #0x4a44554 ; indirect:_objc_release
+030C33C4  e00314aa  mov       x0, x20
+030C33C8  e20317aa  mov       x2, x23
+030C33CC  ad786894  bl        #0x4ae1680 ; objc:setStrokeColor: (selref 0x65244e8)
+030C33D0  e00317aa  mov       x0, x23
+030C33D4  60046694  bl        #0x4a44554 ; indirect:_objc_release
+030C33D8  e00313aa  mov       x0, x19
+030C33DC  09956694  bl        #0x4a68800 ; objc:bounds (selref 0x6506148)
+030C33E0  e00314aa  mov       x0, x20
+030C33E4  d73f6894  bl        #0x4ad3340 ; objc:setFrame: (selref 0x6520c18)
+030C33E8  0800d0d2  mov       x8, #0x800000000000
+030C33EC  880cf8f2  movk      x8, #0xc064, lsl #48
+030C33F0  0001679e  fmov      d0, x8
+030C33F4  2029601e  fadd      d0, d9, d0
+030C33F8  0110751e  fmov      d1, #-12.00000000
+030C33FC  0928611e  fadd      d9, d0, d1
+030C3400  28b601d0  adrp      x8, #0x6789000
+030C3404  08d142f9  ldr       x8, [x8, #0x5a0]
+030C3408  746a68f8  ldr       x20, [x19, x8]
+030C340C  e00314aa  mov       x0, x20
+030C3410  2c716794  bl        #0x4a9f8c0 ; objc:isHidden (selref 0x6513d78)
+030C3414  a0050037  tbnz      w0, #0, #0x30c34c8
+030C3418  e00314aa  mov       x0, x20
+030C341C  b9b46894  bl        #0x4af0700 ; objc:text (selref 0x6528108)
+030C3420  fd031daa  mov       x29, x29
+030C3424  58046694  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+030C3428  000500b4  cbz       x0, #0x30c34c8
+030C342C  f60300aa  mov       x22, x0
+030C3430  4eed6594  bl        #0x4a3e968
+030C3434  f70300aa  mov       x23, x0
+030C3438  f80301aa  mov       x24, x1
+030C343C  e00316aa  mov       x0, x22
+030C3440  45046694  bl        #0x4a44554 ; indirect:_objc_release
+030C3444  e00318aa  mov       x0, x24
+030C3448  29066694  bl        #0x4a44cec ; indirect:_swift_bridgeObjectRelease
+030C344C  e8be4092  and       x8, x23, #0xffffffffffff
+030C3450  09ef78d3  ubfx      x9, x24, #0x38, #4
+030C3454  1f0343f2  tst       x24, #0x2000000000000000
+030C3458  0801899a  csel      x8, x8, x9, eq
+030C345C  680300b4  cbz       x8, #0x30c34c8
+030C3460  e00314aa  mov       x0, x20
+030C3464  201da94e  mov       v0.16b, v9.16b
+030C3468  011da84e  mov       v1.16b, v8.16b
+030C346C  5d996894  bl        #0x4ae99e0 ; objc:sizeThatFits: (selref 0x65265c0)
+030C3470  2a1ca14e  mov       v10.16b, v1.16b
+030C3474  0800d0d2  mov       x8, #0x800000000000
+030C3478  880ce8f2  movk      x8, #0x4064, lsl #48
+030C347C  0001679e  fmov      d0, x8
+030C3480  0b10641e  fmov      d11, #8.00000000
+030C3484  0110641e  fmov      d1, #8.00000000
+030C3488  e00314aa  mov       x0, x20
+030C348C  221da94e  mov       v2.16b, v9.16b
+030C3490  431daa4e  mov       v3.16b, v10.16b
+030C3494  ab3f6894  bl        #0x4ad3340 ; objc:setFrame: (selref 0x6520c18)
+030C3498  28b601d0  adrp      x8, #0x6789000
+030C349C  08cd42f9  ldr       x8, [x8, #0x598]
+030C34A0  746a68f8  ldr       x20, [x19, x8]
+030C34A4  00e4006f  movi      v0.2d, #0000000000000000
+030C34A8  01e4006f  movi      v1.2d, #0000000000000000
+030C34AC  02e4006f  movi      v2.2d, #0000000000000000
+030C34B0  03e4006f  movi      v3.2d, #0000000000000000
+030C34B4  e00314aa  mov       x0, x20
+030C34B8  a23f6894  bl        #0x4ad3340 ; objc:setFrame: (selref 0x6520c18)
+030C34BC  e00314aa  mov       x0, x20
+030C34C0  22008052  mov       w2, #1
+030C34C4  4c000014  b         #0x30c35f4
+030C34C8  00e4006f  movi      v0.2d, #0000000000000000
+030C34CC  01e4006f  movi      v1.2d, #0000000000000000
+030C34D0  02e4006f  movi      v2.2d, #0000000000000000
+030C34D4  03e4006f  movi      v3.2d, #0000000000000000
+030C34D8  e00314aa  mov       x0, x20
+030C34DC  993f6894  bl        #0x4ad3340 ; objc:setFrame: (selref 0x6520c18)
+030C34E0  28b601d0  adrp      x8, #0x6789000
+030C34E4  08cd42f9  ldr       x8, [x8, #0x598]
+030C34E8  766a68f8  ldr       x22, [x19, x8]
+030C34EC  e00316aa  mov       x0, x22
+030C34F0  64f36894  bl        #0x4b00280 ; objc:viewModel (selref 0x652bfe8)
+030C34F4  fd031daa  mov       x29, x29
+030C34F8  23046694  bl        #0x4a44584 ; indirect:_objc_retainAutoreleasedReturnValue
+030C34FC  000900b4  cbz       x0, #0x30c361c
+030C3500  f70300aa  mov       x23, x0
+030C3504  08a401b0  adrp      x8, #0x6544000
+030C3508  004d46f9  ldr       x0, [x8, #0xc98]
+030C350C  0f046694  bl        #0x4a44548 ; indirect:_objc_opt_self
+030C3510  f80300aa  mov       x24, x0
+030C3514  e00316aa  mov       x0, x22
+030C3518  7abc6794  bl        #0x4ab2700 ; objc:options (selref 0x6518908)
+030C351C  f90300aa  mov       x25, x0
+030C3520  e00316aa  mov       x0, x22
+030C3524  17ef6694  bl        #0x4a7f180 ; objc:displayTextOptions (selref 0x650bba8)
+030C3528  fa0300aa  mov       x26, x0
+030C352C  e00316aa  mov       x0, x22
+030C3530  94ef6694  bl        #0x4a7f380 ; objc:displayType (selref 0x650bc28)
+030C3534  fb0300aa  mov       x27, x0
+030C3538  e8a301d0  adrp      x8, #0x6541000
+030C353C  00bd42f9  ldr       x0, [x8, #0x578]
+030C3540  b1036694  bl        #0x4a44404 ; indirect:_objc_allocWithZone
+030C3544  c7326794  bl        #0x4a90060 ; objc:init (selref 0x650ff60)
+030C3548  fc0300aa  mov       x28, x0
+030C354C  21b601d0  adrp      x1, #0x6789000
+030C3550  21a01a91  add       x1, x1, #0x6a8
+030C3554  e2a301b0  adrp      x2, #0x6540000
+030C3558  42201391  add       x2, x2, #0x4c8
+030C355C  000080d2  mov       x0, #0
+030C3560  c1043d97  bl        #0x4864
+030C3564  f40300aa  mov       x20, x0
+030C3568  40008052  mov       w0, #2
+030C356C  65f36594  bl        #0x4a40300
+030C3570  f40300aa  mov       x20, x0
+030C3574  ff330079  strh      wzr, [sp, #0x18]
+030C3578  e0ff00a9  stp       x0, xzr, [sp, #8]
+030C357C  ff0300f9  str       xzr, [sp]
+030C3580  e00318aa  mov       x0, x24
+030C3584  e20317aa  mov       x2, x23
+030C3588  e30319aa  mov       x3, x25
+030C358C  e4031aaa  mov       x4, x26
+030C3590  e5031baa  mov       x5, x27
+030C3594  201da94e  mov       v0.16b, v9.16b
+030C3598  e6031caa  mov       x6, x28
+030C359C  07008052  mov       w7, #0
+030C35A0  18276794  bl        #0x4a8d200 ; objc:heightForViewModel:options:displayTextOptions:displayType:width:layoutMetrics:richTextEnabled:trailingString:maxLines:attachmentDelegate:textKit2Enabled:cachingEnabled: (selref 0x650f3c8)
+030C35A4  0a1ca04e  mov       v10.16b, v0.16b
+030C35A8  e0031caa  mov       x0, x28
+030C35AC  ea036694  bl        #0x4a44554 ; indirect:_objc_release
+030C35B0  e00314aa  mov       x0, x20
+030C35B4  e8036694  bl        #0x4a44554 ; indirect:_objc_release
+030C35B8  e00317aa  mov       x0, x23
+030C35BC  25076694  bl        #0x4a45250 ; indirect:_swift_unknownObjectRelease
+030C35C0  4821601e  fcmp      d10, #0.0
+030C35C4  cd020054  b.le      #0x30c361c
+030C35C8  0800d0d2  mov       x8, #0x800000000000
+030C35CC  880ce8f2  movk      x8, #0x4064, lsl #48
+030C35D0  0001679e  fmov      d0, x8
+030C35D4  0b10641e  fmov      d11, #8.00000000
+030C35D8  0110641e  fmov      d1, #8.00000000
+030C35DC  e00316aa  mov       x0, x22
+030C35E0  221da94e  mov       v2.16b, v9.16b
+030C35E4  431daa4e  mov       v3.16b, v10.16b
+030C35E8  563f6894  bl        #0x4ad3340 ; objc:setFrame: (selref 0x6520c18)
+030C35EC  e00316aa  mov       x0, x22
+030C35F0  02008052  mov       w2, #0
+030C35F4  33446894  bl        #0x4ad46c0 ; objc:setHidden: (selref 0x65210f8)
+030C35F8  28b601d0  adrp      x8, #0x6789000
+030C35FC  084d43f9  ldr       x8, [x8, #0x698]
+030C3600  1f0500b1  cmn       x8, #1
+030C3604  a10e0054  b.ne      #0x30c37d8
+030C3608  28b601d0  adrp      x8, #0x6789000
+030C360C  005143fd  ldr       d0, [x8, #0x6a0]
+030C3610  4029601e  fadd      d0, d10, d0
+030C3614  0a286b1e  fadd      d10, d0, d11
+030C3618  0b000014  b         #0x30c3644
+030C361C  00e4006f  movi      v0.2d, #0000000000000000
+030C3620  01e4006f  movi      v1.2d, #0000000000000000
+030C3624  02e4006f  movi      v2.2d, #0000000000000000
+030C3628  03e4006f  movi      v3.2d, #0000000000000000
+030C362C  e00316aa  mov       x0, x22
+030C3630  443f6894  bl        #0x4ad3340 ; objc:setFrame: (selref 0x6520c18)
+030C3634  e00316aa  mov       x0, x22
+030C3638  22008052  mov       w2, #1
+030C363C  21446894  bl        #0x4ad46c0 ; objc:setHidden: (selref 0x65210f8)
+030C3640  0a10661e  fmov      d10, #16.00000000
+030C3644  28b601d0  adrp      x8, #0x6789000
+030C3648  08c942f9  ldr       x8, [x8, #0x590]
+030C364C  746a68f8  ldr       x20, [x19, x8]
+030C3650  28b601d0  adrp      x8, #0x6789000
+030C3654  17e142f9  ldr       x23, [x8, #0x5c0]
+030C3658  686a7738  ldrb      w8, [x19, x23]
+030C365C  29008052  mov       w9, #1
+030C3660  2201280a  bic       w2, w9, w8
+030C3664  e00314aa  mov       x0, x20
+030C3668  16446894  bl        #0x4ad46c0 ; objc:setHidden: (selref 0x65210f8)
+030C366C  686a7738  ldrb      w8, [x19, x23]
+030C3670  38b601d0  adrp      x24, #0x6789000
+030C3674  36b601d0  adrp      x22, #0x6789000
+030C3678  1f050071  cmp       w8, #1
+030C367C  a1020054  b.ne      #0x30c36d0
+030C3680  084743f9  ldr       x8, [x24, #0x688]
+030C3684  1f0500b1  cmn       x8, #1
+030C3688  01090054  b.ne      #0x30c37a8
+030C368C  cc4a43fd  ldr       d12, [x22, #0x690]
+030C3690  0800d0d2  mov       x8, #0x800000000000
+030C3694  880ce8f2  movk      x8, #0x4064, lsl #48
+030C3698  0b01679e  fmov      d11, x8
+030C369C  e00314aa  mov       x0, x20
+030C36A0  601dab4e  mov       v0.16b, v11.16b
+030C36A4  411daa4e  mov       v1.16b, v10.16b
+030C36A8  821dac4e  mov       v2.16b, v12.16b
+030C36AC  831dac4e  mov       v3.16b, v12.16b
+030C36B0  243f6894  bl        #0x4ad3340 ; objc:setFrame: (selref 0x6520c18)
+030C36B4  80296b1e  fadd      d0, d12, d11
+030C36B8  0110621e  fmov      d1, #4.00000000
+030C36BC  0b28611e  fadd      d11, d0, d1
+030C36C0  20396c1e  fsub      d0, d9, d12
+030C36C4  0110721e  fmov      d1, #-4.00000000
+030C36C8  0928611e  fadd      d9, d0, d1
+030C36CC  0a000014  b         #0x30c36f4
+030C36D0  00e4006f  movi      v0.2d, #0000000000000000
+030C36D4  01e4006f  movi      v1.2d, #0000000000000000
+030C36D8  02e4006f  movi      v2.2d, #0000000000000000
+030C36DC  03e4006f  movi      v3.2d, #0000000000000000
+030C36E0  e00314aa  mov       x0, x20
+030C36E4  173f6894  bl        #0x4ad3340 ; objc:setFrame: (selref 0x6520c18)
+030C36E8  0800d0d2  mov       x8, #0x800000000000
+030C36EC  880ce8f2  movk      x8, #0x4064, lsl #48
+030C36F0  0b01679e  fmov      d11, x8
+030C36F4  28b601d0  adrp      x8, #0x6789000
+030C36F8  08d542f9  ldr       x8, [x8, #0x5a8]
+030C36FC  746a68f8  ldr       x20, [x19, x8]
+030C3700  e00314aa  mov       x0, x20
+030C3704  201da94e  mov       v0.16b, v9.16b
+030C3708  011da84e  mov       v1.16b, v8.16b
+030C370C  b5986894  bl        #0x4ae99e0 ; objc:sizeThatFits: (selref 0x65265c0)
+030C3710  281ca14e  mov       v8.16b, v1.16b
+030C3714  686a7738  ldrb      w8, [x19, x23]
+030C3718  1f050071  cmp       w8, #1
+030C371C  21010054  b.ne      #0x30c3740
+030C3720  084743f9  ldr       x8, [x24, #0x688]
+030C3724  1f0500b1  cmn       x8, #1
+030C3728  c1040054  b.ne      #0x30c37c0
+030C372C  c04a43fd  ldr       d0, [x22, #0x690]
+030C3730  0038681e  fsub      d0, d0, d8
+030C3734  01106c1e  fmov      d1, #0.50000000
+030C3738  0008611e  fmul      d0, d0, d1
+030C373C  4a29601e  fadd      d10, d10, d0
+030C3740  e00314aa  mov       x0, x20
+030C3744  601dab4e  mov       v0.16b, v11.16b
+030C3748  411daa4e  mov       v1.16b, v10.16b
+030C374C  221da94e  mov       v2.16b, v9.16b
+030C3750  031da84e  mov       v3.16b, v8.16b
+030C3754  fb3e6894  bl        #0x4ad3340 ; objc:setFrame: (selref 0x6520c18)
+030C3758  e00315aa  mov       x0, x21
+030C375C  7e036694  bl        #0x4a44554 ; indirect:_objc_release
+030C3760  fd7b4ca9  ldp       x29, x30, [sp, #0xc0]
+030C3764  f44f4ba9  ldp       x20, x19, [sp, #0xb0]
+030C3768  f6574aa9  ldp       x22, x21, [sp, #0xa0]
+030C376C  f85f49a9  ldp       x24, x23, [sp, #0x90]
+030C3770  fa6748a9  ldp       x26, x25, [sp, #0x80]
+030C3774  fc6f47a9  ldp       x28, x27, [sp, #0x70]
+030C3778  e923466d  ldp       d9, d8, [sp, #0x60]
+030C377C  eb2b456d  ldp       d11, d10, [sp, #0x50]
+030C3780  ed33446d  ldp       d13, d12, [sp, #0x40]
+030C3784  ef3b436d  ldp       d15, d14, [sp, #0x30]
+030C3788  ff430391  add       sp, sp, #0xd0
+030C378C  c0035fd6  ret
+030C3790  20b601d0  adrp      x0, #0x6789000
+030C3794  00e01991  add       x0, x0, #0x678
+030C3798  e1ffffd0  adrp      x1, #0x30c1000
+030C379C  21503e91  add       x1, x1, #0xf94
+030C37A0  4f066694  bl        #0x4a450dc ; indirect:_swift_once
+030C37A4  d1feff17  b         #0x30c32e8
+030C37A8  20b601d0  adrp      x0, #0x6789000
+030C37AC  00201a91  add       x0, x0, #0x688
+030C37B0  e1ffffd0  adrp      x1, #0x30c1000
+030C37B4  21903e91  add       x1, x1, #0xfa4
+030C37B8  49066694  bl        #0x4a450dc ; indirect:_swift_once
+030C37BC  b4ffff17  b         #0x30c368c
+030C37C0  20b601d0  adrp      x0, #0x6789000
+030C37C4  00201a91  add       x0, x0, #0x688
+030C37C8  e1ffffd0  adrp      x1, #0x30c1000
+030C37CC  21903e91  add       x1, x1, #0xfa4
+030C37D0  43066694  bl        #0x4a450dc ; indirect:_swift_once
+030C37D4  d6ffff17  b         #0x30c372c
+030C37D8  20b601d0  adrp      x0, #0x6789000
+030C37DC  00601a91  add       x0, x0, #0x698
+030C37E0  e1fffff0  adrp      x1, #0x30c2000
+030C37E4  21600091  add       x1, x1, #0x18
+030C37E8  3d066694  bl        #0x4a450dc ; indirect:_swift_once
+030C37EC  87ffff17  b         #0x30c3608
