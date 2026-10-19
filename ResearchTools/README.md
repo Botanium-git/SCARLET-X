@@ -46,3 +46,14 @@ python3 ResearchTools/validate_imp_index.py \
 
 元の `SCARLET_MachO_Indexer` 自体は変更していない。新しい検証ツールで不適切なアドレスを除いた検索用コピーを作る。今後は生成直後の検証を必須とする。
 
+
+## repair_macho_indexer.py — 元インデクサの再現可能な修正
+
+元の `scarlet_macho_index.py` を残したまま、実行領域外のIMPを生成時に除外する修正版を作成する。
+
+```bash
+python3 ResearchTools/repair_macho_indexer.py --original scarlet_macho_index.py --output scarlet_macho_index_repaired.py
+python3 scarlet_macho_index_repaired.py build original.ipa -o XServiceLibraries_rebuilt.sqlite --framework XServiceLibraries
+```
+
+実物検証: XServiceLibrariesの再走査で18,600件。以前の `XServiceLibraries_validated.sqlite` との `(selector,imp)` 集合の差は0件だった。**修正スクリプトは元インデクサの該当文字列パターンが1回ずつ存在する場合だけ動く**。別版には無理にパッチを当てない。クラス所有者の抽出は未実装。
