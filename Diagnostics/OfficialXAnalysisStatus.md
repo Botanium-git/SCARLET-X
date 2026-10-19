@@ -56,3 +56,13 @@ This is a *findings register*, not a substitute for raw binary data or the full 
 - Body font-options construction, token choices by numeric displayType, minimum line height and minimum/maximum line spacing setup are reconstructed. Exact runtime token sizes, Dynamic Type and ordinary timeline option values remain unconfirmed.
 - Attribute initialization resolves to NSMutableAttributedString(TFSFillTemplates), not a standalone class implementation. Paragraph settings are Core Text settings, not a guessed NSParagraphStyle.lineSpacing value.
 - Body content update/model assignment, effective width with optional selection padding and internal renderer frame assignment are traced. Parent cell composition and UITableView row integration remain pending.
+
+## 2026-10-19 status reconciliation after OX-022
+
+This section supersedes earlier *Not yet confirmed* bullets only where explicitly updated; older historical statements remain for provenance.
+
+- **Now statically established:** TTAStatusBodyTextView has separate attributed-model-height (displayType 0/3/4/5/6) and selectable-text sizing (1/2) branches. Model height is connected to TFNTwitterStatus / TFNTwitterDisplayTextModel / TFNAttributedTextModel for the attributed path, with cache and option-dependent branches. Swift-side caller 0x30C31C0..0x30C37F0 uses returned height to set body view frame/visibility (OX-022).
+- **Still unknown:** whether that Swift caller belongs to ordinary timeline, runtime displayType/textOptions/flags, actual font token point sizes and Dynamic Type conditions, effective layoutMetrics lineHeight, selectable/TextKit2 measurement and drawing, final cell/UITableView height, and official X device-level parity.
+- **Do not infer:** 3.0 in Core Text size computation equals the separate font-line-height adjustment; caller-side layout 8.0 is not an intrinsic text-height addition. No app typography changes based only on these findings.
+- **Evidence hygiene:** OX-022's LLVM hexadecimal columns are 32-bit **instruction words**, not literal file-order bytes. See the retained record and appended correction in OfficialXTextSizingDisassembly.md.
+- **Recommended research order:** (1) identify caller owner and whether it is timeline; trace runtime displayType/options/width, (2) resolve font tokens/Dynamic Type/layoutMetrics and selection padding, (3) separately reconstruct Selectable/TextKit2 and attributed renderer, (4) trace body-to-cell height aggregation, (5) controlled same-device screenshot/measurement comparison, then and only then consider app changes.
