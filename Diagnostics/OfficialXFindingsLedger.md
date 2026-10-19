@@ -257,3 +257,8 @@ WHERE name LIKE '%TFNSizeThatFitsHelper%';
 
 - **OX-038（前回2経路のowner確定）**: 元T1Twitter Mach-Oの**メタクラス→relative method list→selector selref→IMP**を直接照合。OX-037経路A `0x2080F4` は `+[T1QuotedStandardStatusView _t1_viewAdapterSetWithLayoutMetrics:]`（meta `0x1AEAF78`、method list `0x1392710`、selref `0x1A9BC30`）。経路B `0x2C4FEC` は `+[T1DirectMessageConversationStatusView _t1_viewAdapterSetWithMaxWidth:]`（meta `0x1AEDE58`、method list `0x13917C8`、selref `0x1A9BC38`）。前回確認済みのbody adapterへのmaximumSizeBlock設定は**引用投稿ビュー/DM投稿ビューの生成処理内部**である。
 - **解釈上の訂正**: これら2経路の高さ0 blockを通常のホームタイムライン本文に適用してよい根拠はない。引用投稿はホーム上でも表示され得るため「ホームで使用されない」との断定もしない。通常の標準投稿におけるblock設定有無、全呼出し元、runtime表示条件は未確認。詳細は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-038。アプリ本体/main/バージョン変更なし、実機観測なし。
+
+## 2026-10-19 — OX-039
+
+- T1Twitter `T1StandardStatusViewLayoutStateGenerator._t1_viewAdapterSet` (0x2A7410) creates `T1StandardStatusBodyViewAdapter` through classref `0x1AD48A8` (rebase to `0x1AF28B8`) around 0x2A75C4..0x2A75DC. Initializer receives w2=14, x3=0, x4=0; exact selector and semantic meaning unresolved.
+- The **only directly observed** `setMaximumSizeBlock:` BL in disassembly range 0x2A7410..0x2A8560 is `0x2A7648`, with **`T1StandardStatusAttachmentViewAdapter`** (classref `0x1AD48B8`) as receiver and block `0x187BB08` as argument. Thus the already-confirmed height=0 block here applies to attachment, not directly to body. This does not prove the body adapter's block is nil or absent in runtime. See [OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-039. No app/main/version changes.
