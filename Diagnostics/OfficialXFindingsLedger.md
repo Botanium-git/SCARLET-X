@@ -252,3 +252,8 @@ WHERE name LIKE '%TFNSizeThatFitsHelper%';
 - **OX-037**: classref `0x1AD48A8`→`T1StandardStatusBodyViewAdapter` class `0x1AF28B8`をdyld-infoで解決し、本文adapter自身をreceiverとする`setMaximumSizeBlock:`呼出しを **2経路**で確認。`_t1_viewAdapterSetWithLayoutMetrics:` (IMP `0x2080F4`) は生成した本文adapter `[sp,#0x98]`に`0x208540`でglobal block `0x1879160`（invoke `0x2088AC`, height=0）を設定。`_t1_viewAdapterSetWithMaxWidth:` (IMP `0x2C4FEC`) は生成した本文adapter `[sp,#0x58]`に`0x2C5214`でstack/copy block（invoke `0x2C53D4`, height=0）を設定。
 - **OX-036精密化**: 0x208530..0x208650 の19 setter callsiteのうち、同一block `0x1879160`なのは `0x208530..0x208620`の**16件**。0x208630は`0x18791C0`、0x208640と0x208650は`0x1879180`。以前の「19件が同一block」は不正確だったため訂正。
 - OX-032のheight cap条件 `maximumSizeBlock.height>0` と合わせ、**この2経路は高さ上限をblockから指定しない**と判断できる。ただし他の経路、通常タイムラインでの実際の採用条件、実機観測は未確認。解析詳細は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-037。アプリ本体/main/バージョン変更なし。
+
+## 2026-10-19 継続調査 — OX-038
+
+- **OX-038（前回2経路のowner確定）**: 元T1Twitter Mach-Oの**メタクラス→relative method list→selector selref→IMP**を直接照合。OX-037経路A `0x2080F4` は `+[T1QuotedStandardStatusView _t1_viewAdapterSetWithLayoutMetrics:]`（meta `0x1AEAF78`、method list `0x1392710`、selref `0x1A9BC30`）。経路B `0x2C4FEC` は `+[T1DirectMessageConversationStatusView _t1_viewAdapterSetWithMaxWidth:]`（meta `0x1AEDE58`、method list `0x13917C8`、selref `0x1A9BC38`）。前回確認済みのbody adapterへのmaximumSizeBlock設定は**引用投稿ビュー/DM投稿ビューの生成処理内部**である。
+- **解釈上の訂正**: これら2経路の高さ0 blockを通常のホームタイムライン本文に適用してよい根拠はない。引用投稿はホーム上でも表示され得るため「ホームで使用されない」との断定もしない。通常の標準投稿におけるblock設定有無、全呼出し元、runtime表示条件は未確認。詳細は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-038。アプリ本体/main/バージョン変更なし、実機観測なし。
