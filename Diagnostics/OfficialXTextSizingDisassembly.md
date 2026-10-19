@@ -733,3 +733,5 @@ llvm-objdump -d --start-address=0x329b50 --stop-address=0x329ba0 T1Twitter
 llvm-objdump -d --start-address=0x329e70 --stop-address=0x329ea0 T1Twitter
 llvm-objdump --macho --dyld-info T1Twitter | grep 1AD48B8
 ```
+
+**追加確認（OX-036）**: `0x208530..0x208650`の連続19 callsiteは、いずれもx2に**同一のglobal block** VM `0x1879160`を渡す（前半・後半の命令列を観察）。当該block literalのinvoke pointer (VM+0x10) は **`0x2088AC`**。その実命令は `mov x0,x2; bl 0x12E51E0; fmov d1,xzr; ret` であり、**戻りCGSizeの第二成分（高さ）は0**。`0x12E51E0`のselectorがまだ未解決のため、第一成分をbodyWidthと断定しない。この19件は**19個の独立したblock実装ではなく、同一blockを複数のadapterへ配布する設定**と読める。`0x208514..0x208520`の条件分岐の後でこの設定列へ入る。
