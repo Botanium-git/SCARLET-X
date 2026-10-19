@@ -200,3 +200,9 @@ WHERE name LIKE '%TFNSizeThatFitsHelper%';
 - **OX-028（T1Twitter実Mach-Oのstub/bind照合）**: OX-027の未解決演算を再調査。`0x2AED94 -> 0x12A9694`は`_TFNBaselineEdgeInsetsForNonTextWithSimulatedFont`へのchained bind（GOT `0x1868000`）、`0x2AEDE0 -> 0x12A99AC`は`_TFNVerticalSpacingForBaselineEdgeInsets`へのbind（GOT `0x18682C0`）。`0x2AEDB0`/`0x2AEDF0`のreceiverに対するselectorは`objectAtIndexedSubscript:`（引数index=5）、`0x2AEE00`はその返却オブジェクトに対する`frame`。後続の`fsub d11,d8,d1`ではframeの第2double成分を引く。
 - **区別**: この演算をCore Text本文高さの直接合成とは扱わない。非テキスト用baseline間隔とview frame位置の計算が関与している。index 5は本文displayType 5ではない。collectionの型、選ばれたview、d8/d14由来、補助関数内部式、最終セルサイズは未確定。旧OX-027は保存し解決情報を追記。
 - 生証拠のslot/命令・再現コマンドは[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-028。公式X実機観測なし、アプリ本体/main/バージョン変更なし。
+
+## 2026-10-19 継続調査 — OX-029
+
+- **OX-029（T1Twitter Mach-O class owner解析）**: `T1StandardStatusBodyViewAdapter`のnlist class `0x1AF28B8`→ro `0x19AD578`→relative instance method list `0x13D15F0`（header `0x8000000C`、36件）を元Mach-Oで確認。特に`initializeView` 0x3BA7C0、`setViewModel:forView:` 0x3BA890、`layoutStateForViewModel:layoutMetrics:` 0x3BAE90、`_t1_displayTextOptionsForViewModel:` 0x3BB778、`displayType` 0x3BBED4、`displayLocation` 0x3BBEE4をowner付きで抽出。本文のタップ・省略表示トークンdelegateも持つ。
+- **実命令**: layoutStateForViewModel:layoutMetrics:の非nil経路に`0x3BAF28 ldr x8,[x0,#0x10]`→`0x3BAF34 blr x8`の間接関数呼び出し、返されたv0/v1の保存、`0x3BAF50 fcmp d8,#0`を確認。これは単純な直接selector呼び出しではない。対象callbackの所有元/値の意味を解明するまで本文高さAPIや最終セル高との同一性を断定しない。
+- **留保**: 通常タイムラインでのruntime使用、TTAStatusBodyTextViewへの接続、displayTypeとフォント実値は未確認。詳細は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-029。アプリ本体/main/バージョン変更なし。
