@@ -634,3 +634,21 @@ llvm-objdump -d --start-address=0x12f8400 --stop-address=0x12f8414 T1Twitter
 llvm-objdump -d --start-address=0x1333c60 --stop-address=0x1333c74 T1Twitter
 llvm-objdump -d --start-address=0x13156c0 --stop-address=0x13156d4 T1Twitter
 ```
+
+
+## OX-033 — 本文paddingの静的戻り値追跡（2026-10-19）
+
+一次資料: 手元のX v12.25 XAppLibraries Mach-O。OX-032で解決したTTAStatusBodyTextViewの二つのclass methodを再度実命令で検査（`llvm-objdump -d --start-address=0x2cccbc0 --stop-address=0x2cccbf8 XAppLibraries`）。SQLiteの`objc_methods`には同クラスmethods list `0x4B27B30`上の`selectionPadding` IMP `0x2CCCBD0`、`linkTapDetectionBottomPadding` IMP `0x2CCCBDC`がある。**実命令でメソッド開始位置と処理を再確認した**。
+
+- `0x2CCCBDC fmov d0,#6.00000000`, `0x2CCCBE0 ret`。**TTAStatusBodyTextView.linkTapDetectionBottomPadding は定数6.0（CGFloat/double）を返す**。
+- `0x2CCCBD0 adrp x8,...; 0x2CCCBD4 ldr x0,[x8,#0xD98]; 0x2CCCBD8 b 0x4AC9820`。対象classref slot `0x6540D98`を`llvm-objdump --macho --dyld-info`で検査し、XServiceLibraries `_OBJC_CLASS_$_TFNAttributedTextView`へbindと確認。`0x4AC9820` objc stubのselref slot `0x651E550`→メソッド文字列`selectionPadding`（低36bit pointer `0x58B5147`、SQLite stringsと一致）。つまり **TTAStatusBodyTextView.selectionPadding は TFNAttributedTextView.selectionPadding へのクラスメソッド転送**。具体的なpt定数は**XServiceLibraries側を解析するまで未確定**。
+- OX-032で確認したoptions bit33 offの経路だけで `linkTapDetectionBottomPadding`の6.0と `selectionPadding`の戻り値がレイアウト式へ使われる。bit33 onはこの二つの値を0として処理する。**全ての本文セルの高さに6ptを足す、とは解釈しない**。
+- `maximumSizeBlock`の設定元・invoke実体はこの追加検査の範囲では未解決。通常タイムラインの実際のbit33とdisplayTypeも未確認。アプリコード/main/バージョン未変更。
+
+再現:
+```sh
+llvm-objdump -d --start-address=0x2cccbc0 --stop-address=0x2cccbf8 XAppLibraries
+llvm-objdump --macho --dyld-info XAppLibraries | grep 6540D98
+llvm-objdump -d --start-address=0x4ac9820 --stop-address=0x4ac9834 XAppLibraries
+llvm-objdump --macho --section=__objc_selrefs --full-contents XAppLibraries | grep '^ 651e550'
+```
