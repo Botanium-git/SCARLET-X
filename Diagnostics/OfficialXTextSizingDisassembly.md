@@ -539,3 +539,32 @@ llvm-objdump --macho --syms T1Twitter | grep 'OBJC_CLASS_\\$_T1StandardStatusBod
 llvm-objdump -d --start-address=0x3bae90 --stop-address=0x3bb1a0 T1Twitter
 llvm-objdump -d --start-address=0x3ba7c0 --stop-address=0x3ba890 T1Twitter
 ```
+
+
+## OX-030 — standard body adapterの生成ビューと最大サイズblockを解決（2026-10-19）
+
+対象T1Twitter SHA-256 `1af51e57d746a81546da299e103241da9682ac397f33475defec7f6a3e6e5ccd`、XAppLibraries SHA-256 `ce10ca22abc997bfc3eb7732be33c198175994e24a421219cf0808c6e7882249` を本ターン再計算一致。T1Twitterの実Mach-Oの `__objc_stubs` 内`ADRP x1`＋`LDR x1`から`__objc_selrefs`を読み、low36 targetが`__objc_methname`の文字列になることを確認。`llvm-objdump --macho --dyld-info T1Twitter`でclassrefのbindも照合。
+
+**1. initializeView = 実際にTTAStatusBodyTextViewを生成する接続**
+
+- `0x3BA7D0..0x3BA7D8` はclassref slot `0x1AD5FC8`を読んで`0x12B02F4`（alloc系stub）へ送る。slotはchained bind `_OBJC_CLASS_$_TTAStatusBodyTextView`、dylib `XAppLibraries` と解決。
+- `0x3BA7E8` は `0x12FF2A0` へBL。このObjC stubのselref slot `0x1AA7E70`→name `initWithDisplayType:`。引数x2はadapterのivarからロード（`0x3BA7E0..E4`）された値。`0x3BA7F4` のtail branchは別のretain/autorelease系stubだが、未解決のため正確な意味は断定しない。
+- 従って **T1StandardStatusBodyViewAdapter.initializeView → TTAStatusBodyTextView alloc/initWithDisplayType:** は静的に確認。通常タイムラインのruntime displayType数値とこのadapterの採用条件は別途未確認。
+
+**2. layoutStateForViewModel:layoutMetrics:の間接呼出しはmaximumSizeBlock**
+
+- `0x3BAF00`（receiver x24=adapter）からObjC stub `0x1319BA0` を呼び、戻りオブジェクトをx23に保持。`0x1319BA0`のselref slot `0x1AAE8B0`→ `maximumSizeBlock`。
+- x23がnon-nilの場合、再度 `maximumSizeBlock` を取得し、`0x3BAF28 ldr x8,[x0,#0x10]`、`0x3BAF2C mov x1,x19`（viewModel）、`0x3BAF30 mov x2,x20`（layoutMetrics）、`0x3BAF34 blr x8` でblockのinvoke pointerを実行。これは**任意の不明なメソッドポインタではなく、adapterのmaximumSizeBlock経由の間接呼出し**である。block invokeの具体的実装アドレス・設定元は未追跡。
+- 戻りのv0/v1をv8/v9に保存し、`0x3BAF50 fcmp d8,#0`。幅の成分が0の経路では、`0x12DB600` selector `bodyWidth`（selref `0x1A9EF48`）をx20=layoutMetricsへ送信し、返るv0をv8へ保存（`0x3BAF58..60`）。このため幅0時にはlayoutMetrics.bodyWidthを採用するフォールバックがあると読める。
+- 同関数`0x3BAEDC`のstub `0x12BB1C0`はselref slot `0x1A96E38`→ `_t1_convertToAutoTranslatedViewModelIfNeeded:`。自動翻訳用モデル変換分岐があるが、返りmodelの実型と通常タイムラインでの採用条件は未確認。
+- `0x3BB074..0x3BB080`の条件付き-8.0は別フラグによって幅候補d8を調整。本文高さの一律-8ptとは解釈しない。
+
+**現時点の結論**: OX-029の不明なclassref / 間接callbackは上記の範囲で解消し、body adapter→TTAStatusBodyTextView生成の**実接続**も確認した。未解決は (a) maximumSizeBlockの設定元とblock invoke実装/戻りCGSizeの利用全体、(b) このadapterが通常タイムラインで選ばれる実条件、(c) adapterの`displayType`/`displayTextOptions`とTTA height APIへの値の伝播、(d) 最終layout state.size/セル高への合成。静的証拠であり、公式X実機の表示一致を意味しない。アプリ本体/main/バージョンは変更しない。
+
+再現:
+```sh
+llvm-objdump --macho --dyld-info T1Twitter | grep '0x1AD5FC8'
+llvm-objdump -d --start-address=0x3ba7c0 --stop-address=0x3ba7f8 T1Twitter
+llvm-objdump -d --start-address=0x3bae90 --stop-address=0x3bb0b0 T1Twitter
+llvm-objdump -d --start-address=0x1319ba0 --stop-address=0x1319bb4 T1Twitter
+```
