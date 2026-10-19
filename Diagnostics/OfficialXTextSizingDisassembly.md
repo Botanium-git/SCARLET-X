@@ -798,3 +798,12 @@ llvm-objdump --macho --syms T1Twitter | grep -E 'OBJC_METACLASS_\\$_(T1QuotedSta
 llvm-objdump -d --start-address=0x2080f4 --stop-address=0x208160 T1Twitter
 llvm-objdump -d --start-address=0x2c4fec --stop-address=0x2c5040 T1Twitter
 ```
+
+
+## OX-039 — StandardStatus generator: body creation vs attachment maximumSizeBlock (2026-10-19)
+
+Primary binary: T1Twitter SHA-256 `1af51e57d746a81546da299e103241da9682ac397f33475defec7f6a3e6e5ccd` (rechecked). In `_t1_viewAdapterSet` IMP `0x2A7410`, `0x2A75C4` loads classref `0x1AD48A8`, rebased to `T1StandardStatusBodyViewAdapter` class `0x1AF28B8`; calls alloc stub at `0x2A75C8`, initializer stub `0x13055A0` at `0x2A75D8` with w2=14,x3=0,x4=0, and saves object in x21 at `0x2A75DC`. Exact initializer selector and meaning of 14 require further resolution.
+
+Separately `0x2A7618..0x2A762C` allocates `T1StandardStatusAttachmentViewAdapter` via classref `0x1AD48B8`; its instance is x23. At `0x2A7648`, the receiver is this x23, argument x2 global block `0x187BB08`, and target objc stub `0x13444E0` is `setMaximumSizeBlock:`. A search of disassembled instructions over `0x2A7410..0x2A8560` found only this one direct BL to that setter stub, not a direct call with the body adapter as receiver. This does NOT exclude indirect dispatch, setters elsewhere, or default blocks, and does not prove home timeline runtime conditions or nil block state. The block's zero height concerns attachment, not body. Source app unchanged.
+
+Reproduce with `llvm-objdump -d --start-address=0x2a75c0 --stop-address=0x2a7650 T1Twitter`, and dyld-info rebase entries for `0x1AD48A8` and `0x1AD48B8`.
