@@ -219,3 +219,9 @@ WHERE name LIKE '%TFNSizeThatFitsHelper%';
 - **OX-031（T1Twitter実命令）**: `T1StandardStatusBodyViewAdapter layoutStateForViewModel:layoutMetrics:` 0x3BAE90の後半を再解析。`maximumSizeBlock`がnilなら`layoutMetrics.bodyWidth`と高さ0を候補とし、blockがあれば結果のv0/v1を幅/高さ候補として保持。幅が0ならbodyWidth、条件付き幅-8pt分岐も存在。
 - **サイズ合成**: `0x3BB270..0x3BB2AC`で幅d8・高さd9が両方正のとき、`W=d8+2*d10`, `H=d9+d11+2*d10`を形成して後続callへ渡す。どちらかが0以下なら別のメモリ定数からサイズを設定する分岐。**d10/d11をpaddingと確定したわけではない**。同じ関数の後続にTTAStatusBodyTextView classrefを使用する箇所もあるが、具体的selector・最終size・通常タイムライン採用は未確認。
 - 根拠の命令語・PCと未解決範囲は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-031。アプリ本体・main・バージョン未変更、公式X実機未確認。
+
+## 2026-10-19 継続調査 — OX-032
+
+- **OX-032：本文height APIへの直接接続を解決**。T1Twitter `T1StandardStatusBodyViewAdapter layoutStateForViewModel:layoutMetrics:` 0x3BB158 のobjc stub `0x12F8400`は、`TTAStatusBodyTextView heightForViewModel:options:displayTextOptions:displayType:width:layoutMetrics:richTextEnabled:trailingString:maxLines:attachmentDelegate:textKit2Enabled:cachingEnabled:` selector。続いて返るheightとmaximumSizeBlock側の高さ候補d9を `d9>0 ? fminnm(d9, heightAPIResult) : heightAPIResult` で統合する。
+- **d10/d11の意味**: optionsのbit33がoffなら、TTAStatusBodyTextViewのクラスメソッド `selectionPadding` → d10、`linkTapDetectionBottomPadding` → d11。bit33がonなら両者0。正のサイズ候補では `W=d8+2*d10`、`H=d9+d11+2*d10` をレイアウト状態へ `setSize:`、その後 `setAdditionalEdgeInsets:` で負の差分を記録。非正の別サイズ分岐も確認。
+- `displayType`は1/2比較に使用。後段はTTAStatusBodyTextViewの`fontForViewModel:options:displayTextOptions:displayType:width:layoutMetrics:`も呼ぶ。**ただし通常タイムライン採用条件・実際のdisplayType、bit33の機能名、padのpt数、maximumSizeBlock設定元はまだ未確認**。詳細は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-032。アプリ本体/main/バージョン未変更。
