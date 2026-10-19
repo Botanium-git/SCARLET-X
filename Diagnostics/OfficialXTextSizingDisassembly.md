@@ -676,3 +676,31 @@ llvm-objdump --macho --section=__objc_selrefs --full-contents XAppLibraries | gr
 llvm-objdump --macho --syms XServiceLibraries | grep '_OBJC_METACLASS_\\$_TFNAttributedTextView'
 llvm-objdump -d --start-address=0xcb52a0 --stop-address=0xcb52b0 XServiceLibraries
 ```
+
+
+## OX-035 — maximumSizeBlockの所有クラス・ivarを解決（2026-10-19）
+
+一次資料: X v12.25 T1Twitter SHA-256 `1af51e57d746a81546da299e103241da9682ac397f33475defec7f6a3e6e5ccd`、XServiceLibraries SHA-256 `09e830331f35a7806f477cd0cbd497642461c44face5f818d39f9abd0b3040fc`（両方再計算一致）。各元Mach-Oのclass / relative method list / disassemblyおよびdyld chained bindを照合。
+
+- T1Twitter `_OBJC_CLASS_$_T1StandardStatusBodyViewAdapter` at **0x1AF28B8** のsuperclass field **0x1AF28C0** はchained bind **`_OBJC_CLASS_$_TFNComposableViewAdapter` (XServiceLibraries)**。これはOX-029本文adapterの直接superclass。
+- T1Twitter同クラスのown instance method list `0x13D15F0`（header `0x8000000C`、36件）を列挙すると、`maximumSizeBlock`/`setMaximumSizeBlock:`は含まれない。所有元は継承先。
+- XServiceLibraries `_OBJC_CLASS_$_TFNComposableViewAdapter` **0x4423710** → class_ro → relative instance method list **0x2FB4810**（header `0x8000000C`、28件）を直接解析すると:
+  - entry **0x2FB4944** `maximumSizeBlock` → IMP **0xCD8038**
+  - entry **0x2FB4950** `setMaximumSizeBlock:` → IMP **0xCD8040**
+- 実命令:
+```asm
+0xCD8038 ldr x0,[x0,#0x30]
+0xCD803C ret
+0xCD8040 mov w3,#0x30
+0xCD8044 b 0x2ED6624
+```
+ getterはインスタンスoffset **0x30** から返す。setterは0x30を引数に共通の保存ルーチンへ分岐（当該保存ルーチンの詳細と参照/コピーsemanticは未検証）。
+- **結論**: 本文adapterのサイズ上限制御に使う`maximumSizeBlock`はT1固有プロパティではなく、XServiceLibraries側の汎用`TFNComposableViewAdapter`から継承したもの。OX-030で見つかった`BLR`がそのblockをinvokeすることと合わせて、保存先は具体的に特定できた。
+- **未解決**: `setMaximumSizeBlock:`の実呼出し元とblock invoke本体、どの本文表示条件で設定されるか、通常タイムラインの採用条件、表示時の具体的サイズ。T1Twitter自クラスにsetterがないことは、他クラス/生成処理がsetterを呼ぶかどうかの否定にはならない。アプリ本体/main/バージョン・実機検証なし。
+
+再現コマンド:
+```sh
+llvm-objdump --macho --dyld-info T1Twitter | grep '0x1AF28C0'
+llvm-objdump --macho --syms XServiceLibraries | grep '_OBJC_CLASS_\\$_TFNComposableViewAdapter'
+llvm-objdump -d --start-address=0xcd8028 --stop-address=0xcd8048 XServiceLibraries
+```
