@@ -735,3 +735,36 @@ llvm-objdump --macho --dyld-info T1Twitter | grep 1AD48B8
 ```
 
 **追加確認（OX-036）**: `0x208530..0x208650`の連続19 callsiteは、いずれもx2に**同一のglobal block** VM `0x1879160`を渡す（前半・後半の命令列を観察）。当該block literalのinvoke pointer (VM+0x10) は **`0x2088AC`**。その実命令は `mov x0,x2; bl 0x12E51E0; fmov d1,xzr; ret` であり、**戻りCGSizeの第二成分（高さ）は0**。`0x12E51E0`のselectorがまだ未解決のため、第一成分をbodyWidthと断定しない。この19件は**19個の独立したblock実装ではなく、同一blockを複数のadapterへ配布する設定**と読める。`0x208514..0x208520`の条件分岐の後でこの設定列へ入る。
+
+
+## OX-037 — standard body adapterへのmaximumSizeBlock設定を二経路で確認（2026-10-19）
+
+一次資料: 同一X v12.25 `T1Twitter` Mach-O、`scarlet_macho(1).sqlite`（メソッド候補照合のみ）。`llvm-objdump --macho --dyld-info T1Twitter`でclassref **0x1AD48A8 → rebase 0x1AF28B8**、`_OBJC_CLASS_$_T1StandardStatusBodyViewAdapter`と直接確認した。前回OX-036に記録した`setMaximumSizeBlock:` ObjC stub **0x13444E0**へのBLからreceiverと渡すblockを追跡した。
+
+**経路A — `_t1_viewAdapterSetWithLayoutMetrics:` IMP 0x2080F4**
+- `0x2081B4..0x2081CC`: classref slot 0x1AD48A8からalloc→初期化相当の呼び出しを行い、本文adapter生成結果を`[sp,#0x98]`へ格納する。
+- `0x208534..0x208540`: x2にglobal block **0x1879160**を設定し、`ldr x0,[sp,#0x98]`→ `bl 0x13444E0`（`setMaximumSizeBlock:`）。よって**body adapterが直接setter receiver**である。
+- 同blockのinvoke **0x2088AC** は `mov x0,x2; bl 0x12E51E0; fmov d1,xzr; ret`、少なくとも**CGSize高さ成分0**を返す。幅を取得するselector（objc selref 0x1AA1640）は未解決。
+- **訂正・精密化**: OX-036は`0x208530..0x208650`の19か所を「同一block」と広く表現したが、実命令では`0x208530..0x208620`の**16か所**のみ同一block 0x1879160。`0x208630`は0x18791C0、`0x208640`/`0x208650`は0x1879180で**別block**。本文adapterの`0x208540`は確実に16か所の共通block側。
+
+**経路B — `_t1_viewAdapterSetWithMaxWidth:` IMP 0x2C4FEC**
+- `0x2C5030..0x2C505C`: メモリ上にblock literalを構築、invoke pointerに **0x2C53D4**を設定し、`_Block_copy`系処理の戻りを`[sp,#0x48]`へ格納。captured値としてd8（本関数入口のv0）も格納する。
+- `0x2C5098..0x2C50B0`: 同じbody adapter classref slot **0x1AD48A8** を用いた生成処理、結果を `[sp,#0x58]` に格納する。
+- `0x2C5208..0x2C5214`: `ldr x0,[sp,#0x58]`、`ldr x19,[sp,#0x48]`、`mov x2,x19`、`bl 0x13444E0`。従って**この経路でもbody adapterへ上記stack/copy blockを設定**する。
+- block invoke **0x2C53D4** はcaptured double（block offset+0x20）を使うObjC呼び出し後、`0x2C5414 fmov d1,xzr`を実行し、高さ成分0を返す。幅成分がcaptured値そのものか、どのようなオブジェクト値と組み合わせるかはstubのselector/ABI解決前に断定しない。
+
+**意味と制限**
+- OX-032で実証した本文adapterの高さ採用規則は、`maximumSizeBlock.height > 0`のときのみAPI計測高さをcapし、0ならheight API結果を採用。上記**二経路の実blockはheight=0**なので、これらの経路ではblockが**正の高さ上限を与えていない**。
+- ただし上記2箇所がすべての本文adapter生成経路を網羅している証拠はまだない。ほかのsetter callsiteやruntimeでのblock差替えの有無、実際の通常タイムライン利用は未確定。現段階で「公式Xは本文最大行数・高さを制限しない」と一般化しない。
+- 本文adapterへのblock設定元を**実装アドレスまで確定した**のがOX-037の成果。実機未計測。アプリ本体/main/バージョン変更なし。
+
+再現:
+```sh
+llvm-objdump --macho --dyld-info T1Twitter | grep 1AD48A8
+llvm-objdump -d --start-address=0x2081b0 --stop-address=0x2081d0 T1Twitter
+llvm-objdump -d --start-address=0x208520 --stop-address=0x208658 T1Twitter
+llvm-objdump -d --start-address=0x2c5030 --stop-address=0x2c5060 T1Twitter
+llvm-objdump -d --start-address=0x2c5090 --stop-address=0x2c50b4 T1Twitter
+llvm-objdump -d --start-address=0x2c5200 --stop-address=0x2c5224 T1Twitter
+llvm-objdump -d --start-address=0x2c53d4 --stop-address=0x2c5428 T1Twitter
+```
