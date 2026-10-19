@@ -274,3 +274,7 @@ WHERE name LIKE '%TFNSizeThatFitsHelper%';
 ## 2026-10-19 — OX-042
 
 - T1Twitter ObjC selector `layoutStateForViewModel:options:account:layoutMetrics:withPreviousLayoutState:` has stub `0x1314C80`, selector ref `0x1AAD4E8`; ARM64 `BL` scan found **7 direct calls to the selector stub**, at `0x25F400`, `0x25FEC0`, `0x2A8B30`, `0x2EF85C`, `0x32A678`, `0x32A90C`, `0x8498F0`. This does not contradict OX-041's zero direct calls to the generator IMP `0x2AE63C` because these are dynamic ObjC method dispatches. The receiver class at each site remains unverified, so normal home timeline use of `T1StandardStatusViewLayoutStateGenerator` is still **not established**. See [OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-042. No app/main/version change.
+
+## 2026-10-19 — OX-043
+
+- T1Twitter callsite `0x2A8B30` (OX-042) receiver x22 is derived from the `layoutStateGenerator` getter: objc stub `0x1314CC0`, selref `0x1AAD4F8` → method name `layoutStateGenerator`. Result retained into x22 at `0x2A8ABC`; `0x2A8B18` copies x22 to x0 before `layoutStateForViewModel:options:account:layoutMetrics:withPreviousLayoutState:` selector send. This confirms **getter-result dispatch**, not the concrete runtime generator class. Containing owner, property assignment and home-timeline dispatch remain unverified. Full evidence: [OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-043. No app/main/version change.
