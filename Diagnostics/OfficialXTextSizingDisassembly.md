@@ -506,3 +506,36 @@ llvm-objdump -d --start-address=0x131ec80 --stop-address=0x131ec94 T1Twitter
 llvm-objdump -d --start-address=0x12f3b40 --stop-address=0x12f3b54 T1Twitter
 llvm-objdump --macho --dyld-info T1Twitter | grep -Ei '0x1868000|0x18682C0'
 ```
+
+## OX-029 — T1StandardStatusBodyViewAdapterの所有者とレイアウト入口（2026-10-19）
+
+一次資料: T1Twitter SHA-256 `1af51e57d746a81546da299e103241da9682ac397f33475defec7f6a3e6e5ccd`（本ターン再計算一致）。`scarlet_macho(1).sqlite`の参照に加え、Mach-Oの`_OBJC_CLASS_$_T1StandardStatusBodyViewAdapter`とrelative method listを**直接**読み、セレクタ・型・IMPを照合した。nlist class=**0x1AF28B8** → class_ro（low36）=**0x19AD578**、class name=`T1StandardStatusBodyViewAdapter`、baseMethods=**0x13D15F0**、list header=`0x8000000C`、**36件**（instance methods）。
+
+関係が深いowner付きメソッド（unslid VM address）:
+
+| selector | IMP | Objective-C type |
+|---|---|---|
+| `initWithViewIdentifier:displayType:displayLocation:` | `0x3BA434` | `@40@0:8q16Q24Q32` |
+| `shouldBeVisibleForViewModel:` | `0x3BA520` | `B24@0:8@16` |
+| `initializeView` | `0x3BA7C0` | `@16@0:8` |
+| `setViewModel:forView:` | `0x3BA890` | `v32@0:8@16@24` |
+| `layoutStateForViewModel:layoutMetrics:` | `0x3BAE90` | `@32@0:8@16@24` |
+| `isLayoutState:validForViewModel:layoutMetrics:` | `0x3BB4CC` | `B40@0:8@16@24@32` |
+| `_t1_displayTextOptionsForViewModel:` | `0x3BB778` | `Q24@0:8@16` |
+| `displayType` | `0x3BBED4` | `Q16@0:8` |
+| `displayLocation` | `0x3BBEE4` | `Q16@0:8` |
+
+このクラスは `bodyTextView:didTapActiveTextRange:` (0x3BBA30), `bodyTextViewDidTapTruncationToken:` (0x3BBB0C) 等の本文操作delegate selectorも保持する。従って単なる汎用セルより**本文処理に直接関係する所有クラス候補**として大きく前進した。ただし実際の通常タイムラインでこのadapterが選ばれたruntime観測は未実施。
+
+`llvm-objdump -d`の実命令から:
+- `initializeView` (0x3BA7C0): classref slot `0x1AD5FC8`をロードしてalloc相当stub `0x12B02F4`を呼び、instance ivarから別入力を読み、`0x12FF2A0`へ送り、終端で`0x12B033C`へtail branch。**classrefのbind解決前に生成されるUIViewの具体的クラスは断定しない**。
+- `layoutStateForViewModel:layoutMetrics:` (0x3BAE90): x2(viewModel),x3(layoutMetrics)を保持し、`0x3BAF10`でnil分岐。非nil経路 `0x3BAF28..0x3BAF34`には、保持したオブジェクトのoffset `0x10`の関数ポインタを`BLR x8`で呼ぶ処理がある。返り値の浮動小数レジスタ v0/v1をv8/v9へ保存し、`0x3BAF50`でd8をゼロと比較、必要なら別の補助経路を実行する。`0x3BB008`にはbit19の分岐があるが、意味と通常の値は未解決。
+
+**重要**: 本解析で`T1StandardStatusBodyViewAdapter`というownerと、本文モデル/表示オプションを結ぶ重要な入口を見つけた。ただし、`layoutStateForViewModel:`が具体的にどのTTAStatusBodyTextView高さAPIへ行くか、offset+0x10のcallbackの所有者・意味、stateの最終高さ、通常タイムラインのdisplayTypeはまだ未確定。OX-024のVideoRowViewのレイアウト式は転用しない。元バイナリ・アプリ本体は未変更。
+
+再現:
+```sh
+llvm-objdump --macho --syms T1Twitter | grep 'OBJC_CLASS_\\$_T1StandardStatusBodyViewAdapter'
+llvm-objdump -d --start-address=0x3bae90 --stop-address=0x3bb1a0 T1Twitter
+llvm-objdump -d --start-address=0x3ba7c0 --stop-address=0x3ba890 T1Twitter
+```
