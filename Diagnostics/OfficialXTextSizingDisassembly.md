@@ -1006,3 +1006,31 @@ PY
 ```
 
 Scope: diagnostics only on `develop`, no app code/main/version changes, no official X runtime claims.
+
+
+## OX-052 — Home timeline factory selectors belong to a Swift ObjC protocol, NOT concrete implementations (2026-10-20)
+
+Primary evidence: supplied X v12.25 `T1Twitter` Mach-O (SHA-256 `1af51e57d746a81546da299e103241da9682ac397f33475defec7f6a3e6e5ccd`) plus SQLite `objc_methods` rows for `list_address=0x141D2B8`. Analysis read-only.
+
+**Resolved OX-051 ambiguity:** At native VM address **`0x141D2B8`**, the method-list header is `entsizeAndFlags=0x8000000C`, `count=8`. Each of the eight relative 12-byte entries has **IMP delta equal to zero**. The SQLite `imp` numbers such as `0x141D2E0` point to the **address of the implementation-offset field within an entry**, rather than the address of compiled code. Specifically, entry #2 for `homeTimelineItemsViewControllerWithAccount:timeline:` begins at `0x141D2D8`, with its `imp` field at `0x141D2E0`; that 4-byte field contains zero. This is expected for **protocol method descriptions**, not evidence of a missing home feature at runtime.
+
+The original Mach-O's chained rebase data points from `__DATA,__objc_const` slot **`0x1A38C98`** directly to method-list **`0x141D2B8`**. The containing protocol structure begins at **`0x1A38C80`** (also referenced by `__DATA_CONST,__objc_protolist` slot `0x19338B0`, and `__DATA,__objc_protorefs` slot `0x1AD1218`). Its name pointer at `0x1A38C88` resolves to native C string **`_TtP11TwitterHome22TwitterHomeFeatureObjC_`**, i.e. the Objective-C-visible Swift protocol **`TwitterHomeFeatureObjC`** in module `TwitterHome`. The method list resides in the protocol's **required instance methods** field (`protocol + 0x18`), not in a class implementation.
+
+| Protocol method index | Objective-C selector | SQLite field address | Native `imp` delta |
+|---:|---|---|---:|
+| 0 | `homeFeaturesConfigurationWithAccount:networkQualityProvider:timelineVariant:` | `0x141D2C8` | 0 |
+| 1 | `homeTimelineContainerViewControllerWithAccount:homeTimeline:countryFilteredTimeline:latestTimeline:rankedFollowingTimeline:titleViewPlugins:barButtonItemPlugins:` | `0x141D2D4` | 0 |
+| 2 | `homeTimelineItemsViewControllerWithAccount:timeline:` | `0x141D2E0` | 0 |
+| 3 | `urtHomeTimelineStreamFactoryWithApplicationLink:homeConfiguration:` | `0x141D2EC` | 0 |
+| 4 | `pinnedTimelinesRepositoryWithAccount:` | `0x141D2F8` | 0 |
+| 5 | `pinnedTimelineViewControllerWithAccount:pinnedTimeline:` | `0x141D304` | 0 |
+| 6 | `editPinnedTimelinesViewControllerWithAccount:` | `0x141D310` | 0 |
+| 7 | `tabManagementSheetViewControllerWithAccount:scribePage:scribeSection:` | `0x141D31C` | 0 |
+
+**Implication:** OX-051's concern is resolved more precisely: these home-related selectors are a **factory interface contract** exposed via `TwitterHomeFeatureObjC`. The concrete conforming class, method implementation(s), call sites, row-adapter factory and relation to `T1StatusTableRowAdapter` remain **unresolved**. Do **not** claim the protocol itself supplies execution code or that these selectors establish standard home-timeline cell selection.
+
+**Reproduction:** inspect three-word relative entries with `struct.unpack_from('<IIi', macho, 0x141D2C0 + 12*i)` for `i=0..7`; inspect `llvm-objdump --macho --dyld-info T1Twitter` for slots `0x1A38C98`, `0x19338B0`, `0x1AD1218`; read zero-terminated name bytes at `0x143C710`. Cross-check SQLite `select selector,imp,entry_index from objc_methods where list_address=21091000 order by entry_index`.
+
+Next: find conforming implementation(s) / Swift bridge for `TwitterHomeFeatureObjC` via ObjC class protocol lists and Swift conformance metadata; follow concrete `homeTimelineItemsViewControllerWithAccount:timeline:` implementation and its data-source adapter selection.
+
+No app source/main/version changes. No live iPhone results implied.
