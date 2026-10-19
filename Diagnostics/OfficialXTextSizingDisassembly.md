@@ -426,3 +426,24 @@ OX-024のXActivityHistory.VideoRowViewを**通常タイムラインと取り違�
 **現時点の限界**: T1Twitter内のgeneratorに入力選択・条件分岐・複数のメッセージ送信があることまでは実命令で確認したが、呼び先stubのselector・receiver所有者・TTAStatusBodyTextViewとの連結・最終セル高の式は未解決。LLVMの表示する`_T1ShouldAttachUnifiedCardForViewModel` は近傍のシンボル見出しであり、このIMPの関数名を証明しない。OX-025で想定したgenerator→layout state→cellの関係は依然探索仮説。
 
 **次に必要な操作**: `0x1303880`, `0x12E87A0`, `0x1370B80`, `0x13104E0`, `0x132A260` 等についてT1Twitterの`__objc_stubs`と`__objc_selrefs`からselectorを解決し、receiverを追ってから、返値の型とcellへの受け渡しを評価する。公式X実機未確認、アプリ本体は変更していない。
+
+### OX-026追加検証 — Objective-C stub / selectorの実バイナリ解決
+
+同じ元T1Twitter（SHA-256 `1af51e57d746a81546da299e103241da9682ac397f33475defec7f6a3e6e5ccd`）について、`__TEXT,__objc_stubs`先頭の`ADRP x1 + LDR x1`から`__DATA,__objc_selrefs`のslotを導き、slotのchained pointerのlow36 targetを`__objc_methname`内の文字列として検証した。Mach-O `LC_SEGMENT_64` のVM/file mapを使用し、ファイルオフセットとVMアドレスを分離。前節の未解決呼び先を以下のように更新する。
+
+| BL target | selref slot | 実物で解決したselector |
+|---|---|---|
+| 0x1303880 | 0x1AA8FE8 | `initWithStatusViewModel:options:account:scribeContext:` |
+| 0x13104E0 | 0x1AAC300 | `isStatusViewLayoutStateGeneratorCachedViewAdapterSetEnabled` |
+| 0x12E87A0 | 0x1AA23B0 | `customizeLayoutMetrics:forViewModel:viewAdapterSet:` |
+| 0x1370B80 | 0x1AC44A8 | `viewIdentifiersWithValidLayoutStateInSet:forViewModel:layoutMetrics:` |
+| 0x1305720 | 0x1AA9790 | `initWithViewModel:layoutMetrics:` |
+| 0x1323D80 | 0x1AB1128 | `populateLayoutStateSet:withValidViewIdentifiers:inPreviousLayoutState:` |
+| 0x132A260 | 0x1AB2A60 | `promotedBadgePlacement` |
+| 0x1354640 | 0x1ABD358 | `shouldDisplayAsCompactPromotedTweet` |
+
+これにより、`0x2AE6C4..0x2AE6D8` は `initWithStatusViewModel:options:account:scribeContext:` を送った返り値をx22へ保持する経路、`0x2AE6DC` はキャッシュされたview adapter set利用フラグを判定する経路、`0x2AE718..0x2AE730` は `customizeLayoutMetrics:forViewModel:viewAdapterSet:` の返り値を次段へ渡す経路、`0x2AE740..0x2AE758` は `viewIdentifiersWithValidLayoutStateInSet:forViewModel:layoutMetrics:` へ渡す経路であることを**selectorレベル**で裏付けた。
+
+`0x2AE864..0x2AE884` の数値1/2の比較対象は `promotedBadgePlacement` 由来であり、**OX-019の本文displayType=1/2ではない**。ここは混同を避けるため明示。 `0x1354640`のbit0検査は `shouldDisplayAsCompactPromotedTweet` の返値であり、同様に本文表示タイプとは区別する。
+
+ただし、selectorだけでは動的receiverの実クラスや通常タイムライン採用の証明にはならない。今回の確認は**generator内部のlayout metrics / adapter set / cache利用経路**に限定され、本文の計測値の取得箇所とセル最終高さは未追跡。新しいアプリUI変更なし。
