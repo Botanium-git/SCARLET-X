@@ -206,3 +206,10 @@ WHERE name LIKE '%TFNSizeThatFitsHelper%';
 - **OX-029（T1Twitter Mach-O class owner解析）**: `T1StandardStatusBodyViewAdapter`のnlist class `0x1AF28B8`→ro `0x19AD578`→relative instance method list `0x13D15F0`（header `0x8000000C`、36件）を元Mach-Oで確認。特に`initializeView` 0x3BA7C0、`setViewModel:forView:` 0x3BA890、`layoutStateForViewModel:layoutMetrics:` 0x3BAE90、`_t1_displayTextOptionsForViewModel:` 0x3BB778、`displayType` 0x3BBED4、`displayLocation` 0x3BBEE4をowner付きで抽出。本文のタップ・省略表示トークンdelegateも持つ。
 - **実命令**: layoutStateForViewModel:layoutMetrics:の非nil経路に`0x3BAF28 ldr x8,[x0,#0x10]`→`0x3BAF34 blr x8`の間接関数呼び出し、返されたv0/v1の保存、`0x3BAF50 fcmp d8,#0`を確認。これは単純な直接selector呼び出しではない。対象callbackの所有元/値の意味を解明するまで本文高さAPIや最終セル高との同一性を断定しない。
 - **留保**: 通常タイムラインでのruntime使用、TTAStatusBodyTextViewへの接続、displayTypeとフォント実値は未確認。詳細は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-029。アプリ本体/main/バージョン変更なし。
+
+## 2026-10-19 継続調査 — OX-030
+
+- **OX-030（実バイナリ接続）**: T1Twitterの`T1StandardStatusBodyViewAdapter initializeView`（0x3BA7C0）が読むclassref slot `0x1AD5FC8`はXAppLibrariesの`_OBJC_CLASS_$_TTAStatusBodyTextView`にchained bind。`0x12FF2A0`は`initWithDisplayType:`（selref `0x1AA7E70`）。**本文adapter→本文ビューの生成を静的確認**。
+- **間接計測関数の意味**: `layoutStateForViewModel:layoutMetrics:`（0x3BAE90）の`0x1319BA0`は`maximumSizeBlock`（selref `0x1AAE8B0`）。非nil時には`0x3BAF28`でblock invoke pointerを読み、`0x3BAF34 blr x8`でviewModel・layoutMetricsを渡す。返りv0/v1を保持し、第一成分が0なら`bodyWidth`（stub `0x12DB600`、selref `0x1A9EF48`）から幅を採る。
+- `0x12BB1C0`は`_t1_convertToAutoTranslatedViewModelIfNeeded:`（selref `0x1A96E38`）。`0x3BB074`付近に条件付き-8.0があるが**本文高さへの一律減算ではない**。
+- **依然未解決**: maximumSizeBlockの設定元/実装、通常タイムラインでのadapter採用条件・displayTypeの実値、TTA高さAPIへの具体的引数伝播、最終セル合成。詳細の命令と出典は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-030。公式X実機未測定、アプリ本体/main/バージョン変更なし。
