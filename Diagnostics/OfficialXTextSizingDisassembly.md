@@ -820,3 +820,14 @@ The standard generator (`-[T1StandardStatusViewLayoutStateGenerator _t1_viewAdap
 The previous OX-039 scope remains unchanged: the directly observed `setMaximumSizeBlock:` at 0x2A7648 is addressed to the attachment adapter, not this body adapter. No conclusion about later indirect/default maximumSizeBlock or actual home timeline selection. No app code, main, or version change.
 
 Reproduce: `llvm-objdump -d --start-address=0x13055a0 --stop-address=0x13055b4 T1Twitter` and `llvm-objdump -d --start-address=0x2a75c0 --stop-address=0x2a75e0 T1Twitter`; decode selref 0x1AA9730 in the original Mach-O.
+
+
+## OX-041 — Standard layout generator direct-call scan boundary (2026-10-19)
+
+Read-only inspection of supplied `T1Twitter` Mach-O and SQLite method index. The `objc_methods` index has selector `layoutStateForViewModel:options:account:layoutMetrics:withPreviousLayoutState:` at IMP **0x2AE63C** with method list **0x13D2F00** (already owner-resolved as `T1StandardStatusViewLayoutStateGenerator` in OX-025). Its `_t1_viewAdapterSet` is **0x2A7410** (OX-039/040). Re-inspected `0x2AE63C..0x2AE730` in original `llvm-objdump` to confirm the entry and register arguments.
+
+Performed an exhaustive, 4-byte-aligned ARM64 **immediate BL** target scan over the Mach-O `__TEXT,__text` VM range **0x4000..0x129A124**, using opcode mask `(instruction & 0xFC000000) == 0x94000000`, 26-bit signed displacement and destination `PC + (imm26 << 2)`. **Zero direct BL instructions target 0x2AE63C**, and **zero target 0x2A7410** in that range. This is a narrow **negative result for direct branch instructions only**, not evidence that either method is never called. Objective-C method dispatch through selector/`objc_msgSend`, blocks, function pointers, or dynamic replacement is not covered by this scan; particularly `layoutStateForViewModel:...` is a plausible selector-dispatched entry.
+
+Consequently there is **still no demonstrated ordinary home-timeline runtime caller** of this generator. The static body-adapter `displayType=0` proven in OX-040 cannot yet be generalized to all home timeline posts. The proper next step is to find selector-dispatch callsites and identify receiver class/provenance, then view-model/display conditions. No app code, main, or version modification and no on-device observation.
+
+Reproduce: obtain executable `__text` from `llvm-objdump --macho --section-headers T1Twitter`, scan each 32-bit word for ARM64 BL and sign-extend imm26. Compare decoded target addresses to `0x2AE63C` and `0x2A7410`. SQLite query `select selector,imp,list_address from objc_methods where imp=2811452` confirms indexed method row but is not alone proof of runtime use.
