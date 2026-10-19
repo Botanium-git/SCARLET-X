@@ -908,3 +908,37 @@ llvm-objdump -d --start-address=0x2f099c --stop-address=0x2f09f4 T1Twitter
 llvm-objdump -d --start-address=0x135cb40 --stop-address=0x135cb54 T1Twitter
 llvm-objdump -d --start-address=0x12ffe60 --stop-address=0x12ffe70 T1Twitter
 ```
+
+
+## OX-048 — T1StatusCellのstatusViewClass実装と会話用overrideを確認（2026-10-20）
+
+一次資料: 提供された公式X v12.25の`T1Twitter` Mach-O。IPA内の`Payload/Twitter.app/Frameworks/T1Twitter.framework/T1Twitter`から再展開し、SHA-256 `1af51e57d746a81546da299e103241da9682ac397f33475defec7f6a3e6e5ccd`を確認。SQLiteの`objc_methods`にselector `statusViewClass` が2行（IMP `0xC008`、`0x2EF7B8`）あり、**元Mach-Oのnlist symbol → metaclass class_ro → relative method list → selector selref → IMP**を独立に突き合わせた。
+
+| owner (メタクラス) | class address | relative method list | entry | IMP | classrefと返すクラス |
+|---|---|---|---|---|---|
+| `+[T1StatusCell statusViewClass]` | `0x1AEF398` | `0x1392FC0` | `0x1392FC8` | **`0x2EF7B8`** | slot `0x1AD3E30` → `T1StandardStatusView` `0x1AED840` |
+| `+[T1ConversationFocalStatusViewTableViewCell statusViewClass]` | `0x1AE11F8` | `0x1391510` | `0x1391518` | **`0xC008`** | slot `0x1AD1828` → `T1ConversationFocalStatusView` `0x1AED2F0` |
+
+両メソッドの実命令は、classrefをロードしruntime helper `0x12B03D8`へtail branchする短い実装。helperの個別内部実装は本調査の対象外。classrefの対応関係は`llvm-objdump --macho --dyld-info T1Twitter`の**rebase**とクラスnlist名称から直接確認。
+
+```asm
+0x2EF7B8 adrp x8,0x1AD3000
+0x2EF7BC ldr  x0,[x8,#0xE30]  ; T1StandardStatusView classref 0x1AD3E30
+0x2EF7C0 b    0x12B03D8
+
+0xC008   adrp x8,0x1AD1000
+0xC00C   ldr  x0,[x8,#0x828]  ; T1ConversationFocalStatusView classref 0x1AD1828
+0xC010   b    0x12B03D8
+```
+
+**静的な接続の到達点**: OX-047で確定した`T1StatusCell.initWithStyle:reuseIdentifier:` → `statusViewWithFrame:` → `statusViewClass`を、今回の標準クラス実装で具体化できた。**T1StatusCell標準のクラス選択経路**は`T1StandardStatusView`を返す。OX-044の`T1StandardStatusView → T1StandardStatusViewLayoutStateGenerator`、OX-040のbody adapter (`displayType=0`)、OX-030/032の`TTAStatusBodyTextView`との接続まで、**標準セルから本文ビューへの実装上の静的チェーン**が成立する。
+
+**制限**: これはObjective-C静的実装の結論であって、通常のホームタイムラインが実際に`T1StatusCell`を登録/生成する条件、別subclassの置換、runtime method-swizzlingなどは未検証。少なくとも`T1ConversationFocalStatusViewTableViewCell`という別の`statusViewClass`実装があるため、すべての投稿表示に標準ビューを一般化しない。他フレームワークやcategoryの動的上書きの網羅調査は未実施。アプリ本体/main/バージョン未変更、公式X実機検証なし。
+
+再現:
+```sh
+llvm-objdump -d --start-address=0x2ef7b8 --stop-address=0x2ef7c4 T1Twitter
+llvm-objdump -d --start-address=0xc008 --stop-address=0xc014 T1Twitter
+llvm-objdump --macho --dyld-info T1Twitter | grep -E '1AD3E30|1AD1828'
+llvm-objdump --macho --syms T1Twitter | grep 'OBJC_METACLASS_.*T1StatusCell'
+```
