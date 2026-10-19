@@ -126,3 +126,98 @@ DB候補0x408300..0x408494の実コードでは `xds_content_body` を取得し�
 4. actualSize→view→セル高さの接続、フォント・幅・属性を揃えた公式X実機比較。
 
 アプリ表示コード・バージョンは変更していない。ビルド結果や実機一致の証拠は本解析には含まれない。
+
+
+## OX-015 — CTFrame生成と最大行数の制御（2026-10-19追記）
+
+同一XServiceLibrariesの `_TFN_CTFrameCreateWithAttributedStringWithMaxLines` はLC_FUNCTION_STARTSによって **0xC9FE48..0xCA00CC** と確定。入力はx0=attributed string、d0/d1=幅W/高さH、x1=maxLines、x2=truncated flagの出力ポインタ。
+
+1. 文字列がnil、または `CTFramesetterCreateWithAttributedString` が失敗するとnilとfalseを返す。
+2. `CGPointZero` と入力W/Hから `CGPathCreateWithRect` で矩形を作る（0xC9FEC0）。`CTFramesetterCreateFrame(framesetter,{0,0},path,NULL)` を呼ぶ（0xC9FEDC）。
+3. maxLines==0、または初回frameの行数<=maxLinesなら、そのframeのvisibleStringRange.lengthと文字列lengthの比較をtruncated flagとする。
+4. 行数>maxLinesの場合、0xC9FF18で既解析の `_TFN_CTFrameGetSizeWithMaxLines(string,frame,maxLines)` を呼び、高さhを得る。
+5. **CGRect(0,0,W,H−h)** の追加pathを作る（0xC9FF1C..30）。次の属性を構成し、元の外枠pathと同じframesetterでCTFrameを再生成する（0xC9FFE0）。
+
+```text
+{ kCTFrameClippingPathsAttributeName:
+    [ { kCTFramePathClippingPathAttributeName: additionalPath } ] }
+```
+
+6. この再生成経路ではtruncated flag=trueを設定する。再生成失敗時にnilになる場合でも、この経路上のflag値はtrueのまま。出力ポインタがnilなら書き込まない。
+
+**ここで確定したのは渡される矩形と属性・分岐・再生成処理。** 任意フォントや異常寸法で最終行数が厳密にmaxLinesと一致することを実機で検証したわけではない。H−hを0へclampする命令は当関数に見当たらない。
+
+キー/定数の解決はGOTのindirect symbol tableとchained fixupsのimportsで相互照合した。
+
+| slot | raw pointer | imports ordinal | symbol |
+|---|---|---|---|
+| 0x3DF7108 | 0x80100000000000BC | 188 | _CGPointZero |
+| 0x3DFA6D8 | 0x8010000000000775 | 1909 | _kCTFramePathClippingPathAttributeName |
+| 0x3DFA6D0 | 0x8010000000000774 | 1908 | _kCTFrameClippingPathsAttributeName |
+
+## OX-016 — OX-001の所有者を解決：通常本文候補としての留保を訂正
+
+T1Twitterの0x408300は、**`+[T1StatusWithheldInCountryView _t1_attributedTextModelForStatusViewModel:width:displayType:account:]`**。
+
+- nlist metaclass: 0x1AF3E20
+- class_ro: 0x19B5C58（nameもT1StatusWithheldInCountryViewと照合）
+- method list: 0x1393468、3件
+- 該当entry: 0x1393488、relative IMP→0x408300
+- 同じmetaclassの他メソッドは `heightForStatusViewModel:width:layoutMetrics:showsUndoButton:displayType:account:` と `_t1_innerContentInsetsForMetrics:`。
+
+**OX-001の数値・セレクタ自体を取り消すのではなく、所有者不明を更新する。** 表示制限ビューが所有することは確定。通常の本文ビューの生成関数であるとは扱わない。他所から再利用されないことまで証明したものではない。
+
+0x1AD18F8のbindはUIFont、0x1AD6318はTFNMutableTwitterStatusDisplayAttributedTextModelFontOptions、0x1AD6320はTFNMutableTwitterStatusDisplayAttributedTextModelOptions。先のfont/options設定の読みは維持し、画面用途の混同を避ける。
+
+## OX-017 — 投稿データモデルからTFNAttributedTextModelへの静的接続
+
+XAppLibraries（SHA-256 `ce10ca22abc997bfc3eb7732be33c198175994e24a421219cf0808c6e7882249`）のクラス/メタクラス所有メソッドを読み直した。
+
+| owner | selector | IMP | function end (exclusive) |
+|---|---|---|---|
+| TFNTwitterStatus | attributedTextModelForOptions: | 0x98C588 | 0x98C600 |
+| TFNTwitterStatus | _tfn_displayTextModelForOptions: | 0x98C600 | 0x98C644 |
+| TFNTwitterStatus | _tfn_displayTextModel | 0x98C644 | 0x98C694 |
+| TFNTwitterStatus | _tfn_displayTextModelWithheld:showFullNoteTweet: | 0x98C734 | 0x98C804 |
+| TFNTwitterDisplayTextModel | attributedTextModelForOptions: | 0x96EE74 | 0x96F4D8 |
+| TFNTwitterDisplayTextModel | _tfn_attributedStringForOptions: | 0x972D38 | 未解析 |
+
+全範囲の終端はLC_FUNCTION_STARTSを使用（最後の属性生成はowner/IMPのみ確認）。
+
+- TFNTwitterStatusの0x98C588はoptions.textOptionsでdisplay modelを選択し、その戻り値に `attributedTextModelForOptions:` を送信する。
+- 選択関数0x98C600ではbit15→withheld、bit19→full note tweet、それ以外→default（bit15優先）。各フラグの数値条件を超えるUI仕様は未解明。
+- defaultは0x98C65Cで `_tfn_displayTextModelWithheld:NO showFullNoteTweet:NO` を呼ぶ。
+- 共通生成関数はconfiguration取得に失敗するとnil。既存モデルのconfiguration比較に一致しなければ0x98C7C4で新規alloc、0x98C7CCでinitWithConfiguration:。
+- allocのclassref slot **0x6543730** はchained rebaseで **0x6578C48 `_OBJC_CLASS_$_TFNTwitterDisplayTextModel`** を指す。既存キャッシュ経路のruntimeクラスを実測したものではない。
+- TFNTwitterDisplayTextModelの0x96EE74は、キャッシュを返す経路や空文字経路のほか、0x96EF14で `_tfn_attributedStringForOptions:` を呼ぶ生成経路を持つ。
+- 新規生成経路の0x96F168はclassref **0x6540EB8** を読み、0x96F16Cでalloc、0x96F194で `initWithAttributedString:colorProviderView:` を送信。
+- このclassrefはchained bind ordinal **12444**で **`_OBJC_CLASS_$_TFNAttributedTextModel`** に解決。これによりXServiceLibrariesで解決済みクラス定義との静的接続が得られた。
+- configuration.maxLinesForOptions:/customMaxLinesForOptions:に由来するsetMaxLines:、textOptionsによるsetLineBreakMode:、末尾文字列、NOTE_TWEET_SHOW_MOREの分岐が存在。全フラグの用途・通常タイムラインで選ばれる値は未確定。
+
+**重要な留保**: これは投稿データモデル層の経路である。通常タイムラインのどのview/cellが、どのoptions/fontOptions/widthを渡すかはまだ未確定。Objective-Cの動的置換やsubclass dispatchを実機で観測した証拠ではない。
+
+## OX-018 — 投稿モデルの高さ取得とキャッシュ
+
+- `-[TFNTwitterStatus attributedTextModelHeightForOptions:]`: **0x98C518..0x98C588**。上と同じdisplay-model選択を経て `attributedTextModelHeightForOptions:` を転送。
+- `-[TFNTwitterDisplayTextModel attributedTextModelHeightForOptions:]`: **0x96E3C4..0x96E694**。型は **q24@0:8@16（signed 64-bit整数）**、返値はx0。CGFloat/d0ではない。
+- width<=0（通常の有限値）や空文字の場合に0を返す。キャッシュ有効・条件一致の場合はcached textHeightをdouble→signed integerへ変換して返す。
+- 再計測側はoptionsをmutableCopyしcachingEnabled=NOでmodelを取得し、明示maxLines/custom/configurationの条件を設定する。
+- **0x96E5E4: fitToWidth: → 0x96E5EC: actualSize**。
+- 返値の高さd1を0x96E5F0でfloat32へ、0x96E5F4で正方向へ整数切り上げし、0x96E618でsigned integerに変換する。cache有効なら0x96E614でcache更新補助関数0x96EAC8も呼ぶ。
+- 別の生成関数内にも0x96F46CのfitToWidth:、0x96F474のactualSize、float32切り上げとcache更新がある（該当条件に入る場合のみ）。
+
+**UITableViewの行高そのものと同一とはまだ言えない。** テキスト高さを取得するモデルAPIまで静的に追えた段階。上下余白・画像・引用・セル合成は別途追跡する。
+
+## 今回の再現コマンドと検証
+
+```bash
+python3 ResearchTools/find_method_owners.py --macho T1Twitter --imp 0x408300
+python3 ResearchTools/find_method_owners.py --macho XAppLibraries --selector attributedTextModelForOptions:
+python3 ResearchTools/find_method_owners.py --macho XAppLibraries --selector attributedTextModelHeightForOptions:
+python3 ResearchTools/resolve_chained_bind.py --macho XServiceLibraries --address 0x3df7108 --address 0x3dfa6d8 --address 0x3dfa6d0
+python3 ResearchTools/resolve_chained_bind.py --macho XAppLibraries --address 0x6540eb8 --address 0x6543730
+```
+
+クラス/メタクラス抽出でowner名照合と実行可能IMP検証、bind/rebaseのページchain所属検証、非chainアドレスの拒否、主要6関数の境界と全命令デコードを実行済み。新ツールは今回のMach-O構成専用で、カテゴリ追加・動的method交換や他pointer形式への汎用解析ではない。
+
+次の優先課題は **TFNTwitterDisplayTextModelの属性生成0x972D38、および実際の本文viewからのoptions/font/widthの設定と呼び出し**。固定3.0や今回の丸めをScarlet X本体へまだ適用しない。

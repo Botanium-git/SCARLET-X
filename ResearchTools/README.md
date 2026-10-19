@@ -79,3 +79,10 @@ python3 ResearchTools/inspect_text_sizing.py --macho XServiceLibraries --range 0
 ```
 
 2026-10-19実行済み: 4つの主要関数範囲を全命令デコード、未解決6スタブを解決。extract_class_methods.pyの間接selector誤読も修正し、37+7件を再抽出・IMP実行領域照合。上記の「GitHub登録版の実行テストは別途必要」は、この特定IPA/2クラスについては本検証で更新された。詳細・根拠はDiagnostics/OfficialXTextSizingDisassembly.mdとOfficialXTextSizingEvidence.txtを参照。
+
+## 2026-10-19追加 — owner/chain/function boundaries
+
+- `find_method_owners.py --macho XAppLibraries --selector attributedTextModelForOptions:`: nlist定義のclassと**metaclass両方**からrelative method listを引き、owner/種類/型/IMP/実行領域を報告する。今回の0x8000000C形式のみ。カテゴリや動的置換は含まない。`--imp 0x408300`等も使用可能。
+- `resolve_chained_bind.py --macho XAppLibraries --address 0x6540eb8 --address 0x6543730`: observed pointer format 6 / imports format 1 / single-start pageに限定し、指定slotがpage chain上にあることを確認してbind名、またはhigh8=0のrebase先と定義symbolを報告する。非対応形式は拒否する。
+- `inspect_text_sizing.Image.function_range(start)`: LC_FUNCTION_STARTSのULEB128を読み、登録済みstartから次のstartまでを返す。対象は今回のframework（base=0）。最後の関数や未登録startでは推定せず失敗する。
+- 実物3バイナリで使用し、owner/型・既知bind/rebase・非chainアドレス拒否・主要6関数の全命令デコードを検証。証拠は既存Diagnostics/OfficialXTextSizingEvidence.txtへ追記。

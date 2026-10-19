@@ -43,3 +43,10 @@ This is a *findings register*, not a substitute for raw binary data or the full 
 - Text-property branch selectors and Single/Multi → CTFrame construction are resolved. Full frame creation and attribute transformation remain pending.
 - The original class extractor had an indirect-selector decoding bug; fixed and executed for all 44 methods, including executable/aligned IMP validation.
 - Earlier statements about unknown implementation methods are superseded for these specific paths, while timeline-body use, caller ownership, runtime typography and official-device parity remain unconfirmed.
+
+## 2026-10-19 continuation (OX-015–018)
+- Frame construction/maxLines clipping path is now statically reconstructed at 0xC9FE48 (see existing disassembly report).
+- Correction to OX-001: T1Twitter 0x408300 belongs to the metaclass T1StatusWithheldInCountryView; it is not established as the ordinary timeline-body builder.
+- XAppLibraries now supplies a concrete status/display-text-model path: TFNTwitterStatus → new TFNTwitterDisplayTextModel allocation → bound TFNAttributedTextModel allocation/initializer. Cache paths also exist.
+- Display-model height API uses fitToWidth: / actualSize, float32 upward rounding and a signed 64-bit integer return; frame-generation, caller and cache conditions are documented separately.
+- Ordinary timeline UI options, font/attribute generation and final table-row composition remain pending. No production typography changes or official-device parity claims.

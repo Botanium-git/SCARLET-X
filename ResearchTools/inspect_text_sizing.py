@@ -17,7 +17,7 @@ class Image:
         if self.u32(0) != 0xfeedfacf:
             raise ValueError('requires thin little-endian Mach-O64')
         self.sections, self.segments, self.symbols, self.stubs = [], [], {}, {}
-        symtab = dysymtab = None
+        symtab = dysymtab = starts = None
         off = 32
         for _ in range(self.u32(16)):
             cmd, size = struct.unpack_from('<II', self.data, off)
@@ -36,7 +36,26 @@ class Image:
                 symtab = struct.unpack_from('<IIII', self.data, off+8)
             elif cmd == 0xb:
                 dysymtab = struct.unpack_from('<18I', self.data, off+8)
+            elif cmd == 0x26:
+                starts = struct.unpack_from('<II', self.data, off+8)
             off += size
+        self.function_starts = []
+        if starts:
+            pos, size = starts
+            limit = pos+size
+            pc = min(lo for lo, hi, fo in self.segments)
+            while pos < limit:
+                value = shift = 0
+                while True:
+                    if pos >= limit or shift > 63: raise ValueError('invalid function-start ULEB128')
+                    byte = self.data[pos]
+                    pos += 1
+                    value |= (byte & 0x7f) << shift
+                    if not byte & 0x80: break
+                    shift += 7
+                if value == 0: break
+                pc += value
+                self.function_starts.append(pc)
         entries = []
         if symtab:
             so, count, strings, stringsize = symtab
@@ -81,6 +100,10 @@ class Image:
     def pointer_string(self, addr):
         ptr = struct.unpack_from('<Q', self.data, self.offset(addr, 8))[0] & ((1 << 36)-1)
         return self.cstring_offset(self.offset(ptr))
+    def function_range(self, start):
+        index = self.function_starts.index(start)
+        if index+1 >= len(self.function_starts): raise ValueError('no next function boundary')
+        return start, self.function_starts[index+1]
     def disassemble(self, start, end):
         md = Cs(CS_ARCH_ARM64, CS_MODE_ARM)
         for i in md.disasm(self.data[self.offset(start):self.offset(end-1)+1], start):

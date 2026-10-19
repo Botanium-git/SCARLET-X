@@ -141,3 +141,12 @@ WHERE name LIKE '%TFNSizeThatFitsHelper%';
 - **訂正**: 旧extract_class_methods.pyは間接selector参照を文字列として誤受理する場合があった。今回の観測headerに限定して参照を直接解決するよう修正し、37+7メソッドを再実行・実行領域照合した。OX-010の主要selector/IMP対応は再確認できた。
 - **T1候補の追加事実**: 0x408300でxds_content_body、font/boldFont/lineHeight設定、attributedTextModelForOptions:送信を確認。所有クラス・TFNへの到達・本文使用条件は未確定。
 - **留保**: 公式X実機の高さを測定した結果ではない。固定3.0をScarlet Xの本文へ適用する根拠はまだない。アプリコード・バージョンは変更していない。
+
+## 2026-10-19 継続調査 — OX-015〜018
+
+詳細・生証拠は既存のOfficialXTextSizingDisassembly.md / OfficialXTextSizingEvidence.txtへ追記。
+- **OX-015（実命令）**: CTFrame生成0xC9FE48..0xCA00CCはCGPointZero+入力幅/高さのpathで初回frameを作り、行数>maxLinesのとき計測高さhからCGRect(0,0,W,H−h)を作り、Core Textのclipping paths属性でframeを再生成する。成功/失敗とtruncated flagも区別。
+- **OX-016（訂正）**: OX-001の0x408300はT1StatusWithheldInCountryViewの**クラスメソッド**。メタクラス0x1AF3E20→ro0x19B5C58→method list0x1393468→entry0x1393488で確認。通常本文の経路として扱う根拠はなかった。元記録は保持し所有者を補足。
+- **OX-017（静的接続）**: XAppLibrariesでTFNTwitterStatusのattributedTextModelForOptions:（0x98C588）→display-model選択。新規生成のclassref rebaseはTFNTwitterDisplayTextModel（0x6578C48）。同クラスのattributedTextModelForOptions:（0x96EE74）はTFNAttributedTextModelへのbind（slot0x6540EB8、ordinal12444）をallocし、initWithAttributedString:colorProviderView:へ渡す経路を持つ。
+- **OX-018（実命令）**: TFNTwitterStatus高さ取得0x98C518→display-model高さ取得0x96E3C4。再計測側にfitToWidth:→actualSize→float32正方向切り上げ→signed integer返値を確認。キャッシュ経路もある。メソッド型q24@0:8@16で、CGFloat戻り値と混同しない。
+- **未確認**: 実際の本文view/cellからの呼び出し、通常options/font/width、生成属性の全内容、セル高さの合成、実機一致。アプリ本体は変更しない。
