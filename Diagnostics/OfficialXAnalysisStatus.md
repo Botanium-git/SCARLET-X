@@ -36,3 +36,10 @@ This is a *findings register*, not a substitute for raw binary data or the full 
 3. Compare identical text on the same device, same effective font size and width in official X and Scarlet X.
 4. Document each confirmed conclusion with source binary, function address, disassembly/call graph, or actual experiment data.
 5. Do not alter production typography or row calculation until an official-X comparison supports it.
+
+## 2026-10-19 static disassembly update (OX-011–014)
+- See [full reconstruction](OfficialXTextSizingDisassembly.md) and [raw evidence](OfficialXTextSizingEvidence.txt).
+- Class-owned fitToSize: directly calls _TFN_CTFrameGetSizeWithMaxLines. Its width scan, selected-line height formula, +3.0 constant, float32 conversions and upward rounding are now statically resolved. All six previously unresolved call targets are identified.
+- Text-property branch selectors and Single/Multi → CTFrame construction are resolved. Full frame creation and attribute transformation remain pending.
+- The original class extractor had an indirect-selector decoding bug; fixed and executed for all 44 methods, including executable/aligned IMP validation.
+- Earlier statements about unknown implementation methods are superseded for these specific paths, while timeline-body use, caller ownership, runtime typography and official-device parity remain unconfirmed.

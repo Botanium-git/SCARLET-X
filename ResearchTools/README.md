@@ -68,3 +68,14 @@ python3 ResearchTools/extract_class_methods.py --macho XServiceLibraries --class
 ```
 
 入力したクラス名との照合とMach-Oセグメント範囲検証を行う。ポインタ形式・relative method listに関して**この特定のIPAで観測した構成**に依存し、他バージョンでの動作は保証しない。コードは追加済みだが、このGitHub登録版の実行テストは別途必要。検証済みの抽出結果は `Diagnostics/OfficialXClassResolution.md` に保存。
+
+## inspect_text_sizing.py — arm64実命令・スタブ解決
+
+Capstone 5.0.7が必要。thin arm64 Mach-Oを読み取り専用で解析し、unslid VM address指定範囲のバイト・命令・直接branch先を出す。nlistとindirect symbol tableでCスタブ、実命令と__objc_selrefsでObjCスタブのselectorを解決する。今回の32-byte ObjCスタブ、low-36-bit pointer target形式に限定した研究ツールで、任意Mach-Oへの汎用対応や動的dispatch先クラスの保証ではない。
+
+```bash
+python3 -m pip install capstone==5.0.7
+python3 ResearchTools/inspect_text_sizing.py --macho XServiceLibraries --range 0xc9ed74 0xc9efd4
+```
+
+2026-10-19実行済み: 4つの主要関数範囲を全命令デコード、未解決6スタブを解決。extract_class_methods.pyの間接selector誤読も修正し、37+7件を再抽出・IMP実行領域照合。上記の「GitHub登録版の実行テストは別途必要」は、この特定IPA/2クラスについては本検証で更新された。詳細・根拠はDiagnostics/OfficialXTextSizingDisassembly.mdとOfficialXTextSizingEvidence.txtを参照。

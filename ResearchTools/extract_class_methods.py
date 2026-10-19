@@ -44,14 +44,16 @@ def main():
     if name!=a.expected_class:p.error(f"class mismatch: {name}")
     lst=target(u64(ro+32))
     head,count=struct.unpack_from("<II",data,offset(lst,8))
-    if head&0x80000000==0 or (head&0xffff)!=12 or count>1000:p.error("unexpected method list format")
+    if head != 0x8000000C or count>1000:p.error("requires observed indirect relative method list 0x8000000C")
     result=[]
     for i in range(count):
         entry=lst+8+12*i
         nameaddr=entry+i32(entry)
-        try:selector=cstr(nameaddr)
-        except (ValueError,UnicodeError):
-            selector=cstr(target(u64(nameaddr)))
+        # This observed header uses an indirect selector reference. Decoding
+        # pointer bytes as UTF-8 first can silently accept empty/control text.
+        selector=cstr(target(u64(nameaddr)))
+        if not selector or any(ord(ch)<32 for ch in selector):
+            p.error("invalid selector string")
         types=cstr(entry+4+i32(entry+4))
         imp=entry+8+i32(entry+8)
         result.append({"selector":selector,"types":types,"imp":f"0x{imp:X}"})

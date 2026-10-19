@@ -130,3 +130,14 @@ SELECT binary_id, kind, name
 FROM symbols
 WHERE name LIKE '%TFNSizeThatFitsHelper%';
 ```
+
+## 2026-10-19 継続調査 — OX-011〜014
+
+**実IPA再検証**: [詳細と再現手順](OfficialXTextSizingDisassembly.md)、[生証拠](OfficialXTextSizingEvidence.txt)。
+- **OX-011**: 未解決6アドレスのC API / Objective-Cセレクタを解決。CTFrameGetLines、CTLineGetTypographicBounds、fast enumeration、および末尾文字列/単行/複数行の3分岐。
+- **OX-012**: fitToSize:→_TFN_CTFrameGetSizeWithMaxLinesの直接BLを再確認。全CTFrame行の最大幅、制限対象行のorigin・ascent・descent、高さへの固定3.0加算、float32を経由する高さ切り上げを実命令から復元。maxLines非0のときだけ末尾改行を除外する経路。入力CTFrameの生成条件は別途解析が必要。
+- **OX-013**: _tfn_buildTextPropertiesは末尾文字列length/lineBreakMode値1,2,4/maxLines==1で分岐。Single/Multi→更新関数→CTFrame生成への接続を確認。
+- **OX-014**: TFNSizeThatFitsHelperはsubviewsのframe.maxYを採否判定付きで集計し、_TFNCeilToPixelの後でbottomContentPaddingを加算。CTLine直接計測とは別処理。
+- **訂正**: 旧extract_class_methods.pyは間接selector参照を文字列として誤受理する場合があった。今回の観測headerに限定して参照を直接解決するよう修正し、37+7メソッドを再実行・実行領域照合した。OX-010の主要selector/IMP対応は再確認できた。
+- **T1候補の追加事実**: 0x408300でxds_content_body、font/boldFont/lineHeight設定、attributedTextModelForOptions:送信を確認。所有クラス・TFNへの到達・本文使用条件は未確定。
+- **留保**: 公式X実機の高さを測定した結果ではない。固定3.0をScarlet Xの本文へ適用する根拠はまだない。アプリコード・バージョンは変更していない。
