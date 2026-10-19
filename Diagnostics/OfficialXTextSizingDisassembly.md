@@ -480,3 +480,29 @@ OX-024のXActivityHistory.VideoRowViewを**通常タイムラインと取り違�
 **未解決**: 0x12A9694 / 0x131EC80 / 0x12DA780 / 0x12A99AC / 0x12F3B40 / 0x12D7520 のselector、実際のreceiver、d8/d14の初期値の意味、ここでの座標が本文なのか画像/カード等なのか、最終的なlayout stateのsizeへの格納。この段階では**本文高さをセル高へ加算していると断定できない**。近傍シンボル表示 `_T1ShouldAttachUnifiedCardForViewModel` は関数ownerの根拠にしない。
 
 **次の検証**: 上記stubをXServiceではなく**T1Twitter自身の**selrefsから解決し、0x131EC80に渡す`w2=5`の意味と、返り値の型、d8への取り込みを逆方向追跡する。次に実際のstate.size setterへの到達とT1StatusCellへの受け渡しを調べる。アプリ本体・バージョン・mainは変更しない。
+
+
+## OX-028 — OX-027の座標算術はnon-text baseline spacingとindex-5 view.frame（2026-10-19）
+
+元T1Twitter（SHA-256 `1af51e57d746a81546da299e103241da9682ac397f33475defec7f6a3e6e5ccd`）を再調査。OX-027の未解決値を、実Mach-O `__objc_stubs` のADRP/LDR→`__objc_selrefs`と `llvm-objdump --macho --dyld-info` の `__DATA_CONST,__got` bindで解決。
+
+| caller BL | stub/GOT or selref | 解決名 | 出典 |
+|---|---|---|---|
+| `0x2AEDA C`ではなく `0x2AEDB0` | ObjC stub `0x131EC80`, selref `0x1AAFCE8` | `objectAtIndexedSubscript:` | slot raw target `0x16452D2` |
+| `0x2AEDE0` | C stub `0x12A99AC`, GOT `0x18682C0` | `_TFNVerticalSpacingForBaselineEdgeInsets` | chained bind word `0x8010000000002561`; dylib XServiceLibraries |
+| `0x2AEE00` | ObjC stub `0x12F3B40`, selref `0x1AA5098` | `frame` | slot raw target `0x1606754` |
+| `0x2AED94` | C stub `0x12A9694`, GOT `0x1868000` | `_TFNBaselineEdgeInsetsForNonTextWithSimulatedFont` | chained bind word `0x8010000000002509`; dylib XServiceLibraries |
+
+訂正: 第1行のcallsiteは**0x2AEDB0**（前段に `mov w2,#5`）。同selectorは**0x2AEDF0**からも呼ばれ、返値を`x21`に保持する。二度ともx0=x27/w2=5の入力で`objectAtIndexedSubscript:` を呼ぶ。続く`0x12B0444`は返却オブジェクトに対するretain相当のスタブだが、間接symbolの独立解決前に対象collectionのクラスは断定しない。**index 5は配列要素の選択であり、本文displayType 5とは無関係**。
+
+`0x2AEE00 frame` は`x21`に対する呼出しで、直後の`0x2AEE04 fsub d11,d8,d1`で**CGRect.frame結果の第2浮動小数成分d1（origin.yに相当）**を減算。もう一方の`0x2AEDE0`は非テキスト用baseline edge insetsからの縦間隔を返す補助関数にbindされる。従ってOX-027の計算を**投稿本文のCore Text高さ合成だと読む根拠はなく、非テキスト要素のbaseline spacingと別viewのframe座標のレイアウト演算**として区別できる。
+
+**範囲の留保**: `_TFNVerticalSpacingForBaselineEdgeInsets`の引数とd0返値の正確な算式、index 5の実際のview種類、d8/d14の意味、最終state.sizeへの反映は未解決。外部bind名だけではそれらは確定しない。旧OX-027を残して今回解決分を追記。通常タイムラインのruntime実行やセル高式は未証明。アプリ本体変更なし。
+
+再現:
+```sh
+llvm-objdump -d --start-address=0x2aed80 --stop-address=0x2aee45 T1Twitter
+llvm-objdump -d --start-address=0x131ec80 --stop-address=0x131ec94 T1Twitter
+llvm-objdump -d --start-address=0x12f3b40 --stop-address=0x12f3b54 T1Twitter
+llvm-objdump --macho --dyld-info T1Twitter | grep -Ei '0x1868000|0x18682C0'
+```
