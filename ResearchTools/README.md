@@ -29,3 +29,20 @@ python3 ResearchTools/macho_db_search.py --db /path/to/scarlet_macho.sqlite --qu
 - 入口: [Diagnostics/README.md](../Diagnostics/README.md)
 - 証拠台帳: [Diagnostics/OfficialXFindingsLedger.md](../Diagnostics/OfficialXFindingsLedger.md)
 - 不明な項目を憶測で確定せず、SQL/逆アセンブル/実機ログで出典を残す。
+
+## validate_imp_index.py — IMP実行領域の検証
+
+`objc_methods.imp` に実装アドレスでなく `__objc_methlist` の値が混在していたため、**元DBを変更せず** 検証済みSQLiteを新規作成する。
+
+```bash
+python3 ResearchTools/validate_imp_index.py \
+  --db XServiceLibraries.sqlite \
+  --macho XServiceLibraries \
+  --binary XServiceLibraries \
+  --output XServiceLibraries_validated.sqlite
+```
+
+実物検証（2026-10-19）: 25,530 → 18,600件（6,930件除外）。同件数を持つ検証済みDBを別ファイルとして作成済み。対象Mach-Oは *thin 64-bit little-endian* を要求。IMPが実行領域にあることは、呼び出し経路や正しいowner classの証明ではない。
+
+元の `SCARLET_MachO_Indexer` 自体は変更していない。新しい検証ツールで不適切なアドレスを除いた検索用コピーを作る。今後は生成直後の検証を必須とする。
+
