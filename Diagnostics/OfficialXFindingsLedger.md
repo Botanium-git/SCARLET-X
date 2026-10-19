@@ -284,3 +284,8 @@ WHERE name LIKE '%TFNSizeThatFitsHelper%';
 - **OX-044（標準ビューから標準レイアウト生成器への静的接続を確立）**: OX-042のselector call `0x2A8B30`を含む所有者は `-[T1StandardStatusView _t1_updateLayoutStateWithLayoutMetrics:]` IMP `0x2A8A80`（元Mach-O class relative methods確認）。このメソッドで `layoutStateGenerator` getterの結果をx22に保持し、レイアウト生成selectorのreceiverにする。
 - `+[T1StandardStatusView layoutStateGenerator]` IMP `0x2A73A0`（メタクラスmethod list `0x1392F00`）はキャッシュ対象を返し、初期化側 `0x2A73E4..0x2A7400`が classref `0x1AD53C8`→`T1StandardStatusViewLayoutStateGenerator` class `0x1AED818`を使用して生成器を保存する。よって標準投稿ビュー→標準レイアウト生成器→body adapter（OX-040、displayType=0）の**静的接続**が裏付けられた。
 - **制限**: 実ホームタイムラインでこのビューがいつ/必ず使われるか、表示の実測条件・フォントサイズは未確認。詳細は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-044。main/アプリ本体/バージョン変更なし。
+
+## 2026-10-19 — OX-045
+
+- `T1StandardStatusView` class symbol `0x1AED840` has a concrete rebased `__objc_classrefs` slot `0x1AD3E30` in T1Twitter. One resolved access (`0x2A86E8..0x2A86F0`) sends selector `layoutTracingSamplingFractionalPercentage` (objc stub `0x1314DA0`, selref `0x1AAD530`) to the class and then passes its return value to another method. This specific reference concerns tracing settings, **not verified status-view allocation or home timeline placement**.
+- OX-044's internal standard-view→generator link remains intact, but normal home-timeline adoption is **unconfirmed**. Classref occurrence alone does not prove an on-screen use. Details: [OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-045. No app/main/version change.
