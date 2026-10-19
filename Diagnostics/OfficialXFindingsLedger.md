@@ -178,3 +178,8 @@ WHERE name LIKE '%TFNSizeThatFitsHelper%';
 - **OX-024（実バイナリ・所有者確定）**: OX-023の小関数`0x30C3B10`は、XAppLibrariesの`-[XActivityHistory.VideoRowView layoutSubviews]`（Objective-C登録名 `_TtC16XActivityHistory12VideoRowView`）のIMP。`__objc_methlist` list `0x4B0F840`（4 entries）→entry `0x4B0F860`→IMP field `0x4B0F868`→0x30C3B10、selector `layoutSubviews`、type `v16@0:8`。`__objc_data` class_ro相当 `0x65D6220`のbaseMethods pointer `0x65D6240`→上記method list、name pointer `0x65D6238`→`__objc_classname` 0x593FC70でownerを照合。内部`0x30C3B24`は`0x30C31C0`へ直接BL。
 - **優先順位の訂正**: 前回の「Swift所有者未確定」はこの直接呼び出しについて解消。ただし**Activity HistoryのVideoRowViewであり通常タイムラインの証明にはならない**。`0x30C31C0`の全ての間接callerや実行時displayTypeは引き続き未確定。詳細は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-024。
 - 公式Xのruntime観測ではない。アプリ本体・main・バージョン変更なし。
+
+## 2026-10-19 継続調査 — OX-025
+
+- **OX-025（T1Twitter実クラスの候補整理）**: 元T1Twitterのclass定義とro/baseMethodsを照合。`T1StatusCell` class `0x1AEF370`→method list `0x13D37C0`（61件）、`T1StatusCellLayout` `0x1AEF348`→`0x13D3AA8`（5件）、`T1StandardStatusViewLayoutStateGenerator` `0x1AED818`→`0x13D2F00`、`T1StandardStatusViewLayoutState` `0x1AED8B8`→`0x13D2E50`。`T1StatusCell layoutSubviews` 0x2F0B74、`sizeThatFits:` 0x2F0BE4、generator `layoutStateForViewModel:options:account:layoutMetrics:withPreviousLayoutState:` 0x2AE63Cを索引・Mach-Oと照合。
+- **留保**: 名前から通常タイムラインでの実行を断定しない。XAppLibrariesのTTAStatusBodyTextView計測へ接続された証拠、runtime displayType/幅/フォント、最終セル高さは未確認。OX-024のVideoRowViewとは独立した次の探索入口として保存。詳細は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-025。
