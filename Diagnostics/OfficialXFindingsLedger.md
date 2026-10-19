@@ -183,3 +183,8 @@ WHERE name LIKE '%TFNSizeThatFitsHelper%';
 
 - **OX-025（T1Twitter実クラスの候補整理）**: 元T1Twitterのclass定義とro/baseMethodsを照合。`T1StatusCell` class `0x1AEF370`→method list `0x13D37C0`（61件）、`T1StatusCellLayout` `0x1AEF348`→`0x13D3AA8`（5件）、`T1StandardStatusViewLayoutStateGenerator` `0x1AED818`→`0x13D2F00`、`T1StandardStatusViewLayoutState` `0x1AED8B8`→`0x13D2E50`。`T1StatusCell layoutSubviews` 0x2F0B74、`sizeThatFits:` 0x2F0BE4、generator `layoutStateForViewModel:options:account:layoutMetrics:withPreviousLayoutState:` 0x2AE63Cを索引・Mach-Oと照合。
 - **留保**: 名前から通常タイムラインでの実行を断定しない。XAppLibrariesのTTAStatusBodyTextView計測へ接続された証拠、runtime displayType/幅/フォント、最終セル高さは未確認。OX-024のVideoRowViewとは独立した次の探索入口として保存。詳細は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-025。
+
+## 2026-10-19 継続調査 — OX-026
+
+- **OX-026（T1Twitter実命令とObjC stub/selref解決）**: `T1StandardStatusViewLayoutStateGenerator` の `layoutStateForViewModel:options:account:layoutMetrics:withPreviousLayoutState:` 0x2AE63C について、入口の引数退避、キャッシュ選択分岐、および実ObjC stubとselector文字列を照合。解決した主なselectorは `initWithStatusViewModel:options:account:scribeContext:` (0x1303880)、`isStatusViewLayoutStateGeneratorCachedViewAdapterSetEnabled` (0x13104E0)、`customizeLayoutMetrics:forViewModel:viewAdapterSet:` (0x12E87A0)、`viewIdentifiersWithValidLayoutStateInSet:forViewModel:layoutMetrics:` (0x1370B80)、`populateLayoutStateSet:withValidViewIdentifiers:inPreviousLayoutState:` (0x1323D80)。`promotedBadgePlacement`の戻り値を1/2と比較する命令を確認したが**TTAStatusBodyTextViewのdisplayType分岐とは無関係な数値として区別**。
+- **留保**: 間接dispatch先の所有クラス、通常タイムラインでのruntime採用、本文高さAPI・最終セル高さへの接続は未確定。詳細のslot/命令/解釈は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-026を参照。アプリ本体・バージョンは変更していない。
