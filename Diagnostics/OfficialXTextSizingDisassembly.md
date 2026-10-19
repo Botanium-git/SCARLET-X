@@ -807,3 +807,16 @@ Primary binary: T1Twitter SHA-256 `1af51e57d746a81546da299e103241da9682ac397f334
 Separately `0x2A7618..0x2A762C` allocates `T1StandardStatusAttachmentViewAdapter` via classref `0x1AD48B8`; its instance is x23. At `0x2A7648`, the receiver is this x23, argument x2 global block `0x187BB08`, and target objc stub `0x13444E0` is `setMaximumSizeBlock:`. A search of disassembled instructions over `0x2A7410..0x2A8560` found only this one direct BL to that setter stub, not a direct call with the body adapter as receiver. This does NOT exclude indirect dispatch, setters elsewhere, or default blocks, and does not prove home timeline runtime conditions or nil block state. The block's zero height concerns attachment, not body. Source app unchanged.
 
 Reproduce with `llvm-objdump -d --start-address=0x2a75c0 --stop-address=0x2a7650 T1Twitter`, and dyld-info rebase entries for `0x1AD48A8` and `0x1AD48B8`.
+
+
+## OX-040 — standard body adapter initializer arguments resolved (2026-10-19)
+
+Primary source: supplied T1Twitter Mach-O, inspected at 0x13055A0 and 0x2A75C0..0x2A75DC with llvm-objdump. The objc stub at 0x13055A0 loads selector reference slot **0x1AA9730** (ADRP 0x1AA9000 + LDR offset 0x730). The slot's low-36-bit pointer resolves to the Objective-C method name **`initWithViewIdentifier:displayType:displayLocation:`**. This agrees with the previously validated `T1StandardStatusBodyViewAdapter` instance-method owner/IMP `0x3BA434` (OX-029).
+
+The standard generator (`-[T1StandardStatusViewLayoutStateGenerator _t1_viewAdapterSet]` at 0x2A7410) reads body adapter classref 0x1AD48A8 at 0x2A75C4, allocates at 0x2A75C8, then supplies these literal initializer arguments: `0x2A75CC mov w2,#0xE` **viewIdentifier=14**, `0x2A75D0 mov x3,#0` **displayType=0**, `0x2A75D4 mov x4,#0` **displayLocation=0**, followed by `0x2A75D8 bl 0x13055A0`. The resulting body adapter is saved in x21 at 0x2A75DC.
+
+**Correction to OX-039**: The integer 14 is **not** the body text displayType; it is `viewIdentifier`. This generator's constructed body adapter is explicitly initialized with **displayType 0**. This is a verified static initialization value, not a direct runtime measurement of which generator the home timeline uses. Selector names are resolved from actual Mach-O selector references rather than guessed from call signatures.
+
+The previous OX-039 scope remains unchanged: the directly observed `setMaximumSizeBlock:` at 0x2A7648 is addressed to the attachment adapter, not this body adapter. No conclusion about later indirect/default maximumSizeBlock or actual home timeline selection. No app code, main, or version change.
+
+Reproduce: `llvm-objdump -d --start-address=0x13055a0 --stop-address=0x13055b4 T1Twitter` and `llvm-objdump -d --start-address=0x2a75c0 --stop-address=0x2a75e0 T1Twitter`; decode selref 0x1AA9730 in the original Mach-O.
