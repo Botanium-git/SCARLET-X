@@ -48,7 +48,6 @@ def main():
     result=[]
     for i in range(count):
         entry=lst+8+12*i
-        selector=cstr(target(u64(entry+i32(entry)))) if False else None
         nameaddr=entry+i32(entry)
         try:selector=cstr(nameaddr)
         except (ValueError,UnicodeError):
