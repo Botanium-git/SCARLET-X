@@ -188,3 +188,9 @@ WHERE name LIKE '%TFNSizeThatFitsHelper%';
 
 - **OX-026（T1Twitter実命令とObjC stub/selref解決）**: `T1StandardStatusViewLayoutStateGenerator` の `layoutStateForViewModel:options:account:layoutMetrics:withPreviousLayoutState:` 0x2AE63C について、入口の引数退避、キャッシュ選択分岐、および実ObjC stubとselector文字列を照合。解決した主なselectorは `initWithStatusViewModel:options:account:scribeContext:` (0x1303880)、`isStatusViewLayoutStateGeneratorCachedViewAdapterSetEnabled` (0x13104E0)、`customizeLayoutMetrics:forViewModel:viewAdapterSet:` (0x12E87A0)、`viewIdentifiersWithValidLayoutStateInSet:forViewModel:layoutMetrics:` (0x1370B80)、`populateLayoutStateSet:withValidViewIdentifiers:inPreviousLayoutState:` (0x1323D80)。`promotedBadgePlacement`の戻り値を1/2と比較する命令を確認したが**TTAStatusBodyTextViewのdisplayType分岐とは無関係な数値として区別**。
 - **留保**: 間接dispatch先の所有クラス、通常タイムラインでのruntime採用、本文高さAPI・最終セル高さへの接続は未確定。詳細のslot/命令/解釈は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-026を参照。アプリ本体・バージョンは変更していない。
+
+## 2026-10-19 継続調査 — OX-027
+
+- **OX-027（T1Twitter実命令）**: T1StandardStatusViewLayoutStateGenerator の `layoutStateForViewModel:options:account:layoutMetrics:withPreviousLayoutState:` 内 `0x2AED94..0x2AEE30` を追加逆アセンブル。`0x2AEDE0` の呼び出し結果 d0 を d8 へ加算し、`0x2AEE00` の結果 d1 を減算し、`0x2AEE20 fmaxnm d8,d11,d14` で値を選ぶ経路を確認。直後はx0と7の比較による分岐。
+- **留保**: 本文高さ、画像/カードの寸法、または別の配置座標かは未確定。`0x12A99AC`, `0x12F3B40`, `0x131EC80` 等のstub/receiver/型を解決するまで、セル高さ式の発見と扱わない。詳細は[OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-027。
+- 元T1Twitter SHA-256再照合済み。実機未確認。アプリ本体・main・バージョン変更なし。
