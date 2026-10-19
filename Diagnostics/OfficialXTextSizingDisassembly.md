@@ -393,3 +393,18 @@ llvm-objdump -d --start-address=0x30c3b10 --stop-address=0x30c3b38 XAppLibraries
 **解釈の訂正**: OX-022/023で「Swift側caller・所有型未解決」とした点は、この直接callerについて解消。`0x30C31C0`自体のSwift所有型・他の間接callerは未確定だが、確認できた直接呼び出しが属するのは通常タイムラインではなく**Activity HistoryのVideoRowView**。したがってこの経路を通常タイムラインの実行条件の証明として使わない。前記記録を削除せず、本節で補足・訂正する。静的所有者が分かっても公式X実機での呼び出し状況を確認したわけではない。
 
 **次の優先順位**: TTAStatusBodyTextView高さAPIの**他の直接・間接caller**や通常のtimeline cell所有型を探す。displayType/fontOptionsの通常タイムライン入力値はなお未確定。アプリ本体変更なし。
+
+
+## OX-025 — VideoRowViewから独立したT1Twitter status-cell/layoutの一次候補（2026-10-19）
+
+OX-024のXActivityHistory.VideoRowViewを**通常タイムラインと取り違えない**ため、別バイナリT1TwitterのObjective-Cクラス定義とmethod listを調査。添付SQLite (`scarlet_macho(1).sqlite`)の`symbols`と`objc_methods`を検索し、元T1Twitter Mach-Oでclass->class_ro相当->baseMethods参照（low36 target）と対象IMPのARM64命令を照合。
+
+- `_OBJC_CLASS_$_T1StatusCell`: **0x1AEF370**、class data low36 target **0x1996E28**、baseMethods low36 target **0x13D37C0**。SQLiteの同listには61件。代表: `statusViewWithFrame:` 0x2F099C、`layoutSubviews` **0x2F0B74**、`sizeThatFits:` **0x2F0BE4**、`setCellLayout:` 0x2F09F4（addressはdecimal IMP値をhexへ変換したもの）。
+- `_OBJC_CLASS_$_T1StatusCellLayout`: **0x1AEF348**、ro target **0x1996F28**、baseMethods **0x13D3AA8**。SQLiteに5件（`statusOptions`, `setStatusOptions:`, `statusViewLayoutState`, `setStatusViewLayoutState:`, `.cxx_destruct`）。
+- `_OBJC_CLASS_$_T1StandardStatusViewLayoutStateGenerator`: **0x1AED818**、ro target **0x198DAF0**、baseMethods **0x13D2F00**。SQLiteのselector `layoutStateForViewModel:options:account:layoutMetrics:withPreviousLayoutState:` はIMP **0x2AE63C**。LLVMで`0x2AE63C`に関数プロローグがあり、複数の引数レジスタを退避して呼び出しを行うことを確認。
+- `_OBJC_CLASS_$_T1StandardStatusViewLayoutState`: **0x1AED8B8**、ro target **0x198D9D8**、baseMethods **0x13D2E50**。SQLiteには`verticalLayout`, `size`, `avatarFrame`の各getter/setterがあり、セル全体の計測を追う探索入口として有望だが、**役割はselector名からの仮説**。
+- LLVMで`0x2F0B74`にスタックプロローグ、`0x2F0BE4`にivar load/tail branchを確認。ただし`sizeThatFits:`の転送先の**受信クラスと最終高さ式は未解決**。
+
+**確実な事実**は上記class/list/selector/IMPと実命令存在。**まだ立証していない**のは、これらが通常タイムラインの実際の選択経路であること、`TTAStatusBodyTextView`への直接/間接呼び出し、具体的なdisplayType・fontOptions・本文の最終行高。別Mach-Oでの動的dispatchや過去のVideoRowView経路を自動的に接続しない。
+
+次は`T1StandardStatusViewLayoutStateGenerator`の`0x2AE63C`でメッセージ送信先をstub/selectorまで解決し、`T1StatusCell`の`setCellLayout:`・`layoutSubviews`へのデータ接続と、通常タイムラインでの利用証拠を並行追跡する。
