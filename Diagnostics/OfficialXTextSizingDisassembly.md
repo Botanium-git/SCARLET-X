@@ -1320,3 +1320,47 @@ print('named home binds',sum('TwitterHomeFeatureObjC' in v[1] for v in fixups.va
 ```
 
 Next: evaluate tag-0 Swift protocol direct references and explicitly inspect ObjC protocol adoption/consumer class metadata in home-related frameworks; avoid asserting a conformer from text-match absence. No app source, version, `main`, or device changes.
+
+
+## OX-061 — Decode all 64 direct Swift conformance protocol references (2026-10-20)
+
+Primary source: supplied official X v12.25 `T1Twitter` Mach-O, SHA-256 `1af51e57d746a81546da299e103241da9682ac397f33475defec7f6a3e6e5ccd`. Read-only parsing of original `__TEXT,__swift5_proto` records; no index-only inference.
+
+OX-059 found 64 tagged **direct** protocol references (tag 0) within 2,647 Swift conformance descriptors. Decoding each signed first-word offset, clearing two tag bits and following the resulting target to a Swift protocol `ContextDescriptor` resolves **all 64 entries to 51 distinct protocol descriptor VAs**, within `0x16F1BA4..0x171C904`. All observed descriptor flags begin with protocol kind `0x43` (low five bits = 3; flags higher bits vary). The `ContextDescriptor`'s relative name field at offset `+8` resolves to readable UTF-8 names for all 51 targets.
+
+Examples of resolved direct protocol definitions:
+
+| Protocol context descriptor VA | Protocol name |
+|---|---|
+| `0x16F1BA4` | `SessionSourceAutoplayable` |
+| `0x16F3538` | `SurveyCardSelectionControl` |
+| `0x1700624` | `HomeTimelineDidUpdateValueExtracting` |
+| `0x170E038` | `InjectionBuilderFactory` |
+| `0x170F034` | `URTTimelineModuleCarouselScribeHelper` |
+| `0x1710CF8` | `AccountURTTimelineEncodingPolicyFactory` |
+| `0x171C904` | `CreatorProductWebViewBehavior` |
+
+**Result of exhaustive tag-0 name check in this image:** None of the 51 direct Swift protocol context descriptors is named `TwitterHomeFeatureObjC`. The home-related `HomeTimelineDidUpdateValueExtracting` protocol is a **distinct named declaration**, not evidence of a `TwitterHomeFeatureObjC` conformer. This resolves the **64-entry direct-reference population** left open in OX-060, but does *not* prove the absence of Objective-C protocol conformance, factory implementations in other images, or the home-timeline-to-`T1StatusTableRowAdapter` edge. ObjC-visible protocol descriptors and Swift native protocol descriptors must not be conflated.
+
+Reproduce with original Mach-O bytes:
+```python
+import struct
+b=open('T1Twitter','rb').read()
+direct=[]
+for i in range(0x295C//4):
+    entry=0x17BE434+4*i
+    desc=entry+struct.unpack_from('<i',b,entry)[0]
+    relative=struct.unpack_from('<i',b,desc)[0]
+    target=desc+relative
+    if (target&3)!=0: continue
+    protocol=target&~3
+    name_field=protocol+8
+    name_at=name_field+struct.unpack_from('<i',b,name_field)[0]
+    name=b[name_at:].split(b'\\0',1)[0].decode('utf8','replace')
+    direct.append((protocol,name))
+print('direct entries',len(direct),'unique protocol declarations',len(set(direct)))
+print('TwitterHomeFeatureObjC matches',[x for x in direct if x[1]=='TwitterHomeFeatureObjC'])
+print('home-named',sorted(set(x for x in direct if 'Home' in x[1])))
+```
+
+Next: examine native Objective-C references to the `TwitterHomeFeatureObjC` protocol and any concrete consumers or cross-image implementations, or inspect `HomeTimelineDidUpdateValueExtracting` as a separate lead. Do not infer the home feed's row adapter from protocol-name similarity alone. No SCARLET-X implementation, version, `main`, or SE runtime changes.
