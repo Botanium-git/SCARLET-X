@@ -1414,3 +1414,34 @@ llvm-objdump --macho --dyld-info T1Twitter | grep '1AD1218'
 Next: inspect `0x12B075C` helper and resolve ownership or nearby symbol boundaries around `0xABDF7C` and `0xABE018`; search Swift method metadata and associated type names before assigning home-feature semantics.
 
 Documentation on `develop` only; no app executable, version, `main`, or real-device change.
+
+
+## OX-064 — 0x12B075C is Swift conditional ObjC protocol dynamic cast (2026-10-20)
+
+Primary input: user-supplied original official X v12.25 `T1Twitter` Mach-O, inspected locally with `llvm-objdump`. This **resolves OX-063's unidentified runtime helper**, but does not yet identify the two enclosing functions' class/Swift owners.
+
+`0x12B075C` is inside `__TEXT,__stubs`, not a bespoke app function. Its native instruction sequence is:
+
+```asm
+0x12B075C adrp x16, 0x186F000
+0x12B0760 ldr  x16, [x16,#0xA58] ; __DATA_CONST,__got VM 0x186FA58
+0x12B0764 br   x16
+```
+
+The original Mach-O's `llvm-objdump --macho --dyld-info` resolves the exact `__got` slot **`0x186FA58`** as an external **bind to `libswiftCore` symbol `_swift_dynamicCastObjCProtocolConditional`**. Adjacent slot `0x186FA50` is `_swift_dynamicCastObjCClassUnconditional`, emphasizing that the symbolic identity here is specifically the **conditional Objective-C protocol cast**.
+
+The OX-063 call sites are:
+
+- `0xABDFF0`: `x0=x19` candidate object, `w1=1`, `x2=&stack[8]` after storing the pointer loaded from `__objc_protorefs` slot `0x1AD1218`, then call `0x12B075C`. Return `x0` is tested with `cbnz`; null-return path calls `0x12B0A80` and returns zero.
+- `0xABE09C`: likewise `x0=x20`, `w1=1`, `x2=&stack[8]`, `0x12B075C` then tests result for nonzero, with a separate failure branch. In both cases the protocol reference was established in OX-062 to refer to `TwitterHomeFeatureObjC`.
+
+**Established meaning:** Both instruction sequences attempt a Swift runtime **conditional cast of an object to the Objective-C `TwitterHomeFeatureObjC` protocol**. They are runtime *checks/use of a protocol type*, not static proof of any particular conforming class, a method implementation, or the home timeline's actual adapter. The exact higher-level function names, origins of x19/x20, and following return-value consumers are not yet known.
+
+Reproduce:
+```sh
+llvm-objdump -d --start-address=0x12b0750 --stop-address=0x12b0768 T1Twitter
+llvm-objdump --macho --dyld-info T1Twitter | grep -i '0x186FA58'
+llvm-objdump -d --start-address=0xabdf90 --stop-address=0xabe0c0 T1Twitter
+```
+
+Next: resolve the boundaries and metadata ownership of functions around `0xABDF7C` and `0xABE018`, and inspect how the successful cast value is used. Source/docs-only update, no app code, version, `main` or SE device changes.
