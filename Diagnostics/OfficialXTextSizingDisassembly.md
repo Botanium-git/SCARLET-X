@@ -1445,3 +1445,29 @@ llvm-objdump -d --start-address=0xabdf90 --stop-address=0xabe0c0 T1Twitter
 ```
 
 Next: resolve the boundaries and metadata ownership of functions around `0xABDF7C` and `0xABE018`, and inspect how the successful cast value is used. Source/docs-only update, no app code, version, `main` or SE device changes.
+
+
+## OX-065 — TwitterHomeFeatureIdentifier is used immediately before both ObjC protocol casts (2026-10-20)
+
+Primary evidence: user-supplied original X v12.25 `T1Twitter` Mach-O, re-extracted from the supplied IPA and inspected read-only using ARM64 `llvm-objdump` disassembly and native dyld fixups. The exact unslid addresses are from the original image; they are not runtime slide-adjusted addresses.
+
+**Both OX-063/064 cast callsites are inside distinct native code ranges**, starting at `0xABDF7C` and `0xABE018`. Both read global slot `0x185D680` through `adrp x8,0x185D000; ldr x8,[x8,#0x680]; ldr x0,[x8]`. The original `llvm-objdump --macho --dyld-info` output identifies that `__DATA_CONST,__got` slot as a **bind to `XAppLibraries::_TFNTwitterHomeFeatureIdentifier`**. This is a concrete home-feature-identifier linkage, not a guess from method names.
+
+| Code range | Identifier-related instructions | Conditional protocol cast | Successful result |
+|---|---|---|---|
+| `0xABDF7C..0xABE014` | `0xABDFA8` ADRP, `0xABDFAC` LDR GOT, `0xABDFB0` LDR `x0,[x8]`; calls `0x12A6F88` and `0x129FD88` | `0xABDFF0` → `swift_dynamicCastObjCProtocolConditional` using `TwitterHomeFeatureObjC` | nonnull `x0` branches to shared return `0xABE004`; null returns zero after helper call |
+| `0xABE018..0xABE0CC` | `0xABE048` ADRP, `0xABE04C` LDR GOT, `0xABE050` LDR `x0,[x8]`; calls `0x12A6F88` and `0x129FD88` | `0xABE09C` → same conditional cast and protocol | nonnull `x0` branches to `0xABE0BC` and then tail-branches via `0x12B033C`; null returns zero |
+
+In the first range, `x19` captures the `x0` output of call `0x129FD88` at `0xABDFC0`, is checked for null at `0xABDFD4`, then is supplied as `x0` for the protocol cast. In the second, `x20` captures `0x129FD88`'s `x0` at `0xABE064`, is checked for null at `0xABE080`, then supplied for the cast at `0xABE09C`. Thus **in both cases the cast input is the returned object from the same call**, after obtaining the `TwitterHomeFeatureIdentifier` symbol. The exact semantics of `0x129FD88`, the identity/type of the returned object, and the enclosing function's source-level names still require proof.
+
+This strongly motivates investigating a feature-registry or dependency-resolution path; **that is a hypothesis**, not a verified implementation classification. There is still no native proof of a concrete `TwitterHomeFeatureObjC` conforming class, no home item view-controller factory IMP, and no established home data-source → `T1StatusTableRowAdapter` use.
+
+Reproduce:
+```sh
+llvm-objdump -d --start-address=0xABDF7C --stop-address=0xABE0D0 T1Twitter
+llvm-objdump --macho --dyld-info T1Twitter | grep '0x185D680 '
+llvm-objdump -d --start-address=0x12A6F88 --stop-address=0x12A6F98 T1Twitter
+llvm-objdump -d --start-address=0x129FD88 --stop-address=0x129FD98 T1Twitter
+```
+
+Next: resolve GOT targets of `0x12A6F88` and `0x129FD88`, and recover callers of the two functions; inspect the `XAppLibraries` identifier type/feature registration before asserting implementation class ownership. Only this diagnostic document on `develop` changed; app executable, version, `main` and iPhone remain untouched.
