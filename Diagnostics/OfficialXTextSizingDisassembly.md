@@ -1501,3 +1501,37 @@ llvm-objdump -d --start-address=0xabdf90 --stop-address=0xabe0b0 T1Twitter
 ```
 
 Next: inspect how `TwitterHomeFeatureIdentifier` is registered and how the retrieved protocol value's successful cast is consumed, then trace actual home timeline item factory and row adapter selection. No SCARLET-X app code, version, `main` branch, or SE device changes.
+
+
+## OX-067 — TwitterHomeFeatureIdentifier exported storage and its first chained rebase (2026-10-20)
+
+Primary evidence: user-provided **official X v12.25** IPA, extracted `XAppLibraries.framework/XAppLibraries` Mach-O plus `T1Twitter` Mach-O; checked read-only with `llvm-objdump --macho --syms`, `--dyld-info`, and raw little-endian binary reads. This examines identifier storage, **not** the feature registration function or concrete implementation class.
+
+The original `XAppLibraries` symbol table contains the defined global object `_TFNTwitterHomeFeatureIdentifier` at unslid VM **`0x5F22F88`**, in `__DATA_CONST,__const`. `T1Twitter` has the symbol as an **undefined import** and binds its GOT slot `0x185D680` to that name (as observed in OX-065). Therefore this identifier is imported across the **T1Twitter → XAppLibraries** boundary, rather than defined inside `T1Twitter`.
+
+At `XAppLibraries` address `0x5F22F88`, the raw 8-byte value is **`0x0010000006248360`**, and native dyld chained-fixup output independently identifies a **rebase to `0x6248360`**. The next 8-byte data words at `0x5F22F90` and `0x5F22F98` are separate rebases to `0x62483E0` and `0x6248400`, respectively; they must **not** automatically be attributed to the same symbol or interpreted as one identifier structure without symbol-size/section layout evidence.
+
+| Confirmed edge | Evidence |
+|---|---|
+| `T1Twitter` references `_TFNTwitterHomeFeatureIdentifier` | Undefined symbol and GOT bind slot `0x185D680` |
+| `XAppLibraries` defines `_TFNTwitterHomeFeatureIdentifier` | Object symbol `0x5F22F88` |
+| First stored word resolves elsewhere in `XAppLibraries` | `0x5F22F88` rebase → `0x6248360` |
+| T1Twitter calls feature lookup using that identifier | OX-065/066: `TwitterFeatureRegistry.feature(for:)` |
+
+**Limit:** The bytes at `0x6248360` are **not decoded here as a Swift String or registry key**. No mapping from identifier to registered concrete `TwitterHomeFeatureObjC` implementation has been established. A chained data rebase by itself does **not** prove a class registration, allocation, or home timeline adapter selection. Decoding these data records requires checking their native section layout and any actual registration/use callsites, rather than interpreting nearby bytes by eye.
+
+Reproduce (original Mach-O files):
+```sh
+llvm-objdump --macho --syms XAppLibraries | grep '_TFNTwitterHomeFeatureIdentifier'
+llvm-objdump --macho --syms T1Twitter | grep '_TFNTwitterHomeFeatureIdentifier'
+llvm-objdump --macho --dyld-info XAppLibraries | grep '0x5F22F88 '
+llvm-objdump --macho --dyld-info T1Twitter | grep '0x185D680 '
+python3 - <<'PY'
+import struct
+b=open('XAppLibraries','rb').read()
+for addr in (0x5F22F88,0x5F22F90,0x5F22F98):
+ print(hex(addr), hex(struct.unpack_from('<Q',b,addr)[0]))
+PY
+```
+
+Next: establish the identifier's exact data type/extent from XAppLibraries native metadata, then seek a verified feature-registry registration callsite and concrete implementation. The home timeline → `T1StatusTableRowAdapter` relation remains unproven. Documentation-only change to `develop`; no SCARLET-X app code, version, `main`, or iPhone changes.
