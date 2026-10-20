@@ -1570,3 +1570,32 @@ PY
 ```
 
 Next: use the confirmed identifier string to search registration/storage callsites in the native feature-registry implementation and determine which concrete feature is registered. Diagnostic document only; no changes to SCARLET-X app code, version, `main` or iPhone SE.
+
+
+## OX-069 — Home timeline runtime class landmarks alongside feature-registry discovery (2026-10-21)
+
+Source: original user-provided **official X 12.25 IPA**, re-extracted unmodified `T1Twitter.framework/T1Twitter` and `XAppLibraries.framework/XAppLibraries`; cross-checked with the supplied `scarlet_macho(1).sqlite` symbol index. This entry identifies actual **defined runtime class symbols**, not class registration or dynamic call order.
+
+The `T1Twitter` Mach-O symbol index contains these **defined** ObjC runtime class objects (un-slid addresses):
+
+| Module | Class symbol | ObjC class-object address |
+|---|---|---|
+| T1Twitter | `_OBJC_CLASS_$_TFNTwitterHomeTimeline` | `0x1B573C0` |
+| T1Twitter | `_OBJC_CLASS_$_TwitterHomeTimelineManagerProvider` | `0x1B57398` |
+| T1Twitter | `_OBJC_CLASS_$_T1HomeTimelineVariantCoordinator` | `0x1B37C90` |
+| T1Twitter | `_OBJC_CLASS_$_T1HomeTimelineAppNavigationTabEntry` | `0x1B008E0` |
+| T1Twitter | `_OBJC_CLASS_$_T1HomeTimelineRefreshTaskProvider` | `0x1B567C0` |
+| T1Twitter | `_OBJC_CLASS_$_TwitterHomeFeature` | `0x1B56120` |
+| T1Twitter | `_OBJC_CLASS_$_TwitterHomeFeatures` | `0x1B56D28` |
+
+The `XAppLibraries` Mach-O defines the distinct global `_TFNTwitterHomeFeatureIdentifier` at `0x5F22F88` (OX-067/068: CFString content `com.twitter.home`). This establishes a **cross-binary distinction**: the home feature key is defined by `XAppLibraries`, whereas multiple home-related concrete ObjC runtime class objects are defined inside `T1Twitter`.
+
+The class names are useful **investigation landmarks only**. Their mere co-occurrence does **not** establish that `TwitterHomeFeature` is registered into `TwitterFeatureRegistry` under `com.twitter.home`, that `TFNTwitterHomeTimeline` constructs the home feed, or that any particular `T1StatusTableRowAdapter` is selected. OX-065/066 establishes lookup and protocol-cast callsites, but does not bridge registration or returned implementation.
+
+Reproduce:
+```sh
+llvm-objdump --macho --syms T1Twitter | grep -E '_OBJC_CLASS_\\$_(TFNTwitterHomeTimeline|TwitterHomeTimelineManagerProvider|T1HomeTimelineVariantCoordinator|T1HomeTimelineAppNavigationTabEntry|T1HomeTimelineRefreshTaskProvider|TwitterHomeFeature|TwitterHomeFeatures)'
+llvm-objdump --macho --syms XAppLibraries | grep '_TFNTwitterHomeFeatureIdentifier'
+```
+
+Next: inspect exact ObjC metaclass/class method-list and native function cross-references for the **home timeline manager-provider/feature** candidates, then seek an actual registration/factory edge. Do not treat names or proximity as a verified execution path. Diagnostic-only commit to `develop`; no app code, version, `main`, or SE changes.
