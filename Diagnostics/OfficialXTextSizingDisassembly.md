@@ -1242,3 +1242,37 @@ PY
 ```
 
 Next: decode the conformance protocol and type-reference tags properly, then compare to native ObjC protocol references/factory callsites. No SCARLET-X executable, version, `main` branch, or iPhone was changed.
+
+
+## OX-059 — Swift conformance protocol reference tags surveyed (2026-10-20)
+
+Primary input: user-provided official X v12.25 `T1Twitter` Mach-O, SHA-256 `1af51e57d746a81546da299e103241da9682ac397f33475defec7f6a3e6e5ccd`. Read-only binary pass. Examined all **2647** relative conformance references in `__TEXT,__swift5_proto` at `0x17BE434..0x17C0D90`, decoding the signed descriptor offset, the descriptor's first 32-bit protocol-reference word, and the **low two tag bits** of the relative protocol reference.
+
+| Observed protocol-reference low-two-bit tag | Descriptor records |
+|---|---:|
+| `1` | **2583** |
+| `0` | **64** |
+| `2` / `3` | **0** |
+
+For a descriptor at `d`, the tagged protocol-reference target was computed as `d + (int32_t)word_at(d)`; remove its two low tag bits (`& ~3`) before comparing address bases. This yields **1780 distinct masked target addresses**, spanning **`0x16F1BA4..0x1908338`**. No masked target equals any of the **previously identified** Objective-C protocol reference locations for `TwitterHomeFeatureObjC`: `0x1A38C80` (protocol structure), `0x19338B0` (protolist slot), or `0x1AD1218` (protorefs slot). None of these addresses lies within the observed target range.
+
+**Important interpretation limitation:** Most Swift descriptor protocol references are tagged indirect forms; comparing the **address of the indirect slot** to the Objective-C protocol object address is not equivalent to resolving the slot's chained/bound pointer. This pass did **not** decode all indirect slot contents and cannot establish that `TwitterHomeFeatureObjC` is absent from the conformances. Moreover, class/category adoption, implementation in another image and Swift bridging are still distinct possibilities. No concrete home controller implementation nor a home-timeline → `T1StatusTableRowAdapter` selection path is proven.
+
+Reproduce against the original Mach-O:
+```python
+import struct,collections
+b=open('T1Twitter','rb').read()
+s,n=0x17BE434,0x295C//4
+tags=collections.Counter(); masked=set()
+for i in range(n):
+    a=s+4*i
+    desc=a+struct.unpack_from('<i',b,a)[0]
+    proto_target=desc+struct.unpack_from('<i',b,desc)[0]
+    tags[proto_target&3]+=1
+    masked.add(proto_target&~3)
+print('tags',tags,'unique',len(masked),'range',hex(min(masked)),hex(max(masked)))
+for ref in (0x1A38C80,0x19338B0,0x1AD1218):
+    print(hex(ref),ref in masked)
+```
+
+Next: resolve the **indirect slot contents** and chained fixups of the Swift conformance protocol-reference targets; do not claim absence of conformance from un-dereferenced slot addresses. No app code, main branch, version or device changes.
