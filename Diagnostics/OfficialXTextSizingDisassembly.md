@@ -1364,3 +1364,27 @@ print('home-named',sorted(set(x for x in direct if 'Home' in x[1])))
 ```
 
 Next: examine native Objective-C references to the `TwitterHomeFeatureObjC` protocol and any concrete consumers or cross-image implementations, or inspect `HomeTimelineDidUpdateValueExtracting` as a separate lead. Do not infer the home feed's row adapter from protocol-name similarity alone. No SCARLET-X implementation, version, `main`, or SE runtime changes.
+
+
+## OX-062 — Native dyld references to TwitterHomeFeatureObjC protocol object (2026-10-20)
+
+Primary evidence: extracted **original** official X v12.25 `T1Twitter` binary from supplied IPA `Payload/Twitter.app/Frameworks/T1Twitter.framework/T1Twitter`; inspected with `llvm-objdump --macho --dyld-info` in a read-only pass. The protocol object address `0x1A38C80` was established independently in OX-052.
+
+Searching the **complete dyld chained-fixup text** for the exact resolved `rebase` target `0x1A38C80` returns **two slots**:
+
+| Slot (VM) | Section | Fixup | Resolved destination |
+|---|---|---|---|
+| `0x19338B0` | `__DATA_CONST,__objc_protolist` | rebase | `0x1A38C80` |
+| `0x1AD1218` | `__DATA,__objc_protorefs` | rebase | `0x1A38C80` |
+
+Both contain the encoded chained pointer `0x0010000001A38C80`. The `__objc_protolist` slot is the image's registration of the protocol metadata; the `__objc_protorefs` slot is a separate reference to the same protocol. This **does not identify the owning method, adopting class, or callsite** for the latter. The number two applies only to slots that are explicitly represented as dyld chained-fixup **rebases to this exact address within this one Mach-O**; it is not a count of all possible protocol consumers, and it does not encompass relative references, Swift metadata accessors, code instructions or other dylibs.
+
+**What is *not* established:** There is still no verified `TwitterHomeFeatureObjC` conforming class, concrete `homeTimelineItemsViewControllerWithAccount:timeline:` implementation, or home timeline data-source → `T1StatusTableRowAdapter` selection edge. OX-052/061/060 and this fixup result must not be combined to claim that all protocol consumers have been exhaustively ruled out. The native class/protocol list adoption scan across all relevant images and the code xrefs to `0x1AD1218` are future work.
+
+Reproduce (on the unchanged extracted binary):
+```sh
+llvm-objdump --macho --dyld-info T1Twitter | grep '1A38C80'
+```
+For an exact count, select dyld lines matching `rebase` and **resolved target** `0x1A38C80`, rather than substring matching arbitrary fields. This pass found exactly the two records above.
+
+Documentation-only change on `develop`; no app implementation, `main`, version, or on-device actions.
