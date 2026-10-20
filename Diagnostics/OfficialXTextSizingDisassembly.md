@@ -1535,3 +1535,38 @@ PY
 ```
 
 Next: establish the identifier's exact data type/extent from XAppLibraries native metadata, then seek a verified feature-registry registration callsite and concrete implementation. The home timeline → `T1StatusTableRowAdapter` relation remains unproven. Documentation-only change to `develop`; no SCARLET-X app code, version, `main`, or iPhone changes.
+
+
+## OX-068 — TwitterHomeFeatureIdentifier resolves to CFString "com.twitter.home" (2026-10-20)
+
+Primary evidence: user-supplied official X v12.25 `XAppLibraries.framework/XAppLibraries` extracted from original IPA, read-only, and independent native `llvm-objdump --macho --dyld-info` corroboration. OX-067 established the symbol `_TFNTwitterHomeFeatureIdentifier` at `0x5F22F88` in `__DATA_CONST,__const`, and its first pointer's chained rebase to `0x6248360`.
+
+**Resolved data type and value:** `0x6248360` lies in `__DATA_CONST,__cfstring`; the first word (`0x8020000000002F73`) is a dyld chained bind to CoreFoundation `___CFConstantStringClassReference`. This is a native **CFString constant object**, not a class-registration record. Its 32-byte payload is:
+
+| CFString slot | VM | On-disk 64-bit word / decoded value |
+|---|---|---|
+| isa/class | `0x6248360` | `0x8020000000002F73` → bind `___CFConstantStringClassReference` |
+| flags | `0x6248368` | `0x7C8` |
+| character data pointer | `0x6248370` | `0x00200000054AADDE` → rebase `0x54AADDE` |
+| length | `0x6248378` | `0x10` = **16** |
+
+At `XAppLibraries` VM `0x54AADDE` the original bytes are `63 6f 6d 2e 74 77 69 74 74 65 72 2e 68 6f 6d 65 00`, i.e. null-terminated ASCII/UTF-8 string **`com.twitter.home`** (16 characters before NUL). Both pointer rebases and the CFString class bind are explicitly present in the native chained fixup records. Therefore OX-066's registry lookup uses a defined home-feature identifier whose pointed-to CFString content is `com.twitter.home`. This is the identifier value, **not** the concrete feature implementation class and not a registration call.
+
+**Limits:** the immediately following global symbols/CFString objects at `0x5F22F90` and `0x5F22F98` are distinct data and cannot be combined into one structure without evidence. No registration writer or concrete conforming `TwitterHomeFeatureObjC` class has been identified. No connection from normal home timeline to `T1StatusTableRowAdapter` is proven.
+
+Reproduce:
+```sh
+llvm-objdump --macho --syms XAppLibraries | grep '_TFNTwitterHomeFeatureIdentifier'
+llvm-objdump --macho --dyld-info XAppLibraries | grep -E '0x5F22F88 |0x6248360 |0x6248370 '
+python3 - <<'PY'
+import struct
+b=open('XAppLibraries','rb').read()
+ptr=struct.unpack_from('<Q',b,0x5F22F88)[0] & 0xFFFFFFFFF
+isa,flags,chars,length=struct.unpack_from('<QQQQ',b,ptr)
+char_addr=chars & 0xFFFFFFFFF
+print(hex(ptr),hex(isa),hex(flags),hex(char_addr),length,b[char_addr:char_addr+length])
+assert b[char_addr:char_addr+length]==b'com.twitter.home'
+PY
+```
+
+Next: use the confirmed identifier string to search registration/storage callsites in the native feature-registry implementation and determine which concrete feature is registered. Diagnostic document only; no changes to SCARLET-X app code, version, `main` or iPhone SE.
