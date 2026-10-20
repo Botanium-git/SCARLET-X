@@ -1169,3 +1169,40 @@ for list_va,count in ((0x13810e0,2),(0x1381100,90)):
 ```
 
 No source change to app, no version change, no `main` change, no device measurements.
+
+
+## OX-057 — Cross-binary string/index coverage for TwitterHomeFeatureObjC (2026-10-20)
+
+Sources: user-supplied official X v12.25 IPA `com.atebits.Tweetie2_12.25_und3fined(1).ipa`, Mach-O index `scarlet_macho(1).sqlite`, read-only. **Scope limited to exact symbol/UTF-8 byte searches, not comprehensive Swift metadata decoding or code/dataflow analysis.**
+
+**Indexer coverage:** SQLite `binaries` currently lists only two records: `T1Twitter` (binary_id=1, 33,287,408 bytes) and `XAppLibraries` (binary_id=2, 124,141,728 bytes). Thus queries of this DB are **not** an exhaustive scan of all IPA frameworks. The IPA also contains `Payload/Twitter.app/Frameworks/XServiceLibraries.framework/XServiceLibraries` (86,030,256 bytes); it is absent from the supplied index.
+
+**SQLite cross-binary check:** Searching indexed `strings.text`, `symbols.name`, and `objc_methods.selector` for `TwitterHomeFeatureObjC` produces the known Swift protocol-name string in T1Twitter only; there is no named occurrence in indexed XAppLibraries. `homeTimelineItemsViewControllerWithAccount:timeline:` also has the previously described single indexed ObjC method entry in T1Twitter's protocol list, and no indexed XAppLibraries counterpart. Absence of an exact string in the index **cannot rule out** stripped symbols, indirect calls, or type descriptors not indexed by these tables.
+
+**Direct IPA binary check:** Opened `XServiceLibraries` directly from the original IPA ZIP and searched its 86,030,256 uncompressed bytes for exact UTF-8 strings. Counts are zero for all four searches:
+
+| Exact byte sequence | Occurrences in XServiceLibraries |
+|---|---:|
+| `TwitterHomeFeatureObjC` | 0 |
+| `homeTimelineItemsViewControllerWithAccount:timeline:` | 0 |
+| `T1StatusTableRowAdapter` | 0 |
+| `TwitterHomeFeature` | 0 |
+
+This narrows the **literal-name** search, but it is **not evidence** that no relevant implementation exists in XServiceLibraries, that the two classes identified in OX-053 conform to the ObjC protocol, or that home timeline uses the standard row adapter. Swift metadata names may be encoded differently, other IPA binaries may be involved, and methods can be compiled without retaining these strings.
+
+**Next:** rather than repeating selector-name searches, decode the native Swift protocol conformance descriptors / ObjC protocol reference lists for `TwitterHomeFeatureObjC` in T1Twitter, and inspect home timeline item controller construction/data-source call sites. Keep adapter-to-home linkage unresolved pending concrete evidence.
+
+Reproduce:
+```python
+import sqlite3,zipfile
+db=sqlite3.connect('scarlet_macho(1).sqlite')
+print(db.execute('SELECT id,name,size FROM binaries ORDER BY id').fetchall())
+for table,col in [('strings','text'),('symbols','name'),('objc_methods','selector')]:
+    print(table,db.execute(f'SELECT binary_id FROM {table} WHERE {col} LIKE ? GROUP BY binary_id',('%TwitterHomeFeatureObjC%',)).fetchall())
+with zipfile.ZipFile('com.atebits.Tweetie2_12.25_und3fined(1).ipa') as z:
+    binary=z.read('Payload/Twitter.app/Frameworks/XServiceLibraries.framework/XServiceLibraries')
+    for needle in (b'TwitterHomeFeatureObjC',b'homeTimelineItemsViewControllerWithAccount:timeline:',b'T1StatusTableRowAdapter',b'TwitterHomeFeature'):
+        print(needle.decode(),binary.count(needle))
+```
+
+Documentation-only commit to SCARLET-X `develop`; no source code, `main`, version or device changes.
