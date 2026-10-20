@@ -1065,3 +1065,30 @@ llvm-objdump --macho --syms T1Twitter | grep 'OBJC_.*TwitterHomeFeature'
 ```
 
 Only diagnostic documentation on `develop` changed. No app code, version, `main` or live-device measurements.
+
+
+## OX-054 — TwitterHomeFeature(s) do not directly declare ObjC protocols in class_ro_t (2026-10-20)
+
+Primary evidence: user-provided official X v12.25 `T1Twitter` original Mach-O, read-only. Confirmed class symbol virtual addresses from OX-053. The class metadata uses chained fixup encoded pointers; addresses listed here are unslid Mach-O virtual addresses, NOT process addresses.
+
+| Objective-C class | class_t VA | class_t data word | decoded class_ro_t VA | class_ro_t `baseProtocols` (offset +0x28) |
+|---|---|---|---|---|
+| `TwitterHomeFeature` | `0x1B56120` | `0x40000001B560C2` | `0x1B560C0` | **0** |
+| `TwitterHomeFeatures` | `0x1B56D28` | `0x40000001B56CCA` | `0x1B56CC8` | **0** |
+
+For both class records, the `class_t` word at offset `+0x20` has low flag bits 2 and points to `class_ro_t` after masking pointer metadata and class data flags. At each resolved `class_ro_t`, the `baseProtocols` field (+0x28 in this ObjC ABI) is **zero**. Thus **neither class directly lists any Objective-C protocol adoption** in its native class metadata. Specifically, OX-053's name-based candidates have **no directly recorded adoption of `TwitterHomeFeatureObjC`** at these class_ro_t fields.
+
+This conclusion is deliberately narrow: a zero direct protocol list does **not** exclude protocol adoption through a superclass, dynamically added protocols, Swift-side conformances, cross-module implementations, or methods forwarded at runtime. Nor does it prove these classes are unrelated to the home timeline; each has other metadata/methods that have not been fully followed. The concrete implementation of `homeTimelineItemsViewControllerWithAccount:timeline:` and the home-data-source → `T1StatusTableRowAdapter` edge are still unresolved. Do not treat either class as a confirmed ObjC protocol implementer.
+
+Reproduce with 64-bit little-endian reads (the file's `__DATA` class records are directly mapped at the quoted VAs for this image):
+```python
+import struct
+b = open('T1Twitter','rb').read()
+for class_va in (0x1B56120, 0x1B56D28):
+    data_word = struct.unpack_from('<Q',b,class_va+0x20)[0]
+    ro_va = (data_word & 0xFFFFFFFFF) & ~7
+    proto_word = struct.unpack_from('<Q',b,ro_va+0x28)[0]
+    print(hex(class_va),hex(data_word),hex(ro_va),hex(proto_word))
+```
+
+This confirms **native direct protocol metadata only**. No app source, executable, version or `main` branch change; no iPhone runtime validation.
