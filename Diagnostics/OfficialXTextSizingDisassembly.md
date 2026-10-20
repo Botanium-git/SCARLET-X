@@ -1092,3 +1092,35 @@ for class_va in (0x1B56120, 0x1B56D28):
 ```
 
 This confirms **native direct protocol metadata only**. No app source, executable, version or `main` branch change; no iPhone runtime validation.
+
+
+## OX-055 — TwitterHomeFeature and TwitterHomeFeatures are direct NSObject subclasses (2026-10-20)
+
+Primary evidence: supplied official X v12.25 `T1Twitter` Mach-O, read-only. Inspected native ObjC `class_t` records at `0x1B56120` / `0x1B56D28` and validated the chained-bind resolution independently with `llvm-objdump --macho --dyld-info`. The on-disk superclass pointer is a chained **bind**, not an ordinary unslid pointer; decode it using dyld binding info rather than interpreting its raw integer as a VM address.
+
+| Class | class_t VM | superclass bind slot | dyld-resolved superclass | class_ro_t baseMethods list | list count | class_ro_t baseProtocols |
+|---|---|---|---|---|---:|---:|
+| `TwitterHomeFeature` | `0x1B56120` | `0x1B56128` | `_OBJC_CLASS_$_NSObject` (libobjc) | `0x13810E0` | 2 | 0 |
+| `TwitterHomeFeatures` | `0x1B56D28` | `0x1B56D30` | `_OBJC_CLASS_$_NSObject` (libobjc) | `0x1381100` | 90 | 0 |
+
+Both superclass slots contain the same chained bind value `0x8010000000003A54`; dyld info explicitly identifies `_OBJC_CLASS_$_NSObject`. Class_ro_t direct protocol fields were separately shown zero in OX-054. The native relative method-list headers at `0x13810E0` and `0x1381100` are respectively `(0x8000000C,2)` and `(0x8000000C,90)`. The counts refer to the **instance method metadata** of these two classes; they do not indicate which timeline UI code uses them.
+
+**Narrow implication:** Their Objective-C superclass chains go directly to NSObject, so **inheritance through an intermediate Objective-C superclass cannot explain** adoption of `TwitterHomeFeatureObjC` for these two named classes. Their direct protocol lists are empty. This is **not** a proof that neither plays a role in home features or that no Swift-side bridge/adoption exists elsewhere. In particular, the 90-method `TwitterHomeFeatures` metadata merits selector-level inspection, and actual implementations may be in other classes/modules.
+
+Reproduce:
+```sh
+llvm-objdump --macho --dyld-info T1Twitter | grep -E '0x1B56128 |0x1B56D30 '
+python3 - <<'PY'
+import struct
+b=open('T1Twitter','rb').read()
+for cls in (0x1B56120,0x1B56D28):
+    superclass=struct.unpack_from('<Q',b,cls+8)[0]
+    ro=(struct.unpack_from('<Q',b,cls+0x20)[0]&0xfffffffff)&~7
+    methods=struct.unpack_from('<Q',b,ro+0x20)[0]&0xfffffffff
+    proto=struct.unpack_from('<Q',b,ro+0x28)[0]
+    hdr=struct.unpack_from('<II',b,methods)
+    print(hex(cls),hex(superclass),hex(ro),hex(methods),hdr,hex(proto))
+PY
+```
+
+Next: decode `TwitterHomeFeatures`' 90 native instance-method entries and other relevant classes' method/Swift metadata; seek a concrete `TwitterHomeFeatureObjC` implementation or home timeline view-controller factory call, and connect to `T1StatusTableRowAdapter` only with verified call/dataflow evidence. No app code, `main`, or version changes and no SE runtime result.
