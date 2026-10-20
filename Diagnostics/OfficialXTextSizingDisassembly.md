@@ -1388,3 +1388,29 @@ llvm-objdump --macho --dyld-info T1Twitter | grep '1A38C80'
 For an exact count, select dyld lines matching `rebase` and **resolved target** `0x1A38C80`, rather than substring matching arbitrary fields. This pass found exactly the two records above.
 
 Documentation-only change on `develop`; no app implementation, `main`, version, or on-device actions.
+
+
+## OX-063 — Concrete code xrefs to TwitterHomeFeatureObjC ObjC protoref (2026-10-20)
+
+Primary evidence: supplied original official X v12.25 `T1Twitter` Mach-O, using full `llvm-objdump -d` and targeted disassembly. Original protocol reference slot `0x1AD1218` was verified in OX-062 to rebase to protocol object `0x1A38C80`. This search resolves an ARM64 `ADRP` followed by the matching 64-bit `LDR` offset; it is not an exhaustive dataflow/call graph across all instruction patterns.
+
+**Two direct adjacent ADRP/LDR sites targeting the exact protoref slot** were found in disassembled `__TEXT,__text`:
+
+| Load site | Native instructions | Subsequent use |
+|---|---|---|
+| `0xABDFD8..0xABDFDC` | `adrp x8, 0x1AD1000; ldr x8, [x8,#0x218]` | `str x8,[sp,#8]`; `add x2,sp,#8`; `mov x0,x19`; `mov w1,#1`; `bl 0x12B075C` at `0xABDFF0` |
+| `0xABE084..0xABE088` | `adrp x8, 0x1AD1000; ldr x8, [x8,#0x218]` | `str x8,[sp,#8]`; `add x2,sp,#8`; `mov x0,x20`; `mov w1,#1`; `bl 0x12B075C` at `0xABE09C` |
+
+Both calls check the returned `x0` with `cbnz`; the zero-return branch executes another runtime helper at `0x12B0A80`. Surrounding calls include `0x12F1260`, `0x12A6F88`, `0x129FD88`, `0x12B0414`, `0x12B0624`. Their precise roles and the owners of the two code ranges have **not** been identified, so the semantics of `0x12B075C` must not be guessed. In particular, a protocol reference passed as an argument does not demonstrate a class adopting the protocol, and it is **not evidence that the home timeline selects `T1StatusTableRowAdapter`**.
+
+**Finding:** At least two executable instruction paths in this Mach-O use the exact `TwitterHomeFeatureObjC` Objective-C protocol reference. OX-062's two dyld fixup slots were metadata locations; the two code sites reported here are *separate actual loads* of the one `__objc_protorefs` slot. The count two is restricted to direct adjacent `ADRP x8 / LDR x8,#0x218` xrefs observed in this pass, not all possible protocol consumers, indirect data accesses or dynamic runtime uses.
+
+Reproduce:
+```sh
+llvm-objdump -d --start-address=0xabdf70 --stop-address=0xabe0d0 T1Twitter
+llvm-objdump --macho --dyld-info T1Twitter | grep '1AD1218'
+```
+
+Next: inspect `0x12B075C` helper and resolve ownership or nearby symbol boundaries around `0xABDF7C` and `0xABE018`; search Swift method metadata and associated type names before assigning home-feature semantics.
+
+Documentation on `develop` only; no app executable, version, `main`, or real-device change.
