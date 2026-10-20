@@ -1599,3 +1599,39 @@ llvm-objdump --macho --syms XAppLibraries | grep '_TFNTwitterHomeFeatureIdentifi
 ```
 
 Next: inspect exact ObjC metaclass/class method-list and native function cross-references for the **home timeline manager-provider/feature** candidates, then seek an actual registration/factory edge. Do not treat names or proximity as a verified execution path. Diagnostic-only commit to `develop`; no app code, version, `main`, or SE changes.
+
+
+## OX-070 — Native ObjC method-list evidence for home timeline manager provider (2026-10-21)
+
+Primary source: unmodified official X iOS v12.25 `T1Twitter.framework/T1Twitter` Mach-O extracted from supplied IPA. The ObjC class pointers, `class_ro_t` metadata, relative method-list entries, dyld rebase pointers to selector C-strings, and disassembled executable methods were read directly from this Mach-O; none of the following class-method associations is inferred from symbol proximity.
+
+The class object `_OBJC_CLASS_$_TwitterHomeTimelineManagerProvider` is `0x1B57398`. Its `class_ro_t` is at `0x1A85C50`, with instance base-method list at `0x13F28E0`. List header `0x8000000C` (12-byte relative entries) and **count 1**. The single entry resolves via selector-reference slot `0x1ACDAC8` to `timelineManagerForAccount:`, with native implementation address **`0x1253BA8`**.
+
+The `_OBJC_CLASS_$_TFNTwitterHomeTimeline` class object at `0x1B573C0` points to `class_ro_t` at `0x1A85EE0`; its instance base-method list at `0x13F1220` also uses relative 12-byte entries and has **34 entries**. Examples recovered directly from that list:
+
+| Ordinal | Selector | Implementation address |
+|---|---|---|
+| 0 | `initWithAccount:streamFactory:` | `0x1253C14` |
+| 1 | `init` | `0x12557C4` |
+| 2 | `dealloc` | `0x1253D00` |
+| 3 | `hasUnreadItems` | `0x1253DE4` |
+| 4 | `setStream:` | `0x1253E20` |
+| 5 | `deserializeStream` | `0x1253F50` |
+| 6 | `performRefreshWithSource:pushToHomeTweetId:` | `0x1254148` |
+| 7 | `refreshWithSource:pushToHomeTweetId:completion:` | `0x1254424` |
+| 8 | `refreshWithSource:completion:` | `0x12545F4` |
+
+For comparison, the `TwitterHomeFeature` class object at `0x1B56120` leads to `class_ro_t` `0x1B560C0` and base-method list `0x13810E0`: **2 entries**, `init` → `0x123DF58`, `.cxx_destruct` → `0x123DF78`. The `TwitterHomeFeatures` class object's instance base-method list at `0x1381100` contains **90 entries**; the list count alone does not assign factory semantics. These counts refer to **direct instance base-method lists** and are not the complete inherited/class/metaclass method sets.
+
+The first disassembly of provider method `0x1253BA8` confirms this is executable native code, not an index field mistaken for an IMP. It takes the account parameter in `x2`, retains/releases it, loads an imported pointer through `adrp x8,0x1AD2000; ldr x20,[x8,#0x8A8]` (slot `0x1AD28A8`), calls imported stubs `0x12B02F4` and `0x12FB6C0`, then returns the result. The exact symbol binds and semantic target of the call **have not yet been identified**. The adjacent timeline initializer at `0x1253C14` is **not proof** the provider calls it (no direct branch to it appears in the first provider method disassembly).
+
+**Scope and limits:** This establishes real runtime methods for investigating the home timeline manager, rather than merely class-name landmarks (OX-069). It does **not** establish that `TwitterFeatureRegistry.feature(for: "com.twitter.home")` returns `TwitterHomeFeature`, that this provider is reached from the home controller factory, or that the home timeline uses `T1StatusTableRowAdapter`.
+
+Reproduce:
+```sh
+llvm-objdump -d --start-address=0x1253ba8 --stop-address=0x1253bf4 T1Twitter
+# Decode class_ro_t and 12-byte relative entries from the unslid addresses
+# above, resolve selector-reference pointers with Mach-O chained rebase data.
+```
+
+Next: resolve imported GOT address `0x1AD28A8` and the symbols behind the provider's calls `0x12B02F4` / `0x12FB6C0`, then inspect `TFNTwitterHomeTimeline initWithAccount:streamFactory:` and callers. Documentation only, `develop`; no app changes or SE operations.
