@@ -1471,3 +1471,33 @@ llvm-objdump -d --start-address=0x129FD88 --stop-address=0x129FD98 T1Twitter
 ```
 
 Next: resolve GOT targets of `0x12A6F88` and `0x129FD88`, and recover callers of the two functions; inspect the `XAppLibraries` identifier type/feature registration before asserting implementation class ownership. Only this diagnostic document on `develop` changed; app executable, version, `main` and iPhone remain untouched.
+
+
+## OX-066 — Feature registry lookup resolves to XServiceLibraries TwitterFeatureRegistry.feature(for:) (2026-10-20)
+
+Primary source: user-supplied official X 12.25 `T1Twitter` Mach-O, SHA-256 `1af51e57d746a81546da299e103241da9682ac397f33475defec7f6a3e6e5ccd`. Checked disassembly and dyld chained bind metadata from the original native executable, read-only.
+
+In OX-065, `0x129FD88` was the yet-unresolved function called after loading `XAppLibraries::_TFNTwitterHomeFeatureIdentifier`, with its returned object used in the `TwitterHomeFeatureObjC` conditional cast. The stub is:
+
+```asm
+0x129FD88  adrp x16, 0x1865000
+0x129FD8C  ldr  x16, [x16,#0x190]  ; GOT slot 0x1865190
+0x129FD90  br   x16
+```
+
+Native `llvm-objdump --macho --dyld-info` identifies the GOT entry **`0x1865190`** as a **bind to `XServiceLibraries`** symbol `_$s14TFSTwitterCore22TwitterFeatureRegistryC7feature3forAA0cD0_pSgSS_tF`, whose Swift-mangled components represent **`TFSTwitterCore.TwitterFeatureRegistry.feature(for: String) -> optional TwitterFeature protocol existential`**. The generic observation “registry returns an object” from OX-065 can now be refined to **this concrete registry lookup**. Swift symbol decoding here identifies the called function's signature and linked module; it does not determine the returned object's runtime concrete class.
+
+The two verified callsite paths (`0xABDF7C..` and `0xABE018..`) now have the following supported linkage:
+
+`XAppLibraries::_TFNTwitterHomeFeatureIdentifier` → `XServiceLibraries::TwitterFeatureRegistry.feature(for:)` via GOT slot `0x1865190` → conditional ObjC protocol cast `swift_dynamicCastObjCProtocolConditional` against `TwitterHomeFeatureObjC` (OX-064).
+
+This confirms the **feature-registry retrieval mechanism** and removes the primary uncertainty about `0x129FD88`. It does **not** establish the feature registry's concrete registration, the type of the object returned for the home identifier, implementation of home controller factories, or whether the home feed selects `T1StatusTableRowAdapter`.
+
+Reproduce:
+```sh
+llvm-objdump -d --start-address=0x129fd88 --stop-address=0x129fd94 T1Twitter
+llvm-objdump --macho --dyld-info T1Twitter | grep '0x1865190 '
+llvm-objdump -d --start-address=0xabdf90 --stop-address=0xabe0b0 T1Twitter
+```
+
+Next: inspect how `TwitterHomeFeatureIdentifier` is registered and how the retrieved protocol value's successful cast is consumed, then trace actual home timeline item factory and row adapter selection. No SCARLET-X app code, version, `main` branch, or SE device changes.
