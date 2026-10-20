@@ -1206,3 +1206,39 @@ with zipfile.ZipFile('com.atebits.Tweetie2_12.25_und3fined(1).ipa') as z:
 ```
 
 Documentation-only commit to SCARLET-X `develop`; no source code, `main`, version or device changes.
+
+
+## OX-058 — Decode Swift protocol conformance section boundaries before assigning home ownership (2026-10-20)
+
+Primary source: user-supplied X v12.25 `T1Twitter` Mach-O (SHA-256 `1af51e57d746a81546da299e103241da9682ac397f33475defec7f6a3e6e5ccd`). All measurements below are from read-only native Mach-O bytes, with section locations cross-checked against `llvm-objdump --macho --private-headers`.
+
+**Swift reflection/conformance sections identified:**
+
+| section | VM start | byte length | 4-byte relative pointer records |
+|---|---|---:|---:|
+| `__TEXT,__swift5_proto` | `0x17BE434` | `0x295C` | **2647** |
+| `__TEXT,__swift5_types` | `0x17C0D90` | `0x2D84` | 2913 (possible type metadata references, **not** conformance count) |
+| `__TEXT,__swift5_protos` | `0x17E58C8` | `0x380` | 224 (possible protocol descriptor references, **not** adoption count) |
+
+For each of the 2647 entries in `__swift5_proto`, interpreting the signed 32-bit relative offset from its own entry address yields **2619 unique target addresses** with minimum **`0x1455C30`** and maximum **`0x149E824`**. These are Swift **protocol-conformance descriptor candidate locations**, *not* concrete Objective-C method IMP addresses. For illustration, entry `0x17BE434` has offset `+0x4306F1` and resolves to `0x1458978`; its 16-byte conformance descriptor begins with four native words `0x004306F1, 0x00294CF8, 0, 0x000300C0`. Entry `0x17BE438` resolves to `0x1455C30` with words `0x00430799, 0x00297A40, 0, 0x000300C0`.
+
+**Constraint:** These Swift ABI conformance entries **cannot be equated directly** with the separate Objective-C `TwitterHomeFeatureObjC` protocol list found in OX-052. In particular, no named Swift conformer to `TwitterHomeFeatureObjC`, no concrete implementation of `homeTimelineItemsViewControllerWithAccount:timeline:`, and no home timeline → `T1StatusTableRowAdapter` edge were identified in this step. Resolving a Swift descriptor requires decoding its protocol reference (including indirect/objective-C reference forms), its type reference kind, and the associated type/context metadata; counts and address proximity alone are not evidence of adoption.
+
+Reproduce:
+```sh
+llvm-objdump --macho --private-headers T1Twitter | grep -A9 -E 'sectname __swift5_proto$|sectname __swift5_types$|sectname __swift5_protos$'
+python3 - <<'PY'
+import struct
+b=open('T1Twitter','rb').read()
+a,n=0x17be434,0x295c//4
+targets=[]
+for i in range(n):
+    at=a+4*i
+    targets.append(at+struct.unpack_from('<i',b,at)[0])
+print('entries',n,'unique',len(set(targets)),'min',hex(min(targets)),'max',hex(max(targets)))
+for t in targets[:2]:
+    print(hex(t),*[hex(v) for v in struct.unpack_from('<IIII',b,t)])
+PY
+```
+
+Next: decode the conformance protocol and type-reference tags properly, then compare to native ObjC protocol references/factory callsites. No SCARLET-X executable, version, `main` branch, or iPhone was changed.
