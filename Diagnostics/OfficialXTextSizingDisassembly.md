@@ -1276,3 +1276,47 @@ for ref in (0x1A38C80,0x19338B0,0x1AD1218):
 ```
 
 Next: resolve the **indirect slot contents** and chained fixups of the Swift conformance protocol-reference targets; do not claim absence of conformance from un-dereferenced slot addresses. No app code, main branch, version or device changes.
+
+
+## OX-060 — Swift conformance indirect slots resolved against native chained fixups (2026-10-20)
+
+Primary source: user-supplied official X v12.25 `T1Twitter` Mach-O, SHA-256 `1af51e57d746a81546da299e103241da9682ac397f33475defec7f6a3e6e5ccd`. Read-only inspection of `__TEXT,__swift5_proto` and `llvm-objdump --macho --dyld-info` output. This is a **fixup-resolution pass**, not an end-to-end Swift conformance or timeline call-graph proof.
+
+OX-059 found 2,583 conformance descriptor entries using the tagged **indirect** protocol-reference format (tag 1). These resolve to **1,729 distinct indirect pointer slots**. The original Mach-O's chained-fixup enumeration accounts for **all 1,729** slots:
+
+| Indirect slot fixup kind | Distinct slots |
+|---|---:|
+| external-symbol `bind` | **1,462** |
+| same-image `rebase` | **267** |
+| unmatched slots | **0** |
+
+Concrete examples:
+- Conformance descriptor `0x1458978` uses indirect slot `0x1889068` (encoded word `0x8010000000003812`); dyld reports bind to `_$ss35_HasCustomAnyHashableRepresentationMp` in `libswiftCore`.
+- Descriptor `0x1455C30` uses slot `0x18863C8` (encoded `0x80100000000037EB`); dyld reports bind to `_$sSYMp` in `libswiftCore`.
+- Slot `0x1887480` carries encoded value `0x00100000016EE098`; dyld reports same-image rebase to `0x16EE098`.
+
+Searching the **1,729 resolved fixup lines** yields **zero named binds** containing `TwitterHomeFeatureObjC`; none of the 267 rebase lines directly identifies the known ObjC protocol VM `0x1A38C80`. **This does not establish the absence of home-feature protocol conformance.** The 64 tag-0 direct conformances are a separate population; Swift/ObjC interoperability may use other protocol metadata forms; other IPA binaries, runtime registrations and stripped/indirect implementations remain unexamined. In particular, an ObjC-visible Swift protocol declaration (OX-052) must not be assumed to appear as a named Swift `__swift5_proto` bind in this image.
+
+**Conclusion:** OX-059's indirect-reference dereferencing gap has been closed at the level of *dyld fixup type and resolved target* for all 1,729 unique slots. No concrete `TwitterHomeFeatureObjC` implementation or home timeline → `T1StatusTableRowAdapter` selection edge has been demonstrated.
+
+Reproduce:
+```python
+import struct,re,subprocess,collections
+b=open('T1Twitter','rb').read()
+slots=set()
+for i in range(0x295C//4):
+    entry=0x17BE434+4*i
+    descriptor=entry+struct.unpack_from('<i',b,entry)[0]
+    off=struct.unpack_from('<i',b,descriptor)[0]
+    if off&3==1: slots.add((descriptor+off)&~3)
+out=subprocess.check_output(['llvm-objdump','--macho','--dyld-info','T1Twitter'],text=True)
+fixups={}
+for line in out.splitlines():
+    m=re.search(r'0x([0-9A-Fa-f]+)\\s+0x([0-9A-Fa-f]+)\\s+(bind|rebase)\\s+',line)
+    if m and int(m.group(1),16) in slots:
+        fixups[int(m.group(1),16)]=(m.group(3),line)
+print('slots',len(slots),'matched',len(fixups),collections.Counter(v[0] for v in fixups.values()))
+print('named home binds',sum('TwitterHomeFeatureObjC' in v[1] for v in fixups.values()))
+```
+
+Next: evaluate tag-0 Swift protocol direct references and explicitly inspect ObjC protocol adoption/consumer class metadata in home-related frameworks; avoid asserting a conformer from text-match absence. No app source, version, `main`, or device changes.
