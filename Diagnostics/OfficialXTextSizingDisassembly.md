@@ -1124,3 +1124,48 @@ PY
 ```
 
 Next: decode `TwitterHomeFeatures`' 90 native instance-method entries and other relevant classes' method/Swift metadata; seek a concrete `TwitterHomeFeatureObjC` implementation or home timeline view-controller factory call, and connect to `T1StatusTableRowAdapter` only with verified call/dataflow evidence. No app code, `main`, or version changes and no SE runtime result.
+
+
+## OX-056 — TwitterHomeFeatures 90-method list is feature configuration, not home view-controller factory (2026-10-20)
+
+Primary source: user-provided official X v12.25 `T1Twitter` Mach-O, read-only. Parsed both classes' native 12-byte relative Objective-C instance method-list entries and dereferenced selector slots from original chained-fixup pointer values (low 36 bits). For `TwitterHomeFeatures`, instance method-list VM `0x1381100` header `0x8000000C, 90` yields **90 selector names and 90 nonzero executable IMP addresses** in the range `0x124C608..0x124F568`. For `TwitterHomeFeature`, list `0x13810E0` has only `init` (IMP `0x123DF58`) and `.cxx_destruct` (IMP `0x123DF78`).
+
+Representative `TwitterHomeFeatures` entries (exact list indices and unslid native IMPs):
+
+| Index | Selector | IMP |
+|---:|---|---:|
+| 0 | `homeTimelineMinimumAdSpacing` | `0x124C608` |
+| 11 | `showsDiscoverPeopleNavButtonForAccount:` | `0x124CF18` |
+| 14 | `maxSeenIDsInHomeTimelineRequest` | `0x124D068` |
+| 27 | `isDeferLoadingInactiveTimelinesEnabled` | `0x124D69C` |
+| 31 | `isMemoryReliefClearCachedDisplayTextEnabled` | `0x124D884` |
+| 52 | `threadedHomeConversationModuleRenderingEnabled` | `0x124E2E0` |
+| 57 | `isViewportAwareLoadingEnabled` | `0x124E518` |
+| 67 | `coldStartLoadingDeferralSeconds` | `0x124E9A8` |
+| 80 | `homeTimelineForegroundRefreshMinBackgroundSeconds` | `0x124F000` |
+| 87 | `initWithFeatureSwitches:` | `0x124F4FC` |
+| 88 | `init` | `0x124F52C` |
+| 89 | `.cxx_destruct` | `0x124F568` |
+
+A complete 90-entry selector-name scan finds **no** `homeTimelineItemsViewControllerWithAccount:timeline:`, `homeTimelineContainerViewControllerWithAccount:...`, `statusCellClass`, or obvious view-controller construction selector in this **instance method list**. Most selectors expose home feed behavior flags, ad spacing, cache/prefetch/de-duplication options, cold start thresholds and premium navigation settings. Therefore the concrete role supported by this native method list is **feature configuration**, not a directly visible Objective-C home timeline view-controller factory. This does not exclude implementation through separate Swift functions, class methods, categories or other binaries, and does not disprove indirect involvement of the class in home timeline creation.
+
+**Interpretation updated from OX-055:** The 90-method count was a lead, not evidence of 90 timeline builders. That candidate's instance selector scan is now exhausted. Search instead for concrete `TwitterHomeFeatureObjC` implementers and home-specific factories in the other Mach-O binaries and Swift metadata, while maintaining the distinction between protocol declarations (OX-052), feature settings (OX-056), and confirmed standard adapter→cell chain (OX-050).
+
+Reproduction with original on-disk bytes:
+```python
+import struct
+b=open('T1Twitter','rb').read()
+for list_va,count in ((0x13810e0,2),(0x1381100,90)):
+    flags,n=struct.unpack_from('<II',b,list_va)
+    assert n==count and (flags&0xffff)==0xC
+    for i in range(count):
+        entry=list_va+8+12*i
+        name_delta,types_delta,imp_delta=struct.unpack_from('<iii',b,entry)
+        selref=entry+name_delta
+        raw=struct.unpack_from('<Q',b,selref)[0]
+        selector_va=raw&0xfffffffff
+        selector=b[selector_va:].split(b'\\0',1)[0].decode('utf8','replace')
+        print(i,selector,hex(entry+8+imp_delta))
+```
+
+No source change to app, no version change, no `main` change, no device measurements.
