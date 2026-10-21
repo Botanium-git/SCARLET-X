@@ -334,3 +334,36 @@ llvm-objdump --macho --dyld-info Twitter | grep -E '0x10023F158|0x10023F2D8|0x10
 ```
 
 Research documentation only; no app or Probe changes.
+
+
+## OX-086 — Decode concrete THFHomeTimelineItemsViewController method list and locate stream/adapter setup (2026-10-22)
+
+**Primary evidence:** Unmodified user-provided official X v12.25 IPA main executable `Payload/Twitter.app/Twitter` (3,125,808 bytes). Direct 64-bit ARM64 Mach-O structure decoding and `llvm-objdump` disassembly; no inference from SQLite index.
+
+- OX-085 class `THFHomeTimelineItemsViewController` at **`0x100276EE0`** has class data pointer to `class_ro_t` at **`0x100256AE8`**, whose *instance method list* is **`0x10019FE78`**. The relative method-list header is `0x8000000C`, count **161**; individual signed relative entries were decoded from original file and selector references resolved to original `__objc_methname` strings. These entries have executable IMP targets, unlike OX-084's protocol declarations.
+- Relevant **verified instance selector → IMP** mappings:
+  - `initWithAccount:timeline:` → **`0x1000B2ED8`** (index 1).
+  - `viewDidLoad` → **`0x1000B5D7C`** (17).
+  - `willDisplayCell:forItem:atIndexPath:` → **`0x1000BA0EC`** (69).
+  - `didEndDisplayingCell:forItem:atIndexPath:inDataViewController:withPreviousDataViewAdapter:options:` → **`0x1000BA260`** (70).
+  - `_streamDidUpdateWithNotification:` → **`0x1000BA724`** (76).
+  - `_performIncrementalUpdate:animated:` → **`0x1000BA860`** (77).
+  - `_statusOptionsForAdapter:args:options:` → **`0x1000BDA54`** (109).
+  - `_statusViewModelAtIndexPath:` → **`0x1000BDBCC`** (110).
+  - `_setupStreamFromTimeline` → **`0x1000BE908`** (115).
+  - **`_registerAdaptersAndTransformersThatRequireStream:` → `0x1000BECFC`** (116).
+  - `_representedItemsForStreamItem:` → **`0x1000BF150`** (120).
+- The above confirms this *particular concrete controller* implements methods for stream setup, adapter/transformer registration, cell visibility and status-specific adapter/options processing. It gives a specific investigative entry point but does **not** yet identify which concrete adapter class is registered for an ordinary home status or its run-time use.
+- Disassembled `_registerAdaptersAndTransformersThatRequireStream:` at `0x1000BECFC..0x1000BEEEC`: its incoming argument is saved in `x19` (`0x1000BED18`), an instance object is obtained through an ivar read from `self` (`0x1000BED28..0x1000BED30`), and the method makes several Objective-C sends and stores a resulting object into another ivar at `0x1000BEDC8..0x1000BEDD4`. Additional setup messages occur through `0x1000BEEA0`. The exact selectors/class receiver identities of these sends remain unresolved; **do not claim any specific T1StatusTableRowAdapter registration yet**.
+
+**Next priority:** Resolve ObjC selector stubs used by `0x1000BECFC..0x1000BEEA0`, classrefs near `0x1002714B0..0x1002714C0`, and calls in `_setupStreamFromTimeline`. Then correlate any real adapter factory/setter with the already established `T1StatusTableRowAdapter → T1StatusCell` static chain (OX-050). Keep v12.25 static evidence separate from official X v12.35 device behavior.
+
+**Reproduce:**
+```sh
+unzip -p 'com.atebits.Tweetie2_12.25_und3fined(1).ipa' Payload/Twitter.app/Twitter > Twitter
+llvm-objdump --macho --syms Twitter | grep 'THFHomeTimelineItemsViewController'
+llvm-objdump -d --start-address=0x1000becfc --stop-address=0x1000beef0 Twitter
+```
+Method-list decode: class data `0x100276EE0 + 0x20 → 0x100256AE8`; `class_ro_t + 0x20 → 0x10019FE78`; header `<II`, relative entries `<iii` with selector references through native rebase pointers.
+
+Documentation only; no Scarlet X app, Probe, or main changes.
