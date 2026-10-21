@@ -313,3 +313,24 @@ WHERE name LIKE '%TFNSizeThatFitsHelper%';
 ## 2026-10-20 — OX-050
 
 - Parsed all three `statusCellClass` class methods directly from T1Twitter metaclass-relative method lists. `T1StatusTableRowAdapter` IMP `0x41E0B8` returns `T1StatusCell` (classref `0x1AD1F08`); `T1ConversationFocalStatusTableRowAdapter` IMP `0x295D70` returns `T1ConversationFocalStatusViewTableViewCell` (classref `0x1AD5280`); `T1TweetSelectionTableRowAdapter` IMP `0xE2FE44` returns nil. This extends the static path `T1StatusTableRowAdapter` → `T1StatusCell` → `T1StandardStatusView` → standard generator → body adapter → TTA body view. **The home timeline's selection of T1StatusTableRowAdapter remains unverified**, so no runtime generalization is made. Full addresses: [OfficialXTextSizingDisassembly.md](OfficialXTextSizingDisassembly.md) OX-050. No app/main/version changes.
+
+
+## OX-085 — v12.25 main executable: native home UI/stream factory class definitions (2026-10-22)
+
+**Primary evidence:** User-provided unmodified official X v12.25 IPA, `Payload/Twitter.app/Twitter` (3,125,808-byte ARM64 main Mach-O). Extracted directly from IPA and checked using `llvm-objdump --macho --syms`, `--dyld-info` and byte reads.
+
+- `_OBJC_CLASS_$_THFHomeTimelineItemsViewController` is a **defined** symbol at main-image VM `0x100276EE0`. Its corresponding `__objc_classlist` rebase at `0x10023F158` targets the same class. This is a concrete class definition in the main executable, unlike a mere undefined class reference.
+- `_OBJC_CLASS_$_THFURTHomeTimelineStream` is defined at `0x1002793F0`, and `_OBJC_CLASS_$_THFURTHomeTimelineStreamFactory` at **`0x1002796B0`**. Class-list rebases at `0x10023F2D8` and `0x10023F2E8` target these classes respectively. This supplies a concrete *candidate class* for the home-stream factory returned in OX-082, **not proof of that method's return type**.
+- The `THFHomeTimelineItemsViewController` class is also referenced by `__objc_classrefs` at `0x1002714F0`; `THFURTHomeTimelineStream` is referenced by `__objc_classrefs` at `0x100271338`. These references are not sufficient to establish the home-to-row-adapter selection chain.
+- The exact selector text `urtHomeTimelineStreamFactoryWithApplicationLink:homeConfiguration:` exists at main executable file offset `0x204335` in `__objc_methname` (consistent with OX-084). Existence alone does not identify the implementation IMP or owner. Protocol declaration in T1Twitter remains a declaration (OX-084).
+
+**Confirmed boundary:** The app's main Mach-O defines distinct native home items-controller and URT stream/factory classes that the earlier SQLite index (T1Twitter + XAppLibraries only) did not include. **Still unproven:** whether `THFURTHomeTimelineStreamFactory` is the concrete factory returned in OX-082, whether `THFHomeTimelineItemsViewController` is used in the user's home screen configuration, and the controller/stream → `T1StatusTableRowAdapter` runtime or static dispatch connection. No v12.35 device parity claims.
+
+**Reproduce:**
+```sh
+unzip -p 'com.atebits.Tweetie2_12.25_und3fined(1).ipa' Payload/Twitter.app/Twitter > Twitter
+llvm-objdump --macho --syms Twitter | grep -E '_OBJC_CLASS_\\$_(THFHomeTimelineItemsViewController|THFURTHomeTimelineStream|THFURTHomeTimelineStreamFactory)'
+llvm-objdump --macho --dyld-info Twitter | grep -E '0x10023F158|0x10023F2D8|0x10023F2E8'
+```
+
+Research documentation only; no app or Probe changes.
