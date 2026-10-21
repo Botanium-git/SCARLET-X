@@ -1965,3 +1965,42 @@ llvm-objdump --macho --dyld-info T1Twitter | grep '0x186DA60'
 ```
 
 Documentation only, `develop`; no app, version, main, or iPhone SE changes.
+
+
+## OX-081 — T1TimelineFactory instance methods create TFNTwitterHomeTimeline (2026-10-21)
+
+**Primary evidence:** Original user-supplied official X 12.25 IPA `Payload/Twitter.app/Frameworks/T1Twitter.framework/T1Twitter` (unmodified 33,287,408-byte ARM64 Mach-O), analyzed by native binary decoding and `llvm-objdump`. Important correction to the OX-073–076 exploration: the two home selectors belong directly to the **T1TimelineFactory instance** class method list; looking for them on `TFNTwitterTimelineManager` or external categories could not resolve their implementation.
+
+ObjC class `_OBJC_CLASS_$_T1TimelineFactory` at **`0x1AE1298`** has `class_ro_t` at **`0x1939538`**, whose base instance method list is **`0x13DA9F0`** (`entsizeAndFlags=0x8000000C`, 19 entries). Decoding all 12-byte relative entries and chained selector references gives:
+
+| Selector | Verified IMP |
+|---|---|
+| `_t1_homeTimelineForAccount:timelineVariant:` | `0xC710` |
+| `homeTimelineForAccount:` | **`0xCE74`** |
+| `homeCountryFilteredTimelineForAccount:` | `0xCF28` |
+| `homeTopicFilteredTimelineForAccount:` | `0xCFA4` |
+| `homeLatestTimelineForAccount:` | **`0xD020`** |
+| `homeRankedFollowingTimelineForAccount:` | `0xD028` |
+| `homeFeaturesForAccount:` | `0xD260` |
+
+**Latest-home path:** `-[T1TimelineFactory homeLatestTimelineForAccount:]` at `0xD020` does `mov w3,#3` then branches directly to ObjC selector stub **`0x12BE660`**, which resolves to **`_t1_homeTimelineForAccount:timelineVariant:`**. The account remains in `x2`, variant value **3** in `w3`; this is a native dispatch relationship, not inferred from naming.
+
+**Regular-home path:** `-[T1TimelineFactory homeTimelineForAccount:]` at `0xCE74` calls `0x1321BE0`, `0x135BEA0` (with `w2=3`), `0x12BE660` (with account `x2`, `x3=0`), then `0x12EF640`, before returning. At `0xCECC..0xCED0`, the common helper selector `_t1_homeTimelineForAccount:timelineVariant:` receives **variant 0**; the returned object is then passed through additional Objective-C messaging and should **not** be assumed unmodified as the outer method's final return.
+
+**Shared construction in helper `0xC710`:** In `_t1_homeTimelineForAccount:timelineVariant:`, `0xC824..0xC838` loads ObjC classref from **`0x1AD1858`**, whose chained rebase targets **`_OBJC_CLASS_$_TFNTwitterHomeTimeline` at `0x1B573C0`** (previously located OX-069). It calls `objc_alloc` stub **`0x12B02F4`**, then message stub **`0x12FC380`** with selector **`initWithAccount:streamFactory:`** (selector reference `0x1AA72A8`), passing account in `x2` and a factory/stream object in `x3`. Its result is retained as `x21` and returned via the ObjC autorelease-return convention at `0xC858..0xC870`.
+
+**Verified dispatch/construction path:** `T1TimelineFactory.sharedTimelineFactory` (OX-080) → factory object → `homeLatestTimelineForAccount:` (variant 3) or `homeTimelineForAccount:` (variant 0, with additional wrapping/messaging) → `_t1_homeTimelineForAccount:timelineVariant:` → allocate **TFNTwitterHomeTimeline** → `initWithAccount:streamFactory:`. The exact stream-factory concrete type and the outer regular-home method's final return object need separate verification. No proof yet of live home controller's invocation or row adapter.
+
+**Reproduce:**
+```sh
+llvm-objdump -d --start-address=0xce74 --stop-address=0xcf28 T1Twitter
+llvm-objdump -d --start-address=0xd020 --stop-address=0xd028 T1Twitter
+llvm-objdump -d --start-address=0xc710 --stop-address=0xc874 T1Twitter
+llvm-objdump -d --start-address=0x12be660 --stop-address=0x12be674 T1Twitter
+llvm-objdump -d --start-address=0x12fc380 --stop-address=0x12fc394 T1Twitter
+# Class 0x1AE1298 → ro_t 0x1939538 → 19-instance-method list 0x13DA9F0;
+# classref 0x1AD1858 → 0x1B573C0 (TFNTwitterHomeTimeline).
+# selector ref 0x1AA72A8 → initWithAccount:streamFactory:.
+```
+
+Diagnostics-only on `develop`; no SCARLET-X code/version, `main`, or SE changes.
