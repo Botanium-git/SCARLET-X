@@ -2004,3 +2004,38 @@ llvm-objdump -d --start-address=0x12fc380 --stop-address=0x12fc394 T1Twitter
 ```
 
 Diagnostics-only on `develop`; no SCARLET-X code/version, `main`, or SE changes.
+
+
+## OX-082 — Resolve native home stream-factory request and construction dependency (2026-10-21)
+
+**Primary source**: original user-provided official X v12.25 IPA `Payload/Twitter.app/Frameworks/T1Twitter.framework/T1Twitter` (unmodified; extracted afresh). ARM64 disassembly of `-[T1TimelineFactory _t1_homeTimelineForAccount:timelineVariant:]` IMP **`0xC710`** plus exact native Objective-C selector stubs at `0x12F8E20`, `0x12F8E40`, and `0x136DAC0`. Selector-reference pointers checked against Mach-O chained dyld rebases.
+
+**Resolved selectors, from native stub loaded selector-ref addresses:**
+
+| ObjC message stub | Selector-ref | Selector string resolved by rebase |
+|---|---|---|
+| `0x12F8E20` | `0x1AA6550` | **`homeFeature`** (string at `0x160EF60`) |
+| `0x12F8E40` | `0x1AA6558` | **`homeFeaturesConfigurationWithAccount:networkQualityProvider:timelineVariant:`** (string at `0x160EF88`) |
+| `0x136DAC0` | `0x1AC3878` | **`urtHomeTimelineStreamFactoryWithApplicationLink:homeConfiguration:`** (string at `0x16AA8C0`) |
+| `0x12FC380` | `0x1AA72A8` (OX-081) | **`initWithAccount:streamFactory:`** |
+
+**Native dataflow in helper `0xC710..0xC870`:**
+1. Incoming `x2` account stored in `x19`; `x3` timeline variant stored in `x20` at `0xC728..0xC72C`.
+2. Loads classref **`0x1AD1848`**, whose dyld bind is **`XAppLibraries::_OBJC_CLASS_$_TFNTwitter`** (this is a bind from another image, *not* a `T1Twitter` class object). Calls ObjC message stub `0x1353CE0`, then sends **`homeFeature`** (`0xC758`).
+3. Loads classref **`0x1AD1850`**; dyld rebase targets **`0x1AE3138`**, local class symbol **`_OBJC_CLASS_$_T1NetworkMonitor`**. Sends ObjC message stub `0x13538E0` at `0xC770`, retaining resulting network monitor/provider object as `x24`. The stub selector is **not resolved in this entry**.
+4. Sends **`homeFeaturesConfigurationWithAccount:networkQualityProvider:timelineVariant:`** at **`0xC790`** to home feature returned at step 2: `x2 = account`, `x3 = network provider`, `x4 = variant`. Retains resulting home configuration in `x20`.
+5. Another call on the `TFNTwitter` class and **`homeFeature`** returns the separate `x23` feature receiver (at `0xC7B8..0xC7D8`). Sends an as-yet-unresolved ObjC message on `self` at `0xC7E0`; saves its return value in `x21`.
+6. Sends **`urtHomeTimelineStreamFactoryWithApplicationLink:homeConfiguration:`** to feature `x23` at **`0xC7FC`**, with `x2 = x21` (from self getter), **`x3 = x20` (home configuration)**. Retains resulting **stream factory object** as `x24`.
+7. At `0xC824..0xC838`, loads classref **`0x1AD1858`** rebased to **`_OBJC_CLASS_$_TFNTwitterHomeTimeline` at `0x1B573C0`**, calls `objc_alloc`, then **`initWithAccount:streamFactory:`**, passing original account in `x2` and **stream factory from step 6 in `x3`**. Returns this constructed home timeline instance.
+
+**Confirmed:** the helper obtains a factory by sending the `urtHomeTimelineStreamFactoryWithApplicationLink:homeConfiguration:` selector to a home-feature receiver and passes that returned object into `TFNTwitterHomeTimeline` initialization. Home configuration construction uses an account, network-provider result, and timeline variant. **Unconfirmed:** concrete runtime class/initializer of the stream factory; precise selectors at `0x1353CE0`, `0x13538E0`, and `0x12B8AA0`; real screen controller → timeline-manager call path. No static claim that the stream-factory object is of a class inferred solely from its selector.
+
+Reproduce:
+```sh
+llvm-objdump -d --start-address=0xc710 --stop-address=0xc874 T1Twitter
+llvm-objdump -d --start-address=0x12f8e20 --stop-address=0x12f8e54 T1Twitter
+llvm-objdump -d --start-address=0x136dac0 --stop-address=0x136dad4 T1Twitter
+llvm-objdump --macho --dyld-info T1Twitter | grep -E '0x1AA6550 |0x1AA6558 |0x1AC3878 |0x1AD1848 |0x1AD1850 |0x1AD1858 '
+```
+
+Only diagnostic document edited on `develop`; no SCARLET-X app/build/version, main, or iPhone SE changes.
