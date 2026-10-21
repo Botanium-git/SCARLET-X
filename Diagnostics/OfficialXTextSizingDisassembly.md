@@ -1635,3 +1635,49 @@ llvm-objdump -d --start-address=0x1253ba8 --stop-address=0x1253bf4 T1Twitter
 ```
 
 Next: resolve imported GOT address `0x1AD28A8` and the symbols behind the provider's calls `0x12B02F4` / `0x12FB6C0`, then inspect `TFNTwitterHomeTimeline initWithAccount:streamFactory:` and callers. Documentation only, `develop`; no app changes or SE operations.
+
+
+## OX-071 — Home timeline manager provider allocates TFNTwitterTimelineManager (2026-10-21)
+
+Primary source: unmodified `T1Twitter.framework/T1Twitter` from user-provided official X v12.25 IPA. Inspected actual ARM64 disassembly, Mach-O symbol table and dyld chained fixup entries.
+
+The sole direct instance method of `TwitterHomeTimelineManagerProvider`, `timelineManagerForAccount:` (IMP **`0x1253BA8`**, OX-070), performs:
+
+```asm
+0x1253BB4  mov x19, x2                ; account
+0x1253BB8  adrp x8, 0x1AD2000
+0x1253BBC  ldr x20, [x8,#0x8A8]     ; ObjC classref slot 0x1AD28A8
+0x1253BC0  mov x0, x2
+0x1253BC4  bl  0x12B0420           ; object retain stub
+0x1253BC8  mov x0, x20             ; class reference
+0x1253BCC  bl  0x12B02F4           ; objc_alloc
+0x1253BD0  mov x2, x19             ; account parameter
+0x1253BD4  bl  0x12FB6C0           ; objc_msgSend with initWithAccount: selector
+0x1253BD8  mov x20, x0             ; initializer result
+0x1253BDC  mov x0, x19
+0x1253BE0  bl  0x12B0414           ; object release stub
+0x1253BE4  mov x0, x20             ; return initialized object
+0x1253BF0  b   0x12B033C           ; autorelease-return-value stub (target semantics to verify separately)
+```
+
+Exact dyld and symbol resolutions:
+
+- `0x1AD28A8` is an `__objc_classrefs` rebase to **`0x1B57460`**, a defined `T1Twitter` symbol **`_OBJC_CLASS_$_TFNTwitterTimelineManager`**.
+- `0x12B02F4` is a three-instruction external stub using GOT slot `0x186DA50`, native dyld bind **`libobjc::_objc_alloc`**.
+- `0x12FB6C0` is an ObjC message stub loading selector reference `0x1AA6F78`. That selector ref rebases to C string at `0x1612BC0`: **`initWithAccount:`**. Its dispatch GOT slot `0x186DAD8` binds **`libobjc::_objc_msgSend`**.
+- These together establish the native allocation and initializer message, passing the account object as argument, and returning the initialized manager. Importantly, `TFNTwitterTimelineManager` is **distinct** from the `TFNTwitterHomeTimeline` class whose initializer `initWithAccount:streamFactory:` was inventoried in OX-070.
+
+**Verified native flow:** `TwitterHomeTimelineManagerProvider.timelineManagerForAccount:` → `objc_alloc(TFNTwitterTimelineManager)` → `-[TFNTwitterTimelineManager initWithAccount:]` → returned manager instance.
+
+**Not established:** a runtime call from the home controller/feature registry into this provider, exact initializer internals, or an ordinary home timeline cell adapter route. Class ownership is based on ObjC method metadata, not inferred from nearby symbols. Next: decode actual `TFNTwitterTimelineManager` initializer method entry/IMP, then trace its native calls and/or callers of `timelineManagerForAccount:`.
+
+Reproduce:
+```sh
+llvm-objdump -d --start-address=0x1253ba8 --stop-address=0x1253bf4 T1Twitter
+llvm-objdump -d --start-address=0x12b02f4 --stop-address=0x12b0300 T1Twitter
+llvm-objdump -d --start-address=0x12fb6c0 --stop-address=0x12fb6d4 T1Twitter
+llvm-objdump --macho --dyld-info T1Twitter | grep -E '0x1AD28A8 |0x186DA50 |0x186DAD8 |0x1AA6F78 '
+llvm-objdump --macho --syms T1Twitter | grep '0x1b57460\\|1b57460'
+```
+
+Only diagnostic documentation updated on `develop`; no changes to SCARLET-X app, version, `main` or iPhone SE.
