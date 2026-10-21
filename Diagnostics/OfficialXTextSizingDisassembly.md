@@ -1881,3 +1881,19 @@ llvm-objdump --macho --section-headers T1Twitter | grep __bss
 ```
 
 **Next:** find native callsites of `+[TFNTwitterTimelineManager setTimelineFactory:]` (or equivalent direct writes to BSS `0x1BF8DF0`); inspect the concrete argument construction to recover the actual factory class. Do not modify app code or device while investigating.
+
+
+## OX-078 — Setter direct-call survey and factory-candidate inventory (2026-10-21)
+
+Primary source: original user-provided official X v12.25 IPA, independently extracted original `T1Twitter.framework/T1Twitter`; the supplied `scarlet_macho` SQLite index was cross-checked with native disassembly. This deliberately narrows the task to evidence obtainable without runtime access.
+
+- Confirmed `+[TFNTwitterTimelineManager setTimelineFactory:]` IMP **`0x1256344`** by ObjC method-list record (shared list address decimal 20530872) and native `llvm-objdump -d --start-address=0x1256318 --stop-address=0x1256374` disassembly.
+- Setter sequence retains incoming object (`x2`), reads previous pointer at BSS **`0x1BF8DF0`**, overwrites the slot with incoming object, and releases previous pointer. The getter at **`0x1256318`** reads and retains this same slot (consistent with OX-077).
+- Exhaustively scanned every 4-byte-aligned ARM64 instruction word in the `__TEXT` segment of this **T1Twitter** Mach-O for immediate `BL` encodings resolving to **`0x1256344`**. **0 direct BL callsites found**. This is **not** evidence the method is unused: Objective-C message sends to `setTimelineFactory:` normally dispatch via `objc_msgSend` and may be emitted in other images; this scan covers **direct BL only**.
+- The binary's string/symbol index contains *defined ObjC class symbols* `T1TimelineFactory`, `T1URTOnboardingTimelineFactory`, `T1BookmarkTimelineFactory`, and Swift `URTNotificationTimelineFactory` (via `_OBJC_CLASS_$_...` in T1Twitter). These are **names/definitions only**, not validated concrete values passed to `setTimelineFactory:`. Similarly `sharedTimelineFactory` is an indexed separate ObjC selector, **not verified** as the setter argument source.
+
+**Open:** Find selector `setTimelineFactory:` native message stub(s), resolve their `objc_msgSend` callsites and class receiver, then trace construction and concrete runtime class of the supplied argument (`x2`). Also check other embedded Mach-O images as appropriate. A raw symbol-name match or a missing direct branch cannot establish the registration pathway.
+
+Reproduce direct-branch check using ARM64 instructions in Mach-O `__TEXT`: for word with `word >> 26 == 0b100101` (BL immediate), sign-extend low 26 bits and calculate `target = instruction_vm + 4 * imm26`; compare with `0x1256344`. The original `T1Twitter` segment covers VM `0x0..0x1854000`, file offset `0x0`.
+
+Only diagnostics updated in `develop`; app code, build/version, main branch, iPhone SE untouched.
