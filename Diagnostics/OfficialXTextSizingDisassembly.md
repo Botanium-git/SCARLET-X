@@ -2050,3 +2050,12 @@ Primary evidence: original official X 12.25 IPA, unmodified T1Twitter Mach-O; ch
 **Scope:** The callsite in OX-082 remains valid, but neither the concrete conforming class, nor the implementation IMP, nor the returned stream-factory type is resolved by this protocol descriptor. Next inspect protocol-adoption metadata and actual class method lists in loaded framework images, focusing on implementations of `TwitterHomeFeatureObjC`. Do not mistake method declaration index rows for executable code.
 
 Reproduce from T1Twitter: read little-endian `<II` at `0x141D2B8`, `<iii` at `0x141D2E4`; read unsigned 64-bit chained rebase at `0x1A38C98`, and the pointer at `0x1A38C88` to C string `0x143C710`. These VM addresses map to file offsets in the corresponding original Mach-O sections. No application code, build/version, main branch, or iPhone SE changes.
+
+
+## OX-083–084 follow-up — protocol-entry caveat and main-executable search (2026-10-21)
+
+From the original official X 12.25 IPA and supplied SQLite index: the T1Twitter index row for `urtHomeTimelineStreamFactoryWithApplicationLink:homeConfiguration:` reports list `0x141D2B8`, entry 3 at `0x141D2E4`, and nominal IMP `0x141D2EC`. Raw relative method-entry decoding gives IMP delta 0. This is consistent with a protocol declaration entry, *not proof of an executable IMP*. OX-082's native message send remains confirmed; its concrete implementation remains unknown.
+
+New OX-084 lead: scanned the original IPA's Mach-O executable members for the **exact UTF-8 selector string**. The string occurs once in `Payload/Twitter.app/Twitter` (3,125,808 bytes) and once in `Payload/Twitter.app/Frameworks/T1Twitter.framework/T1Twitter` (33,287,408 bytes); it was absent from the other scanned native framework executable/dylib members. The main Twitter executable contains the string at file offset **`0x204335`** and has native ObjC sections including `__objc_methlist`, `__objc_classlist`, `__objc_catlist`, `__objc_protolist`, `__objc_selrefs`. The provided SQLite index covers only T1Twitter and XAppLibraries, not this main executable. This is a **lead, not a concrete method implementation**: an embedded selector string can represent a send or declaration just as easily as an implementation. Next decode native class/category/protocol method lists and selector refs in the main executable, and follow actual call sites; do not equate literal hits with implementing classes.
+
+No SE or app-code changes. This entry documents the source-backed investigation; current code and build unchanged.
