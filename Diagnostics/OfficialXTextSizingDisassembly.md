@@ -1751,3 +1751,20 @@ llvm-objdump --macho --dyld-info T1Twitter | grep '0x1B57490 '
 ```
 
 Next: inventory native `__objc_catlist` and `__objc_nlcatlist` methods to locate where the two `home*TimelineForAccount:` class factory selectors are implemented, then resolve implementation call paths. Only official-X diagnostics on `develop`; no application/SE changes.
+
+
+## OX-074 — Full T1Twitter ObjC category-list scan finds no direct home factory selectors (2026-10-21)
+
+Primary source: unmodified `Payload/Twitter.app/Frameworks/T1Twitter.framework/T1Twitter` extracted from the supplied official X 12.25 IPA. Native `__objc_catlist` and ObjC category method lists were parsed directly from Mach-O segments, with dyld chained rebases/binds for category references and relative 12-byte ObjC method-list entries.
+
+- `T1Twitter` `__DATA_CONST,__objc_catlist` begins at **`0x1931050`**, size **`0x3F8`** = **127 eight-byte category pointers**.
+- Each category descriptor's native fields `name`, `cls`, `instanceMethods`, `classMethods` were resolved, and both native instance and class method lists were decoded as 12-byte relative selector entries.
+- **No decoded direct category method entry** in this binary's 127-entry `__objc_catlist` matched **`homeTimelineForAccount:`** or **`homeLatestTimelineForAccount:`**.
+- Representative successful decode cross-checks: first category descriptor at **`0x19390F8`** is named `T1MediaAttachmentPlayerView`, targets external `TAVPlayerView`, and has class-method list `0x1394598` with `tfn_defaultShouldFlipForRightToLeftTransform` and `t1_playerViewWithFrame:configuration:`; second category at **`0x1939C30`** is `TwitterAnimation` targeting `TPSDeviceFeatureSwitches`. These are sanity checks that the scan actually resolves category metadata, rather than just searching symbol names.
+- The strings **`homeTimelineForAccount:`** and **`homeLatestTimelineForAccount:`** are present in the binary's indexed literal strings, and the ObjC message-send sites were found in OX-072, so this category-list absence does **not** imply the selectors are unused.
+
+**Interpretation and limits:** OX-073 found neither selector among `TFNTwitterTimelineManager`'s two direct metaclass base methods. OX-074 extends the negative to direct category method lists within **this T1Twitter image**, but it is **not a proof of no runtime implementation**. Possibilities include class methods supplied by an ObjC category in a **different Mach-O image**, dynamic method resolution/registration, an alternate receiver or dispatch behavior. `__objc_nlcatlist` and atypical list layouts, if present, still merit a separate audit. No definite home factory class or returned object is assigned.
+
+Method: parse Mach-O `LC_SEGMENT_64` for VM-to-file mapping, native chained dyld fixup map, then enumerate each `__objc_catlist` pointer and inspect both method-list fields. Search exact selector names in successfully decoded relative selector-reference entries. This avoids misreading indexed method-list field addresses as executable IMPs.
+
+Next: search separate loaded images (particularly `XAppLibraries` and `XServiceLibraries`) for category definitions extending `TFNTwitterTimelineManager`, and inspect the actual class receiver at OX-072 callsites. Diagnostic-only `develop`; no app, version, `main`, or SE changes.
