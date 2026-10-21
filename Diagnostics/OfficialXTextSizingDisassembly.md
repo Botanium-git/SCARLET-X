@@ -1768,3 +1768,38 @@ Primary source: unmodified `Payload/Twitter.app/Frameworks/T1Twitter.framework/T
 Method: parse Mach-O `LC_SEGMENT_64` for VM-to-file mapping, native chained dyld fixup map, then enumerate each `__objc_catlist` pointer and inspect both method-list fields. Search exact selector names in successfully decoded relative selector-reference entries. This avoids misreading indexed method-list field addresses as executable IMPs.
 
 Next: search separate loaded images (particularly `XAppLibraries` and `XServiceLibraries`) for category definitions extending `TFNTwitterTimelineManager`, and inspect the actual class receiver at OX-072 callsites. Diagnostic-only `develop`; no app, version, `main`, or SE changes.
+
+
+## OX-075 — Cross-framework category-section and factory-selector survey (2026-10-21)
+
+Primary source: user-supplied official X v12.25 IPA, freshly extracted **XAppLibraries.framework/XAppLibraries** (124,141,728 bytes) and **XServiceLibraries.framework/XServiceLibraries** (86,030,256 bytes); native `llvm-objdump --macho --section-headers`, `--objc-meta-data`, plus direct raw-byte scans.
+
+Native section inventory:
+
+| Image | Section | VM address | Size | Number of 8-byte entries |
+|---|---|---|---|---|
+| XAppLibraries | `__objc_catlist` | `0x6281C18` | `0x298` | 83 |
+| XAppLibraries | `__objc_nlcatlist` | `0x6281EB0` | `0x8` | 1 |
+| XServiceLibraries | `__objc_catlist` | `0x4136578` | `0x578` | 175 |
+| XServiceLibraries | `__objc_catlist2` | `0x4136AF0` | `0x8` | 1 |
+| XServiceLibraries | `__objc_nlcatlist` | `0x4136AF8` | `0x50` | 10 |
+
+These are **section entry counts**, not a statement that every category descriptor/method has been successfully decoded. Raw byte scans of both complete images find **zero literal occurrences** of either exact selector string `homeTimelineForAccount:` or `homeLatestTimelineForAccount:`. In contrast, `XAppLibraries` contains two ASCII occurrences each of `TFNTwitterTimelineManager` and `TwitterHomeFeature`; `XServiceLibraries` contains zero occurrences of either. The presence of names is not enough to link them to a category or any function.
+
+**Critical limit:** Absence of an in-image literal selector string is **not conclusive proof** that an external category does not implement or reference it: ObjC selector references may be imported/shared, and Swift/ObjC indirect runtime registrations are possible. Likewise, section inventory alone is **not a full category-method-list scan**. Therefore OX-075 does **not** extend OX-074's confirmed all-categories-negative finding to these two images. No concrete implementation of the two class-factory messages is established.
+
+Reproduce:
+```sh
+llvm-objdump --macho --section-headers XAppLibraries | grep -E '__objc_(catlist|nlcatlist)'
+llvm-objdump --macho --section-headers XServiceLibraries | grep -E '__objc_(catlist|catlist2|nlcatlist)'
+python3 - <<'PY'
+for name in ('XAppLibraries','XServiceLibraries'):
+    binary = open(name,'rb').read()
+    print(name,len(binary))
+    for needle in (b'homeTimelineForAccount:',b'homeLatestTimelineForAccount:',
+                   b'TFNTwitterTimelineManager',b'TwitterHomeFeature'):
+        print(needle.decode(),binary.count(needle))
+PY
+```
+
+**Next:** decode all *native* category descriptors and class-method selectors in both images (including `__objc_catlist2` / `__objc_nlcatlist`), resolve external class references with chained binds, and trace the runtime class-method dispatch used by `TFNTwitterTimelineManager`. No changes to app code/version, `main`, or SE.
