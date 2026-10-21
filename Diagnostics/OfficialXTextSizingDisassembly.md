@@ -2039,3 +2039,14 @@ llvm-objdump --macho --dyld-info T1Twitter | grep -E '0x1AA6550 |0x1AA6558 |0x1A
 ```
 
 Only diagnostic document edited on `develop`; no SCARLET-X app/build/version, main, or iPhone SE changes.
+
+
+## OX-083 / OX-084 — Resolve URT factory selector as protocol declaration and identify its owner (2026-10-21)
+
+Primary evidence: original official X 12.25 IPA, unmodified T1Twitter Mach-O; checked against supplied scarlet_macho SQLite index. The indexed method entry for `urtHomeTimelineStreamFactoryWithApplicationLink:homeConfiguration:` is in the relative method list at VM `0x141D2B8` (header `0x8000000C`, count 8, selector entry index 3 at `0x141D2E4`). Its signed relative IMP offset is **zero**. The indexer's alleged IMP address `0x141D2EC` is just the address of the empty method-record IMP field; it is not an executable method implementation.
+
+**New native owner resolution (OX-084):** The 64-bit chained rebase word at `0x1A38C98` is `0x6000000141D2B8`, whose target is precisely the method list `0x141D2B8`. In the containing ObjC protocol descriptor, the protocol name pointer at `0x1A38C88` resolves to NUL-terminated string `0x143C710`: `_TtP11TwitterHome22TwitterHomeFeatureObjC_`, the Swift-mangled name of **TwitterHome.TwitterHomeFeatureObjC**. The list pointer is in the protocol descriptor's required instance method slot (`+0x18` from descriptor start `0x1A38C80`). Thus the target selector is a **required instance method declaration in the TwitterHomeFeatureObjC protocol**, not a concrete method on a T1Twitter class. The same list also declares `homeFeaturesConfigurationWithAccount:networkQualityProvider:timelineVariant:` and home timeline controller-building selectors. This independently corroborates the earlier identification of the feature as an Objective-C protocol interface.
+
+**Scope:** The callsite in OX-082 remains valid, but neither the concrete conforming class, nor the implementation IMP, nor the returned stream-factory type is resolved by this protocol descriptor. Next inspect protocol-adoption metadata and actual class method lists in loaded framework images, focusing on implementations of `TwitterHomeFeatureObjC`. Do not mistake method declaration index rows for executable code.
+
+Reproduce from T1Twitter: read little-endian `<II` at `0x141D2B8`, `<iii` at `0x141D2E4`; read unsigned 64-bit chained rebase at `0x1A38C98`, and the pointer at `0x1A38C88` to C string `0x143C710`. These VM addresses map to file offsets in the corresponding original Mach-O sections. No application code, build/version, main branch, or iPhone SE changes.
