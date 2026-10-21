@@ -1937,3 +1937,31 @@ The other selector-stub callsites `0xA820C` and `0xB97F4` each show the same sha
 Reproduce with `llvm-objdump -d` at `0xA81D8..0xA8220`, `0xB97CC..0xB9800`, `0x1ECC44..0x1ECC80`, `0x134F460..0x134F474`, and `0x1353C80..0x1353C94`; resolve selector refs `0x1ABBEE0` and `0x1ABD0E8` by native chained rebase words.
 
 Documentation only on `develop`; no SCARLET-X executable/version, `main`, or SE changes.
+
+
+## OX-080 — T1TimelineFactory sharedTimelineFactory singleton implementation resolved (2026-10-21)
+
+**Primary evidence:** user-supplied, unmodified official X v12.25 IPA `Payload/Twitter.app/Frameworks/T1Twitter.framework/T1Twitter`, extracted again in the working container; verified with native Mach-O ObjC class/metaclass records, relative method list, LLVM ARM64 disassembly, and dyld bind information.
+
+**Corrected OX-079 class reference:** `_OBJC_CLASS_$_T1TimelineFactory` is defined at **`0x1AE1298`**; its distinct metaclass `_OBJC_METACLASS_$_T1TimelineFactory` at **`0x1AE12C0`**. The category/classref at `0x1AD28B0` leads to the **class object** `0x1AE1298`, not the metaclass as an earlier OX-079 parenthetical suggested. The metaclass class_ro_t at **`0x1939470`** points to 12-byte relative method list **`0x1393610`**, containing exactly one direct class method: selector **`sharedTimelineFactory`**, IMP **`0xC4A8`**.
+
+**Method implementation `+[T1TimelineFactory sharedTimelineFactory]` at `0xC4A8`:**
+- Builds a stack block whose invoke pointer is **`0xC530`** (`adrp x8,0xC000; add x8,x8,#0x530`), and captures the incoming receiver **`x0` (Class)** at `[sp,#0x28]`.
+- Loads dispatch-once guard from BSS **`0x1BBEA10`**. If already initialized (`-1`), loads the existing singleton pointer from BSS **`0x1BBEA18`**; otherwise invokes imported dispatch-once stub **`0x12B00FC`** with the guard pointer and block.
+- Retains/returns the pointer in `0x1BBEA18` via ObjC return-value convention.
+
+**Block invoke `0xC530`:** `ldr x0,[x0,#0x20]` fetches captured Class; **`bl 0x12B030C`**, which is the stub bound via GOT `0x186DA60` to **`libobjc::_objc_alloc_init`**, allocates and initializes an instance of that class. It stores the created singleton into **`0x1BBEA18`**, releases the previous pointer and returns.
+
+**Consequences:** The OX-079 callsites send `sharedTimelineFactory` to **`T1TimelineFactory` class** (verified classref), so with this unmodified native implementation they obtain the singleton resulting from **`objc_alloc_init(T1TimelineFactory)`**, rather than a separate named concrete subclass allocated by this method. As with all ObjC alloc/init paths, dynamic subclass substitution or swizzling cannot be excluded by static disassembly alone. The same singleton object is passed to `+[TFNTwitterTimelineManager setTimelineFactory:]` (OX-079); the manager initializer later sends `homeTimelineForAccount:` and `homeLatestTimelineForAccount:` to this stored factory object (OX-077).
+
+**Verified native chain:** `+[T1TimelineFactory sharedTimelineFactory]` → dispatch_once → `objc_alloc_init(Class)` → shared instance in `0x1BBEA18` → `+[TFNTwitterTimelineManager setTimelineFactory:]` → saved in `0x1BF8DF0` → `-[TFNTwitterTimelineManager initWithAccount:]` sends home factory instance methods. Next resolve `T1TimelineFactory` **instance** method IMPs for both selectors, then inspect which timeline classes are constructed.
+
+Reproduce:
+```sh
+llvm-objdump --macho --syms T1Twitter | grep -E '_OBJC_(META)?CLASS_\\$_T1TimelineFactory'
+llvm-objdump -d --start-address=0xc4a8 --stop-address=0xc558 T1Twitter
+llvm-objdump --macho --dyld-info T1Twitter | grep '0x186DA60'
+# metaclass 0x1AE12C0 → ro_t 0x1939470 → baseMethods 0x1393610 → sharedTimelineFactory IMP 0xC4A8
+```
+
+Documentation only, `develop`; no app, version, main, or iPhone SE changes.
