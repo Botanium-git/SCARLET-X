@@ -1803,3 +1803,34 @@ PY
 ```
 
 **Next:** decode all *native* category descriptors and class-method selectors in both images (including `__objc_catlist2` / `__objc_nlcatlist`), resolve external class references with chained binds, and trace the runtime class-method dispatch used by `TFNTwitterTimelineManager`. No changes to app code/version, `main`, or SE.
+
+
+## OX-076 — Full native cross-framework ObjC category class-method scan (2026-10-21)
+
+Primary evidence: user-provided official X v12.25 IPA, unmodified extracted `XAppLibraries` and `XServiceLibraries` Mach-O executables. Unlike OX-075's section inventories and raw text searches, this pass **decoded every category descriptor and its available native class-method list** in all category sections for both images. The exact target selectors were `homeTimelineForAccount:` and `homeLatestTimelineForAccount:` (OX-072).
+
+Technique: read 64-bit Mach-O `LC_SEGMENT_64` sections to translate unslid VM addresses to file offsets; interpret raw dyld chained rebase words by low-36-bit target; enumerate 8-byte category pointers in `__objc_catlist`, `__objc_catlist2` (when present), and `__objc_nlcatlist`; for each descriptor read `classMethods` at category +0x18; decode 12-byte relative method entries with `entsizeAndFlags = 0x8000000C`, resolve relative selector-reference slots and their rebase targets into C strings. Validate representative decoded selectors including XAppLibraries `TAF` category `storeProductViewControllerDidDismiss` and both images' `load` category methods. **No class method-list decode failed or was rejected**.
+
+| Image | Category section entries scanned | Valid decoded class-method entries | Exact target selector matches | Unreadable class method lists |
+|---|---:|---:|---:|---:|
+| XAppLibraries | 83 ordinary + 1 nonlazy = 84 | **156** | **0** | **0** |
+| XServiceLibraries | 175 ordinary + 1 catlist2 + 10 nonlazy = 186 | **566** | **0** | **0** |
+| Total | **270** section entries | **722** | **0** | **0** |
+
+**Interpretation:** This upgrades OX-075's string-only negative to an actual category class-method-list negative across both additional frameworks. Together with OX-074, the two home factory selectors have not been found in the decoded ordinary ObjC category class-method entries across `T1Twitter`, `XAppLibraries`, or `XServiceLibraries`; OX-073 also excluded them from `TFNTwitterTimelineManager`'s direct metaclass base method list. The selector **messages** in its `initWithAccount:` still exist (OX-072). Absence in these static lists does **not** exclude implementations in other embedded frameworks, ObjC dynamic method registration, external runtime metadata, or alternate runtime dispatch mechanisms.
+
+Reproduction sketch:
+```python
+# For each Mach-O image, resolve VM-to-file offsets from LC_SEGMENT_64.
+# For catptr in all __objc_catlist/__objc_catlist2/__objc_nlcatlist entries:
+#   category = chained_rebase_target(catptr)
+#   class_method_list = chained_rebase_target(*(category + 0x18))
+#   for each 12-byte entry:
+#       selref = entry_address + signed_relative_name_offset
+#       selector = read_c_string(chained_rebase_target(*selref))
+#       compare selector against both exact target strings
+```
+
+**Next:** Stop treating category searches in these three images as a likely route. Audit `TFNTwitterTimelineManager` class-side dynamic resolution or other embedded frameworks; alternatively trace `timelineFactory` setter writers and concrete factory instance returned at runtime, preserving the class-message/callsite distinction.
+
+Documentation only to `develop`; no SCARLET-X app, version, `main` branch, or iPhone SE changes.
