@@ -1681,3 +1681,48 @@ llvm-objdump --macho --syms T1Twitter | grep '0x1b57460\\|1b57460'
 ```
 
 Only diagnostic documentation updated on `develop`; no changes to SCARLET-X app, version, `main` or iPhone SE.
+
+
+## OX-072 — TFNTwitterTimelineManager initialization requests two home timeline variants (2026-10-21)
+
+Primary source: original official X 12.25 IPA `T1Twitter.framework/T1Twitter` (unmodified), using native ARM64 `llvm-objdump` and the Objective-C 12-byte relative method list at `0x13F1BA8`. The class `TFNTwitterTimelineManager` ObjC object is `0x1B57460`, with `class_ro_t` `0x1A86288`. Its direct instance base-method list header has `entsizeAndFlags=0x8000000C`, **17 methods**.
+
+Verified selected selectors and IMPs from the actual ObjC method list:
+
+| Index | Selector | IMP |
+|---|---|---|
+| 0 | `homeTimelineForVariant:` | `0x124C244` |
+| 1 | `initWithAccount:` | `0x12557EC` |
+| 5 | `homeRankedFollowingTimeline` | `0x1255AAC` |
+| 6 | `homeCountryFilteredTimeline` | `0x1255B4C` |
+| 7 | `homeTopicFilteredTimeline` | `0x1255C28` |
+| 8 | `refreshHomeTimelineWithSource:` | `0x1255D04` |
+| 9 | `refreshSecondaryTimelinesWithSource:` | `0x1255D58` |
+| 10 | `refreshTimelinesWithSource:excludingTimelines:` | `0x1255E08` |
+| 12 | `homeTimeline` | `0x1256374` |
+| 13 | `homeLatestTimeline` | `0x125637C` |
+
+**Initializer `-[TFNTwitterTimelineManager initWithAccount:]` at `0x12557EC`:**
+
+- Retains incoming account (`x2`), calls superclass `init` via `objc_msgSendSuper2` at `0x12B03CC`, and initializes/stores account into `self+0x40` using `0x12B0498`.
+- Loads the actual ObjC class reference at `0x1BF8DF0`, which points to **`_OBJC_CLASS_$_TFNTwitterTimelineManager` at `0x1B57460`**.
+- Calls ObjC message stub `0x12F8FC0`, whose `x1` selector ref `0x1AA65B8` resolves to **`homeTimelineForAccount:`**, passing account in `x2`. Stores returned retained object at **`self+0x30`** (ARM64 `str x0,[x20,#0x30]` at `0x125585C`).
+- Calls ObjC message stub `0x12F8EA0`, selector ref `0x1AA6570` resolves to **`homeLatestTimelineForAccount:`**, also passing account in `x2`. Stores returned retained object at **`self+0x38`** (`str x0,[x20,#0x38]` at `0x1255880`).
+- Subsequent `self+0x40` related helper and `0x13072C0` Boolean-style result gate the final `0x12D1800` call; **their precise semantics are not determined here**.
+
+This establishes the **actual initialization-time dispatch**:
+
+`TwitterHomeTimelineManagerProvider.timelineManagerForAccount:` (OX-071) → allocate/init `TFNTwitterTimelineManager` → `+[TFNTwitterTimelineManager homeTimelineForAccount:]` and `+[TFNTwitterTimelineManager homeLatestTimelineForAccount:]` (dispatch on class object) → hold distinct returned values at offsets `+0x30` and `+0x38`.
+
+The class-method implementations reached by these selectors have **not yet been resolved** from the metaclass method-list; selector resolution proves the messages issued, not the concrete returned types. It does not yet connect the live home controller to provider usage or home row adapter selection.
+
+Reproduce:
+```sh
+llvm-objdump -d --start-address=0x12557ec --stop-address=0x12558d4 T1Twitter
+llvm-objdump -d --start-address=0x12f8ea0 --stop-address=0x12f8eb4 T1Twitter
+llvm-objdump -d --start-address=0x12f8fc0 --stop-address=0x12f8fd4 T1Twitter
+# Selector-reference slots: 0x1AA6570 → "homeLatestTimelineForAccount:",
+# 0x1AA65B8 → "homeTimelineForAccount:" (dyld chained rebases).
+```
+
+Next: read TFNTwitterTimelineManager **metaclass** method list and resolve the two class factory IMPs; inspect their native allocations and timeline selection. Documentation only on `develop`. No app, version, `main`, or SE changes.
