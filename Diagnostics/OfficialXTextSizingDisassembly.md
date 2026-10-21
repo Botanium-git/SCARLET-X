@@ -1897,3 +1897,43 @@ Primary source: original user-provided official X v12.25 IPA, independently extr
 Reproduce direct-branch check using ARM64 instructions in Mach-O `__TEXT`: for word with `word >> 26 == 0b100101` (BL immediate), sign-extend low 26 bits and calculate `target = instruction_vm + 4 * imm26`; compare with `0x1256344`. The original `T1Twitter` segment covers VM `0x0..0x1854000`, file offset `0x0`.
 
 Only diagnostics updated in `develop`; app code, build/version, main branch, iPhone SE untouched.
+
+
+## OX-079 — Resolve three real ObjC setTimelineFactory: callsites and shared factory source (2026-10-21)
+
+**Primary source:** the original user-supplied official X 12.25 IPA, `Payload/Twitter.app/Frameworks/T1Twitter.framework/T1Twitter` unmodified Mach-O (33,287,408 bytes). Native disassembly, ObjC chained rebase pointers, classrefs and selector references decoded from binary bytes; this is stronger evidence than the zero direct-BL-to-IMP survey in OX-078.
+
+**Selector stub:** the C string `setTimelineFactory:` at `0x167F2CC` is targeted by chained rebase selector-reference slot **`0x1ABBEE0`** (`__objc_selrefs`). Within `__objc_stubs`, the 20-byte stub at **`0x134F460`** loads that slot into `x1` (adrp page `0x1ABB000` + ldr offset `0xEE0`) then dispatches through `objc_msgSend`. A full native ARM64 `BL`-immediate scan over `__TEXT,__text` found exactly **3** direct calls to this selector stub: **`0xA820C`**, **`0xB97F4`**, **`0x1ECC6C`**. These are ObjC selector-stub calls, *not* branches to the Setter IMP at `0x1256344`.
+
+At **all three sites**, local dataflow reveals identical configuration logic:
+1. Load class reference from **`0x1AD28A8`**, a chained rebase to **`_OBJC_CLASS_$_TFNTwitterTimelineManager` at `0x1B57460`**.
+2. Load another class reference from **`0x1AD28B0`** (rebases to **`0x1AE1298`**, defined `_OBJC_METACLASS_$_T1TimelineFactory` per local symbol table; investigate metaclass/class naming ambiguity in this symbol mapping) and call ObjC stub **`0x1353C80`**. That stub loads selector reference **`0x1ABD0E8`**, whose rebased selector C string is **`sharedTimelineFactory`** at `0x1683F10`.
+3. Retain returned object via `objc_retainAutoreleasedReturnValue` stub `0x12B0444`, then pass it in `x2` to the **`setTimelineFactory:`** stub `0x134F460` with the manager class in `x0`.
+4. Release the local retained reference after the setter message.
+
+Representative native sequence at **`0x1ECC44–0x1ECC74`**:
+
+```asm
+1ecc44  adrp x8,0x1ad2000
+1ecc48  ldr  x19,[x8,#0x8a8]      ; manager classref
+1ecc4c  adrp x8,0x1ad2000
+1ecc50  ldr  x0,[x8,#0x8b0]       ; factory-associated ObjC reference
+1ecc54  bl   0x1353c80          ; sharedTimelineFactory
+1ecc5c  bl   0x12b0444          ; retain-autoreleased return
+1ecc60  mov  x20,x0
+1ecc64  mov  x0,x19
+1ecc68  mov  x2,x20
+1ecc6c  bl   0x134f460          ; setTimelineFactory:
+1ecc70  mov  x0,x20
+1ecc7c  b    0x12b0414          ; release
+```
+
+The other selector-stub callsites `0xA820C` and `0xB97F4` each show the same sharedTimelineFactory → setTimelineFactory: sequence, with differently allocated local registers. The exact parent method/context of each callsite remains to be mapped.
+
+**Verified native chain:** T1TimelineFactory-associated `sharedTimelineFactory` message → returned object passed to `+[TFNTwitterTimelineManager setTimelineFactory:]` → global factory pointer saved (OX-077) → home timeline manager initializer sends `homeTimelineForAccount:` and `homeLatestTimelineForAccount:` to global factory object (OX-077). This resolves why searching for those selectors as direct TFNTwitterTimelineManager category methods gave negatives (OX-073–076).
+
+**Open questions:** Resolve precisely whether classref `0x1AD28B0` binds to runtime class/metaclass and trace the concrete `sharedTimelineFactory` implementation; verify the class of returned object. The result of an ObjC factory method must not be assigned a class solely from its sender class name. Also map the containing routines of the three callsites.
+
+Reproduce with `llvm-objdump -d` at `0xA81D8..0xA8220`, `0xB97CC..0xB9800`, `0x1ECC44..0x1ECC80`, `0x134F460..0x134F474`, and `0x1353C80..0x1353C94`; resolve selector refs `0x1ABBEE0` and `0x1ABD0E8` by native chained rebase words.
+
+Documentation only on `develop`; no SCARLET-X executable/version, `main`, or SE changes.
