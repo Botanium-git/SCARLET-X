@@ -1834,3 +1834,50 @@ Reproduction sketch:
 **Next:** Stop treating category searches in these three images as a likely route. Audit `TFNTwitterTimelineManager` class-side dynamic resolution or other embedded frameworks; alternatively trace `timelineFactory` setter writers and concrete factory instance returned at runtime, preserving the class-message/callsite distinction.
 
 Documentation only to `develop`; no SCARLET-X app, version, `main` branch, or iPhone SE changes.
+
+
+## OX-077 — Correction: two home selector messages dispatch on mutable timelineFactory storage, not a TFNTwitterTimelineManager class object (2026-10-21)
+
+**Important correction to OX-072 and OX-073:** Verified again from the original, unmodified official X v12.25 `T1Twitter` Mach-O (ARM64 `llvm-objdump` disassembly and Mach-O section headers). Earlier OX-072 described the receiver of `homeTimelineForAccount:` and `homeLatestTimelineForAccount:` as a `TFNTwitterTimelineManager` **class** via alleged classref at `0x1BF8DF0`. That interpretation is **incorrect**. The same location is writable shared **`timelineFactory` storage** accessed by the class getter/setter, not a dyld class reference. Consequently the ObjC selector searches in OX-073 through OX-076 were aimed at the wrong receiver; their native metadata inventory/negative method-list observations remain valid only for their stated lists and must not be interpreted as excluding implementation on the **factory object's class**.
+
+Cross-check of native instructions:
+
+```asm
+; +[TFNTwitterTimelineManager timelineFactory], IMP 0x1256318
+0x1256324  adrp x8,0x1bf8000
+0x1256328  ldr x19,[x8,#0xdf0]     ; storage at 0x1BF8DF0
+
+; +[TFNTwitterTimelineManager setTimelineFactory:], IMP 0x1256344
+0x1256350  mov x19,x2               ; incoming factory object
+0x1256354  mov x0,x2
+0x1256358  bl  0x12b0420            ; retain
+0x125635c  adrp x8,0x1bf8000
+0x1256360  ldr x0,[x8,#0xdf0]      ; old factory
+0x1256364  str x19,[x8,#0xdf0]     ; new factory stored to 0x1BF8DF0
+0x1256370  b   0x12b0414           ; release old factory
+
+; -[TFNTwitterTimelineManager initWithAccount:], IMP 0x12557EC
+0x1255840  adrp x21,0x1bf8000
+0x1255844  ldr x0,[x21,#0xdf0]     ; same mutable factory object
+0x1255848  mov x2,x19              ; account
+0x125584c  bl  0x12f8fc0           ; message selector homeTimelineForAccount:
+...
+0x1255868  ldr x0,[x21,#0xdf0]     ; same mutable factory object
+0x125586c  mov x2,x19              ; account
+0x1255870  bl  0x12f8ea0           ; message selector homeLatestTimelineForAccount:
+```
+
+Crucial independent metadata: `llvm-objdump --macho --section-headers T1Twitter` reports **`__DATA,__bss` at `0x1BBE9C0`, size `0x3B5E0`**, hence the slot `0x1BF8DF0` lies **inside zero-initialized BSS**, not in `__objc_classrefs`. It cannot be the previous purported native chained rebase to `_OBJC_CLASS_$_TFNTwitterTimelineManager`; that purported pointer identification is **withdrawn**.
+
+**Verified flow (corrected):** Provider allocates `TFNTwitterTimelineManager` (OX-071) → manager initializer loads **globally configured timelineFactory object** at `0x1BF8DF0` → sends the two home factory selectors to **that receiver** → holds results separately at offsets `self+0x30`, `self+0x38`. The configuration writer **`setTimelineFactory:`** stores its argument into that same global slot. The factory's concrete runtime class, configuration callsite(s), initialization timing and result types are **not yet established**.
+
+This explains why `TFNTwitterTimelineManager` metaclass itself does not define the home factory selectors (OX-073) and why the previous three framework category scans do not close the question. Do **not** infer that a missing category implies dynamic registration is required: the receiver simply is not the manager's metaclass.
+
+Reproduce:
+```sh
+llvm-objdump -d --start-address=0x12557ec --stop-address=0x125588c T1Twitter
+llvm-objdump -d --start-address=0x1256318 --stop-address=0x1256374 T1Twitter
+llvm-objdump --macho --section-headers T1Twitter | grep __bss
+```
+
+**Next:** find native callsites of `+[TFNTwitterTimelineManager setTimelineFactory:]` (or equivalent direct writes to BSS `0x1BF8DF0`); inspect the concrete argument construction to recover the actual factory class. Do not modify app code or device while investigating.
