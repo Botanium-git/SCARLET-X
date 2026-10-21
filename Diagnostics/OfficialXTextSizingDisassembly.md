@@ -1726,3 +1726,28 @@ llvm-objdump -d --start-address=0x12f8fc0 --stop-address=0x12f8fd4 T1Twitter
 ```
 
 Next: read TFNTwitterTimelineManager **metaclass** method list and resolve the two class factory IMPs; inspect their native allocations and timeline selection. Documentation only on `develop`. No app, version, `main`, or SE changes.
+
+
+## OX-073 — TFNTwitterTimelineManager metaclass owns only timelineFactory accessors (2026-10-21)
+
+Source: re-read original official X v12.25 `T1Twitter.framework/T1Twitter` unmodified Mach-O, native ObjC class/metaclass data, 12-byte relative method-list entries, dyld binds and ARM64 disassembly. This resolves the specific next question from OX-072: **whether the two home timeline class factory selectors are directly defined in the TFNTwitterTimelineManager metaclass base methods**.
+
+- `_OBJC_CLASS_$_TFNTwitterTimelineManager`: VM `0x1B57460`. Its `isa` chained rebase targets **metaclass `0x1B57488`**.
+- Metaclass's `class_ro_t` pointer targets **`0x1A86070`**. Its direct base-method list is **`0x13946B8`**, with header `entsizeAndFlags = 0x8000000C` and **count = 2**.
+- Relative method entry 0: selector **`timelineFactory`**, native IMP **`0x1256318`**.
+- Relative method entry 1: selector **`setTimelineFactory:`**, native IMP **`0x1256344`**.
+- Native chained bind at metaclass superclass pointer `0x1B57490` resolves to **`libobjc::_OBJC_METACLASS_$_NSObject`**. The class superclass slot `0x1B57468` likewise binds to `libobjc::_OBJC_CLASS_$_NSObject`.
+
+ARM64 disassembly at `0x1256318..0x1256374` shows the getter loads and retains an object from a global storage slot using `adrp/ldr`, and the setter retains the new object, swaps into the same storage slot using `str`, and releases the previous object. This establishes the **timelineFactory storage-accessor behavior**, not the stored object's implementation or timeline factory dispatch targets.
+
+**Crucial limit / corrective nuance to OX-072:** Although `-[TFNTwitterTimelineManager initWithAccount:]` issues ObjC **class messages** with selectors `homeTimelineForAccount:` and `homeLatestTimelineForAccount:` (OX-072), **neither selector is directly present in this metaclass's base-method list**. Thus OX-072's wording must not be read as a verified direct implementation of either factory on the base metaclass. Potential ObjC categories or dynamic resolution still require investigation; with NSObject as the direct superclass, the two selectors cannot simply be attributed to TFNTwitterTimelineManager's direct base class-method entries. The exact runtime implementations and returned timeline classes remain **unresolved**.
+
+Reproduce:
+```sh
+llvm-objdump -d --start-address=0x1256318 --stop-address=0x1256374 T1Twitter
+llvm-objdump --macho --dyld-info T1Twitter | grep '0x1B57490 '
+# Metaclass 0x1B57488 → class_ro_t 0x1A86070 → base methods 0x13946B8;
+# decode two 12-byte relative ObjC method entries and chained selector refs.
+```
+
+Next: inventory native `__objc_catlist` and `__objc_nlcatlist` methods to locate where the two `home*TimelineForAccount:` class factory selectors are implemented, then resolve implementation call paths. Only official-X diagnostics on `develop`; no application/SE changes.
