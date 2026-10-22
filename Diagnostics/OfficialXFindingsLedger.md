@@ -491,3 +491,18 @@ llvm-objdump -d --start-address=0x12e2fe0 --stop-address=0x12e2ff4 T1Twitter
 llvm-objdump -d --start-address=0x1311b60 --stop-address=0x1311b74 T1Twitter
 ```
 Documentation only; no Scarlet X or Probe code, version or main-branch changes.
+
+
+## OX-096 — Verify option argument reaches status-cell layout generator (2026-10-22)
+
+**Primary evidence:** Original user-provided X v12.25 IPA, freshly extracted `Payload/Twitter.app/Frameworks/T1Twitter.framework/T1Twitter`, directly inspected with `llvm-objdump -d`. Existing OX-090/095 describe upstream options path; this entry checks a specific downstream argument transfer without inferring final body displayType.
+
+- `cellLayoutForViewModel:options:account:layoutMetrics:withPreviousLayout:` IMP **`0x2EF7C4`** is indexed in the supplied `scarlet_macho(1).sqlite` `objc_methods` for T1Twitter (list address recorded in index as decimal `20524992`); native disassembly confirms an actual code body at that address.
+- At `0x2EF7E0..0x2EF7F4`, the method retains its incoming args: x2 model → **x24**, x3 options → **x22**, x4 account → **x23**, x5 layout metrics → **x19**, x6 previous layout → **x20**.
+- At `0x2EF818..0x2EF82C`, it requests a class's `statusViewClass` (`0x135CB40`) and from that class obtains `layoutStateGenerator` (`0x1314CC0`), saving the generator result in **x25**.
+- At **`0x2EF844..0x2EF85C`**, receiver x0=x25; x2=x24 model; **x3=x22 options**; x4=x23 account; x5=x19 metrics; x6=x26 previous-layout-derived result. The dispatch is selector stub **`0x1314C80`**, independently resolved earlier (OX-042) as `layoutStateForViewModel:options:account:layoutMetrics:withPreviousLayoutState:`. This confirms that the incoming options propagate to the layout state generator as an explicit argument.
+- A separate layout-state-generator IMP at `0x2AE63C` begins by saving its incoming x3 options in **x21** (`0x2AE678`), then forwards x21 as x3 into an initializer call at **`0x2AE6CC..0x2AE6D4`**. This proves further argument use in that function, *not yet* the option-to-displayType mapping.
+
+**Scope and caution:** The instructions establish an adapter/cell-layout → generator **parameter handoff**, not that the user-visible home cell always takes this branch, and not a complete proof that a particular upstream mask from OX-089/095 changes `TTAStatusBodyTextView` displayType or text height. The identity of the class returned by `statusViewClass` and the result of `layoutStateGenerator` at runtime remain subject to the class-selection conditions already noted in OX-047/048. Do not assume the numeric flags are text-format flags.
+
+**Reproduce:** `llvm-objdump -d --start-address=0x2ef7c4 --stop-address=0x2ef8a4 T1Twitter`; `llvm-objdump -d --start-address=0x2ae63c --stop-address=0x2ae6e0 T1Twitter`. Code, Probe, version and main branch unchanged.
