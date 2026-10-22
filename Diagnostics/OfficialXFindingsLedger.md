@@ -1201,3 +1201,16 @@ Static research only; no Scarlet X app, Probe, main or version changes. SE runti
 **Reproduce:** `llvm-objdump --syms XServiceLibraries | grep TFNComposableViewLayoutState`; inspect native `class_ro_t` at `0x41C9BC8`, method list `0x2FB4A50`, ivars `0x41C9AF8`, and `llvm-objdump -d --start-address=0xcd8b80 --stop-address=0xcd8bd0 XServiceLibraries`.
 
 Documentation only; no SCARLET-X app, Probe, main or version changes.
+
+
+## OX-141 — Additional-edge-inset getter/setter forwarding in T1Twitter (2026-10-22)
+
+**Primary source:** User-supplied original official X v12.25 IPA `Payload/Twitter.app/Frameworks/T1Twitter.framework/T1Twitter`, `Payload/Twitter.app/Frameworks/XServiceLibraries.framework/XServiceLibraries`, and user-supplied Mach-O SQLite index. Native disassembly, without SE.
+
+- The SQLite `objc_methods` index records another pair of `additionalEdgeInsets` **IMP 0x7ABF58** and `setAdditionalEdgeInsets:` **IMP 0x7ABF68** in T1Twitter (same relative method list **0x138CBF8**, entries 2 and 3). These are **distinct** from the direct superclass accessors in XServiceLibraries `TFNComposableViewLayoutState` at 0xCD8BB8 and 0xCD8BC4 (OX-140).
+- At `0x7ABF58..0x7ABF64`, the getter loads an ivar offset via `adrp/ldr` and then loads an object pointer from `self+offset` into x0. It then tail-branches to Objective-C stub **0x12D3EC0**. This is an **object-delegating getter**, not a direct four-double field read or CGRect frame application.
+- At `0x7ABF68..0x7ABF74`, the setter loads the *same* ivar offset, replaces x0 with that ivar's object pointer, and tail-branches to **0x13354E0**, whose selector **`setAdditionalEdgeInsets:`** was previously resolved in OX-138. Hence this setter also **delegates the incoming four-double inset argument to a contained object** rather than storing four doubles in this wrapper class.
+- Sibling methods from the same list delegate `size`, `setSize:`, `baselineEdgeInsets`, `setBaselineEdgeInsets:`, `topContentInset`, `setTopContentInset:` through the same ivar. This strongly supports a layout-state *wrapper/composition* pattern. The exact owner class of the method list, the ivar name/type, and the getter target's native selector should be independently resolved before asserting their identity or how insets are applied.
+- The presence of forwarding accessors does **not** show that these insets are ultimately used for `UIView.frame`; nor does it establish actual horizontal or vertical values, which remain SE-dependent if not determined statically.
+
+**Reproduce:** `SELECT selector,imp,list_address,entry_index FROM objc_methods WHERE binary_id=1 AND list_address=20499448 ORDER BY entry_index;` and `llvm-objdump -d --start-address=0x7abf28 --stop-address=0x7abfb8 T1Twitter`; compare XServiceLibraries `0xCD8BB8..0xCD8BCC`. Research documentation only; no app, Probe, main or version changes.
