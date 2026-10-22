@@ -912,3 +912,17 @@ Static official X v12.25 only; no X v12.35 device validation. No SCARLET-X app/P
 **Reproduce:** `llvm-objdump -d --start-address=0x96e728 --stop-address=0x96e8d0 XAppLibraries`; `llvm-objdump -d --start-address=0x4ac8c80 --stop-address=0x4ac8d40 XAppLibraries`; inspect chained rebases for slots `0x651E268..0x651E290` via `llvm-objdump --macho --dyld-info XAppLibraries`.
 
 Static research only. No app, Probe, main branch or version changes.
+
+
+## OX-119 — Previous-layout equality gate in T1Twitter cell layout builder (2026-10-22)
+
+**Primary source:** Original user-supplied official X v12.25 IPA; freshly extracted `Payload/Twitter.app/Frameworks/T1Twitter.framework/T1Twitter`. Verified the method IMP `0x2EF7C4` for `cellLayoutForViewModel:options:account:layoutMetrics:withPreviousLayout:` against `scarlet_macho(1).sqlite` `objc_methods`; directly inspected ARM64 disassembly `0x2EF7C4..0x2EF97C`. Static analysis, SE not required.
+
+- The method preserves the preceding layout parameter x6 in x20 at `0x2EF7E0`, and stores other layout parameters in x19/x23/x22/x24. It obtains the generator through the class's `layoutStateGenerator` selector (`0x2EF820`, stub `0x1314CC0`), then sends `layoutStateForViewModel:options:account:layoutMetrics:withPreviousLayoutState:` via stub `0x1314C80` at `0x2EF85C`, saving the resulting new layout state in x21. Both stubs' selectors were independently verified from `__objc_selrefs`.
+- At `0x2EF830..0x2EF840`, the previous layout x20 is queried by a method stub whose concrete name was not resolved in this entry, yielding x26. The new state is passed to generator with x6=x26 at `0x2EF858`. Do not assume x26 is identical to previous layout object: it is a derived value.
+- At `0x2EF890..0x2EF8A0`, the routine obtains another value from the prior-layout parameter and **compares it to new state x21**. Pointer equality branches to `0x2EF934`.
+- If pointers differ, `0x2EF8A8..0x2EF8D8` obtains a property/value from the prior layout and sends **`isEqual:`** via ObjC stub **`0x130A0E0`** (`__objc_selrefs` slot **`0x1AAAA00`** rebases to native selector C string at **`0x1629780`**). Its argument x2 is new layout state x21. A true result branches to `0x2EF938`, while false enters allocation/build flow at `0x2EF8DC..0x2EF930`.
+- The equality-success path `0x2EF938..0x2EF940` retains and returns previous-layout x20 as x23, subject to the normal teardown/return at `0x2EF944..0x2EF978`. When equality fails, it constructs a layout object and returns that instead. This establishes **prior layout object reuse when derived layout states are pointer-equal or `isEqual:`**.
+- **Scope:** This is *cell-layout object* reuse, distinct from attributed text height caching analyzed in OX-110..118. Reuse of an object is not proof that all frames are immutable, nor that every runtime home-timeline post takes this method; v12.35 device-level behavior remains unverified.
+
+**Reproduce:** `llvm-objdump -d --start-address=0x2ef7c4 --stop-address=0x2ef97c T1Twitter`; `llvm-objdump -d --start-address=0x130a0e0 --stop-address=0x130a100 T1Twitter`; `llvm-objdump --macho --dyld-info T1Twitter` and original `0x1629780` selector bytes. No app/Probe/main/version changes.
