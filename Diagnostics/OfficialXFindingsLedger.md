@@ -713,3 +713,19 @@ llvm-objdump --macho --dyld-info XAppLibraries | grep -E '0x6505238 |0x6505240 |
 ```
 
 Research documentation only; no Scarlet X app, Probe, main branch, or version changes.
+
+
+## OX-110 — Concrete attributedTextModelHeightForOptions: has conditional measurement and upward rounding (2026-10-22)
+
+**Primary evidence:** Unmodified user-provided official X v12.25 IPA, `Payload/Twitter.app/Frameworks/XAppLibraries.framework/XAppLibraries` (124,141,728 bytes). Fresh extraction; `scarlet_macho(1).sqlite` checked and native `llvm-objdump -d --start-address=0x96e3c4 --stop-address=0x96e658 XAppLibraries` independently inspected.
+
+- The `objc_methods` index has a concrete `attributedTextModelHeightForOptions:` IMP **`0x96E3C4`** (binary_id 2; list `0x4B67D78`), **as well as numerous other entries** with the same selector. The latter can include separate owners or declaration records. The following conclusions are specifically about the executable method at `0x96E3C4`, not every possible receiver.
+- At `0x96E3E4..0x96E3F8` the method retains the incoming options object in x19 and calls a property/getter stub returning double in d0. It compares with zero at `0x96E3FC`; if the value is not positive it branches to a zero-height return (`0x96E46C..0x96E470`). The exact property selector must be decoded before naming this width/size constraint.
+- There are conditional early-return/cache-like paths at `0x96E440..0x96E468`, including a call at `0x96E454` and a value converted to signed 64-bit via `fcvtzs x22,d0` at `0x96E464`; the exact semantics and whether this is a cache hit require resolving call targets.
+- The longer measurement path starting `0x96E550` obtains a model through **`attributedTextModelForOptions:`** at `0x96E56C` (selector stub `0x4A64BC0`, previously resolved in OX-109). The following calls handle a measurement/model object and a conditional fallback (`0x96E590..0x96E5D8`).
+- In the measurement-success path, the method calls `0x4A5EB40` at `0x96E5EC`, converts a double result to float (`fcvt s0,d1` at `0x96E5F0`), performs **`frintp s8,s0` at `0x96E5F4`** (round toward positive infinity), then **`fcvtzs x22,s8` at `0x96E618`** before return at `0x96E644`. This directly demonstrates a float32 upward-rounding stage for this path, consistent with but not identical to the earlier fit-to-size analysis.
+- Some branches return zero or another integer without traversing the `frintp` path. Therefore do not assert a universal rounding formula or label the return as the final cell height; this method supplies one attributed-model height input, conditional on options and internal helpers.
+
+**Next:** Resolve native selector stubs `0x4B016C0`, `0x4AF0D20`, `0x4A6BD20`, `0x4A5EB40` and cache-related calls, then identify the receiver/class owner of this IMP from original `class_ro_t` metadata. Cross-check with OX-109's calling displayType path. Original X v12.25 only; no live X v12.35 measurement.
+
+No app/Probe/main/version change.
