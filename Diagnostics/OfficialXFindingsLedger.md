@@ -884,3 +884,31 @@ Static official X v12.25 only; no X v12.35 device validation. No SCARLET-X app/P
 - **Still unresolved:** the `0x96E770` cached-entry getter previously decoded as `seedEmptyLineMaxHeight` appears to return an object passed to `isEqualToString:` for comparison with live `fontName`. This mismatch deserves an independent native stub/receiver verification before claiming a definite font-name matching field. Do not silently reinterpret the strange selector identity.
 
 **Result:** One formerly unresolved OX-116 comparison is resolved with instruction-level evidence; do not extrapolate to runtime home-timeline displayType/width on official v12.35. Static analysis only; no production/Probe/version modification.
+
+
+## OX-118 — Correct off-by-one ObjC stub mapping in cache font-name and metric comparisons (2026-10-22)
+
+**Primary evidence:** User-provided unmodified official X v12.25 `XAppLibraries.framework/XAppLibraries`, native `llvm-objdump` disassembly of `0x96E728..0x96E8D0` and ObjC stubs `0x4AC8C80..0x4AC8D20`. Each stub's `adrp x1; ldr x1,[x1,#offset]` was resolved via dyld chained rebase entries for exact `__objc_selrefs`, then read as NUL-terminated strings from original Mach-O. **Corrects inaccurate stub names in OX-114 and the follow-up caveat in OX-116/117.**
+
+| Stub | Selector slot | Actual selector |
+|---|---|---|
+| `0x4AC8C80` | `0x651E268` | `seed` |
+| `0x4AC8CA0` | `0x651E270` | `seedEmptyLineMaxHeight` |
+| **`0x4AC8CC0`** | **`0x651E278`** | **`seedFontName`** (NOT `seedEmptyLineMaxHeight`) |
+| `0x4AC8CE0` | `0x651E280` | `seedKerning` |
+| `0x4AC8D00` | `0x651E288` | `seedLineHeight` |
+| **`0x4AC8D20`** | **`0x651E290`** | **`seedLineSpacing`** (NOT `seedKerning`) |
+
+**Exact corrected validator callsites:**
+- `0x96E770` → `0x4AC8CC0` → **`seedFontName`**. The live `fontName` returned at `0x96E74C` is compared with this cached string by pointer shortcut `0x96E78C` and `isEqualToString:` at `0x96E7A8` if both non-null. The previous puzzling string-vs-numeric-field discrepancy is therefore **an erroneous earlier stub mapping, not evidence of unusual object types**.
+- `0x96E7D0` → `0x4AC8D00` → `seedLineHeight`; compared against live `lineHeight` (`0x96E7EC`).
+- `0x96E800` → `0x4AC8D20` → **`seedLineSpacing`**; compared against live `lineSpacing` (`0x96E81C`), tolerance 0.001.
+- `0x96E850` → `0x4AC8CA0` → **`seedEmptyLineMaxHeight`**; compared against live `emptyLineMaxHeight` (`0x96E86C`), tolerance 0.001.
+- `0x96E898` → `0x4AC8CE0` → **`seedKerning`**; compared against live `kerning` (`0x96E8B4`), tolerance 0.001.
+- `0x96E938` → `0x4AC8C80` → `seed`; width/point-size-packed seed comparison remains as OX-116.
+
+**Consequence:** All the previously questionable formatter-field pairing now matches ordinary, type-consistent string and double comparisons. This correction supersedes the erroneous cache-getter names/callsites in the OX-114 table and the uncertainty about `0x96E770` in OX-116/117. It does not undo the separately evidenced OX-115 0.001 threshold or OX-117 maxLines numeric match. Exact cache-invalidations and dynamic v12.35 behavior remain unverified.
+
+**Reproduce:** `llvm-objdump -d --start-address=0x96e728 --stop-address=0x96e8d0 XAppLibraries`; `llvm-objdump -d --start-address=0x4ac8c80 --stop-address=0x4ac8d40 XAppLibraries`; inspect chained rebases for slots `0x651E268..0x651E290` via `llvm-objdump --macho --dyld-info XAppLibraries`.
+
+Static research only. No app, Probe, main branch or version changes.
