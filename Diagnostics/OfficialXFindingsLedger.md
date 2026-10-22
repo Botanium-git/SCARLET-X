@@ -678,3 +678,18 @@ These selector names establish that the extended predicate checks tweet identity
 **Reproduce:** disassemble `0x2cc7330..0x2cc7570` and listed objc stubs in original XAppLibraries, resolve each stub's `__objc_selrefs` slot with Mach-O chained rebases into `__objc_methname`.
 
 Research only. SCARLET-X app, Probe, main and versions unchanged.
+
+
+## OX-108 — Recheck real body-height method displayType split, rather than promote-button classifier (2026-10-22)
+
+**Primary source:** Original user-provided official X v12.25 IPA; freshly extracted `Payload/Twitter.app/Frameworks/XAppLibraries.framework/XAppLibraries`. Verified `objc_methods` SQLite record for selector `heightForViewModel:options:displayTextOptions:displayType:width:layoutMetrics:richTextEnabled:trailingString:maxLines:attachmentDelegate:textKit2Enabled:cachingEnabled:` (binary_id 2, IMP **`0x2CCC9EC`**) and disassembled its original ARM64 instructions at `0x2CCC9EC..0x2CCCBC0`.
+
+- Incoming `displayType` is retained from x5 into x23 at **`0x2CCCA18`**. The function checks it against **6** at `0x2CCCADC` and branches when greater.
+- For values 0..6, `0x2CCCAE4..0x2CCCAF4` computes **`(1 << displayType) & 0x79`**, branching when the result is zero. Mask `0x79 = 0b1111001` selects **displayType 0, 3, 4, 5, 6**; values **1 and 2** instead go to `0x2CCCB38`. Values greater than 6 branch to `0x2CCCB7C`; do not infer their semantics from this out-of-range path.
+- For types 0/3/4/5/6, the code sets further parameters on x22 at `0x2CCCAFC..0x2CCCB10` and calls **`0x4A64BE0`** at `0x2CCCB1C`, then converts its returned integer to a floating value (`scvtf d0,x0`). The precise callee name should be resolved from native imports/selector stubs before assigning it a text-measurement API label.
+- For types 1/2, it calls **`0x4A64BC0`** at `0x2CCCB40` and conditionally uses the resulting object in **`0x4AE9820`** at `0x2CCCB68`; the fallback when null yields zero at `0x2CCCB80`. The callee identities and return semantics remain to verify.
+- This independent body-height method is a much more targeted research lead than the `0x2CC72C8` promotion/Boost predicate from OX-107. It agrees with the *existence of a 0/3/4/5/6 vs 1/2 split* previously noted in OX-019, without yet establishing official X v12.35 live mode, exact font, line wrapping or observed pixels.
+
+**Reproduce:** `llvm-objdump -d --start-address=0x2ccc9ec --stop-address=0x2cccbc0 XAppLibraries`. Cross-check the IMP in SQLite with `SELECT imp FROM objc_methods WHERE selector LIKE 'heightForViewModel:options:displayTextOptions:%';`. Do not use objdump's nearest symbol label as the owner name: the exact method identity comes from native/indexed ObjC metadata.
+
+Documentation only: no Scarlet X app, Probe, main or version changes.
