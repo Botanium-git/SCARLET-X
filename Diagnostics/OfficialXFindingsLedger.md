@@ -1294,3 +1294,18 @@ llvm-objdump --macho --dyld-info XServiceLibraries | grep -E '0x43BA498|0x43C598
 ```
 
 Documentation only; Scarlet X app, Probe, main branch and version unchanged. Official X v12.35 runtime state selection unverified.
+
+
+## OX-147 — Locate an indexed write of a newly computed layout state at identifier 24 (2026-10-22)
+
+**Primary evidence:** Original user-provided official X v12.25 IPA, extracted unmodified `T1Twitter.framework/T1Twitter`. Directly disassembled known `T1StandardStatusViewLayoutStateGenerator` method at `0x2AE63C` (generator ownership previously corroborated in ledger) through `0x2AFA10`, with focus on `0x2AF940..0x2AF9A8`. The Mach-O Objective-C stubs, selrefs and original selector strings were independently checked; no SE used.
+
+- At **`0x2AF944..0x2AF954`**, code sends an ObjC message through stub `0x1370BE0` to x20 and retains the resulting object in x23; this method is **not named in this entry**, so no assumptions about its semantics should be made.
+- At **`0x2AF958..0x2AF974`**, the generator prepares a previous/result-like receiver x19, computes an x23- and x24-dependent layout state, supplies several SIMD floating-point parameters, and invokes stub **`0x1314C40`** at `0x2AF974`. The stub loads selref **`0x1AAD4D8`**, rebased to native C-string **`0x1636E9A`**, exactly **`layoutStateForViewModel:layoutMetrics:avatarFrame:containerHeight:tweetStormIndicatorMidY:`**. The returned object is retained in **x26** at `0x2AF980`.
+- At **`0x2AF984..0x2AF9A4`**, x20 is restored from x27; at **`0x2AF99C`**, x2=x26 (returned state), at **`0x2AF9A0`**, `mov w3,#0x18` sets the **literal index 24**, and at **`0x2AF9A4`**, it sends stub **`0x1345F40`**, whose selref **`0x1AB9998`** rebases to native C-string **`0x1676247`**, **`setObject:atIndexedSubscript:`**. The receiver at that call is the x20 object returned from a prior stack-saved x26 via the stub `0x1370BE0`; its concrete class and backing store require follow-up.
+- Therefore a state computed using model/metrics/avatar-frame/container-height/tweet-storm inputs is **stored at index 24** in a container in the standard status layout-generator path. This is direct evidence of **an indexed layout-state construction/write**, complementary to OX-146's `viewIdentifier`-based read. It **does not establish** that viewIdentifier=24 belongs to body/header/avatar, nor establish that the index-24 receiving container is exactly the array later used by OX-146 without confirming its type/flow.
+- Important existing fact: OX-040 had separately found standard body adapter **viewIdentifier=14** in one construction path. Do not equate that with the literal **24** observed here.
+
+**Reproduce:** `llvm-objdump -d --start-address=0x2af940 --stop-address=0x2af9b0 T1Twitter`; `llvm-objdump -d --start-address=0x1314c40 --stop-address=0x1314c50 T1Twitter`; `llvm-objdump -d --start-address=0x1345f40 --stop-address=0x1345f50 T1Twitter`; use `llvm-objdump --macho --dyld-info T1Twitter` to resolve rebases at `0x1AAD4D8` and `0x1AB9998`, and read source selector strings at `0x1636E9A` and `0x1676247`.
+
+**Next static step:** resolve `0x1370BE0` selector and receiver/container provenance, then associate index 24 with its view-adapter registration if native evidence permits. No SE, SCARLET-X app, Probe, main or version changes.
