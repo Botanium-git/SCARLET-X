@@ -1271,3 +1271,26 @@ Documentation only; no app, Probe, main, or version changes; SE runtime investig
 **Reproduce:** `llvm-objdump -d --start-address=0xcd6fc0 --stop-address=0xcd7118 XServiceLibraries`; inspect ObjC stubs at `0x2F18F20`, `0x2F61BE0`, `0x2F246A0`, `0x2F1D620`; resolve chained rebases at selrefs `0x43C2DC0`, `0x43D50F0`, `0x43C5BA0`, `0x43C3F80` against original C-string bytes. This is static original X v12.25 evidence, not runtime proof for v12.35.
 
 Documentation only; no Scarlet X application, Probe, main branch or version change.
+
+
+## OX-146 — Resolve 0xE22118 as bounds-checked indexed layout-state lookup excluding NSNull (2026-10-22)
+
+**Primary evidence:** User-provided original official X v12.25 IPA, extracted unchanged `XServiceLibraries.framework/XServiceLibraries`; directly disassembled `0xE22118..0xE221AC` using `llvm-objdump`. Objective-C stubs and the NSNull classref were verified against the original Mach-O dyld rebases. Extends OX-145; no SE used.
+
+- **Inputs:** `x0` = layout-state-set-like object, `x1` = view identifier/index. At **`0xE22128`**, `cbz x0,0xE22198` returns nil for null input. `x1` is preserved in x19, x0 in x20.
+- At **`0xE22134..0xE22140`**, it reads **`[x0+0x8]`** and dispatches `count` at stub **`0x2EF6A80`** (selref `0x43BA498` → C-string `0x36C4718`, `count`). `cmp x19,x0; b.hs 0xE22198` rejects an unsigned identifier at/above count, returning nil.
+- If in bounds, at **`0xE22144..0xE22158`** it again loads `[x20+0x8]`, passes identifier as x2, and dispatches **`objectAtIndexedSubscript:`** via stub **`0x2F246A0`** (the selector already resolved in OX-145), retaining the returned object in x20.
+- At **`0xE2215C..0xE22170`**, it loads classref **`0x43E89F0`**, which native dyld info binds to **`CoreFoundation:_OBJC_CLASS_$_NSNull`**, and sends **`null`** through stub **`0x2F23E20`** (selref `0x43C5980` → string `0x371742C`, `null`), retaining the singleton in x21.
+- At **`0xE22174..0xE2217C`**, it compares the indexed element against NSNull singleton by pointer identity and selects **nil** when equal, otherwise the indexed element. Retain/release cleanup follows, then returns autoreleased via the helper at `0x2ED648C`.
+- **Confirmed contract for this native helper:** null state set, out-of-range unsigned identifier or `NSNull` placeholder yields null; otherwise it returns the indexed object. This explains how OX-145's `viewIdentifier` can select a distinct non-placeholder layout-state entry. The code alone does **not** establish the meaning of each identifier or any CGRect/setFrame application.
+- The function appears without a reliable isolated symbol in objdump; ownership/name should not be assigned from the nearest unrelated symbol label.
+
+**Reproduce:**
+```sh
+llvm-objdump -d --start-address=0xe22118 --stop-address=0xe221b0 XServiceLibraries
+llvm-objdump -d --start-address=0x2ef6a80 --stop-address=0x2ef6a94 XServiceLibraries
+llvm-objdump -d --start-address=0x2f23e20 --stop-address=0x2f23e34 XServiceLibraries
+llvm-objdump --macho --dyld-info XServiceLibraries | grep -E '0x43BA498|0x43C5980|0x43E89F0'
+```
+
+Documentation only; Scarlet X app, Probe, main branch and version unchanged. Official X v12.35 runtime state selection unverified.
