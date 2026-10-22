@@ -1004,3 +1004,15 @@ Documentation only, no SCARLET-X application, Probe, main branch or version chan
 **Limits:** The six indexed implementations may not be exhaustive for dynamic inheritance and XAppLibraries. Do not infer the particular child receiver is the 0x2DF118 owner. No proof yet of where `contentEdgeInsets` is applied. Documentation only, no app/Probe/main/version changes.
 
 **Reproduce:** `SELECT imp,list_address FROM objc_methods WHERE binary_id=1 AND selector='setLayoutState:';`; `llvm-objdump -d --start-address=0x2df118 --stop-address=0x2df158 T1Twitter`; `llvm-objdump -d --start-address=0x2f09f4 --stop-address=0x2f0a84 T1Twitter`.
+
+
+## OX-127 — Identify T1StatusCell child ivar as _statusView (2026-10-22)
+
+**Source:** Original user-supplied official X v12.25 IPA, native `T1Twitter.framework/T1Twitter` disassembly plus Objective-C ivar metadata. Static-only analysis; no SE needed.
+
+- In `-[T1StatusCell setCellLayout:]` (IMP `0x2F09F4`), code at `0x2F0A4C..0x2F0A54` loads the offset symbol at **`0x1ADD804`** and then reads the child pointer from `self + offset`. That pointer is receiver x0 for **`setLayoutState:`** call at **`0x2F0A5C`**, with the derived `statusViewLayoutState` passed in x2, matching OX-125.
+- The original `T1StatusCell` native ObjC ivar metadata contains an entry at **`0x1996CC0`** whose offset pointer is **`0x1ADD804`**, whose name pointer rebases to **`0x15B0B03`**, NUL-terminated string **`_statusView`**, and whose type pointer rebases to **`0x16C36C3`**, NUL-terminated encoding **`@\"UIView<TTACoreLayoutableStatusView>\"`**. The offset slot stores numeric value **8** in this original binary.
+- Thus the cell's child receiving `setLayoutState:` is concretely named **`_statusView`**, statically declared as **`UIView<TTACoreLayoutableStatusView>`**. Independently OX-124's `layoutSubviews` and `sizeThatFits:` reference this same offset symbol, tying the contentView.bounds frame assignment and intrinsicContentSize query to this ivar.
+- **Important limit:** An Objective-C protocol-qualified UIView type **does not identify the actual concrete subclass created at runtime**, nor does it prove which of the multiple `setLayoutState:` IMPs from OX-126 is dispatched. Continue by tracing the constructor or `statusViewClass` selection and identifying the actual init/assignment to `_statusView`. Do not infer exact child view frames, layout insets, or v12.35 values.
+
+**Reproduce:** `llvm-objdump -d --start-address=0x2f09f4 --stop-address=0x2f0a64 T1Twitter`; read original Mach-O native ivar record at `0x1996CC0` and `__objc_selrefs`-style dyld fixups for pointers `0x1ADD804`, `0x15B0B03`, `0x16C36C3`. No SCARLET-X production, Probe, main or version changes.
