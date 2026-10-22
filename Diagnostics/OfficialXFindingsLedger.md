@@ -392,3 +392,25 @@ The method copies incoming options `x4` into `x20` at `0x1000BDA6C`. It gets `it
 Reproduction: `llvm-objdump -d --start-address=0x1000bda54 --stop-address=0x1000bdbcc Twitter` and `llvm-objdump --macho --dyld-info Twitter` for selrefs `0x100269010`, `0x10026C100`, `0x100268F80`, `0x100268F48`, `0x1002670F0`. Read rebased NUL-terminated selector strings in original Mach-O.
 
 Documentation only; no application, Probe, main branch, or version changes.
+
+
+## OX-091 — Resolve receiver and argument handoff for status-option helper (2026-10-22)
+
+**Directly checked:** user-provided original official X v12.25 IPA, `T1Twitter.framework/T1Twitter`; native ARM64 disassembly at `0x3AB20C..0x3AB31C`, with indexed class method-list cross-check.
+
+Within `-[T1StatusTableRowAdapter dataViewController:tableViewCellForItem:withOptions:atIndexPath:]`:
+- Entry saves `x2` data-view controller into `x19`, `x3` item into `x20`, `x4` options into `x21`, `x5` index path into `x22`, and `x0` (self) into `x24` at `0x3AB22C..0x3AB23C`.
+- At `0x3AB2AC..0x3AB2BC`, message `statusAdapter` is sent to **self** (`x24`) via ObjC stub `0x135C640`. Its result is retained in `x26`.
+- At `0x3AB2C0..0x3AB2D4`, the subsequent message `tableViewController:statusOptionsForViewModel:withOptions:atIndexPath:` (stub `0x1361540`) has **receiver x0 = statusAdapter result (x26)**. x2 receives `x19` data-view controller, x3 receives `x20` item/view-model argument, x4 receives original `x21` options, and x5 receives `x22` index path; the returned computed options in x0 are saved as x25.
+- At `0x3AB30C..0x3AB31C`, `setViewModel:options:account:` is invoked on cell's inner `statusView`, with `x3=x25` computed option bits.
+
+The supplied `scarlet_macho` SQLite lists `statusAdapter` getter at **IMP `0x3AB09C`** (decimal 3846044), and `setStatusAdapter:` at 0x3AC234 (decimal 3851868) in the same method list as the row adapter. It has **no indexed concrete ObjC implementation entry** for the exact selector `tableViewController:statusOptionsForViewModel:withOptions:atIndexPath:` among the two indexed images (T1Twitter, XAppLibraries). Absence from this partial index **does not prove no implementation in the full IPA**, category, protocol forwarding or dynamic dispatch.
+
+**Meaning:** OX-090 helper method dispatch is to the *statusAdapter object*, not directly to `THFHomeTimelineItemsViewController`. The route from that object's helper to the OX-088/OX-089 home status-options block remains to be established by tracing `setStatusOptionsBlock:`, the statusAdapter class, and concrete helper implementation. Do not infer home runtime selection or bit meanings from this handoff.
+
+Reproduce from original binaries:
+```sh
+llvm-objdump -d --start-address=0x3ab20c --stop-address=0x3ab340 T1Twitter
+llvm-objdump -d --start-address=0x3ab09c --stop-address=0x3ab0d0 T1Twitter
+```
+No production code, Probe, main branch or version changes.
