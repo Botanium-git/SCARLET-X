@@ -729,3 +729,27 @@ Research documentation only; no Scarlet X app, Probe, main branch, or version ch
 **Next:** Resolve native selector stubs `0x4B016C0`, `0x4AF0D20`, `0x4A6BD20`, `0x4A5EB40` and cache-related calls, then identify the receiver/class owner of this IMP from original `class_ro_t` metadata. Cross-check with OX-109's calling displayType path. Original X v12.25 only; no live X v12.35 measurement.
 
 No app/Probe/main/version change.
+
+
+## OX-111 — Resolve width, caching and cached-height selectors in attributed model height routine (2026-10-22)
+
+**Primary evidence:** User-supplied unmodified official X v12.25 IPA `Payload/Twitter.app/Frameworks/XAppLibraries.framework/XAppLibraries` (124,141,728 bytes), extracted anew. ARM64 code disassembled at `0x96E3C4..0x96E644`; individual Objective-C stubs decoded to native `__objc_selrefs` and resolved using `llvm-objdump --macho --dyld-info` chained rebases and original selector strings.
+
+| Stub | Selector ref → native selector | Callsite |
+|---|---|---|
+| `0x4B016C0` | `0x652C4F8` → **`width`** | `0x96E3F8`, `0x96E5DC` |
+| `0x4AF0D20` | `0x6528290` → **`textOptions`** | `0x96E408` |
+| `0x4A6BD20` | `0x6506E90` → **`cachingEnabled`** | `0x96E444`, `0x96E5FC` |
+| `0x4AF0BC0` | `0x6528238` → **`textHeight`** | `0x96E460` |
+| `0x4A5EB40` | `0x6503A18` → **`actualSize`** | `0x96E5EC` |
+| `0x4A58460` | `0x6502060` → **`_tfn_displayTextCacheEntryForOptions:prepopulateDisplayTextCacheIfDoesNotExist:`** | `0x96E418` |
+| `0x4AF0700` | `0x6528108` → **`text`** | `0x96E428` |
+| `0x4AAC8C0` | `0x6517178` → **`mutableCopy`** | `0x96E554` |
+
+**Verified branch interpretation:** At `0x96E3F4..0x96E400`, width is compared with floating 0.0 using `fcmp d0,#0.0` then `b.ls`; when width is not ordered-greater-than-zero, the branch sets integer height 0 at `0x96E46C`. The ordered-greater-than-zero branch requests text options and the display-text cache entry. At `0x96E440..0x96E468`, `cachingEnabled` must be true and helper `0x96E694` must return nonzero before returning `textHeight` via `fcvtzs x22,d0`. Hence the short path reads existing text height (not proven to be a valid hit without helper analysis). Otherwise the routine measures an attributed model, obtains `actualSize` and rounds upward using `frintp s8,s0` (OX-110). A later `cachingEnabled` check gates helper `0x96EAC8`, likely involved in persistence but not yet verified.
+
+**Limits:** Exact predicate in `0x96E694`, how cache entries are populated/invalidated, and precise type/field semantics of the `actualSize` return need separate confirmation. This is not a universal formula for final timeline row height, and v12.35 device behavior remains unmeasured.
+
+**Reproduce:** `llvm-objdump -d --start-address=0x96e3c4 --stop-address=0x96e658 XAppLibraries` and corresponding ObjC stubs; `llvm-objdump --macho --dyld-info XAppLibraries` for listed selector refs.
+
+Documentation only. Scarlet X production code, Probe, main branch and versions unchanged.
