@@ -414,3 +414,22 @@ llvm-objdump -d --start-address=0x3ab20c --stop-address=0x3ab340 T1Twitter
 llvm-objdump -d --start-address=0x3ab09c --stop-address=0x3ab0d0 T1Twitter
 ```
 No production code, Probe, main branch or version changes.
+
+
+## OX-092 — Distinguish T1StatusTableRowAdapter statusAdapter and statusOptionsBlock accessors (2026-10-22)
+
+**Evidence:** Original official X v12.25 `T1Twitter.framework/T1Twitter` binary, independently checked against user-supplied `scarlet_macho(1).sqlite` `objc_methods` index. Direct ARM64 disassembly using `llvm-objdump`.
+
+For `T1StatusTableRowAdapter` method list `0x13A6278`, the index gives:
+- `statusAdapter` getter **IMP `0x3AAF9C`**.
+- `setStatusAdapter:` **IMP `0x3AC65C`**.
+- `statusOptionsBlock` getter **IMP `0x3AC5A0`**.
+- `setStatusOptionsBlock:` **IMP `0x3AC5B0`**.
+
+At `0x3AC5A0`, the `statusOptionsBlock` getter loads an ivar-offset symbol via `adrp/ldrsw`, then reads the object at that offset. At `0x3AC5B0`, its setter loads that **same ivar offset** (page `0x1ADE000`, +`0x4EC`) and branches to the Objective-C property-storage helper at `0x12B0480`. It is not a method that itself calculates status options. The earlier `statusAdapter` getter pointer `0x3AB09C` stated in OX-091 was inaccurate: the actual indexed getter is `0x3AAF9C`; `0x3AB09C` falls in adjacent method code. This entry corrects that address without changing the verified OX-091 receiver handoff.
+
+The index also lists `statusOptionsBlock` getter `0x144D4` and setter `0x144E4` in a **different** ObjC method list `0x13C9D98`, alongside `initWithAccount:statusOptionsBlock:customEventHandler:` at `0x12948`. These method records establish an additional holder with a similarly named block property, **not** the concrete class owner or how that object is connected to the row-adapter property.
+
+**Next necessary check:** resolve the owner of method list `0x13C9D98` through native class_ro_t→class metadata and trace the concrete helper dispatch and block invocation. The getter/setter presence alone does not establish that the row adapter invokes its stored block or that the helper's receiver is the same object. This is static v12.25 evidence, not v12.35 runtime proof.
+
+No application/Probe code or versions modified.
