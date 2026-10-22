@@ -1108,3 +1108,20 @@ No Scarlet X production code, Probe, versions or main changes. Documentation onl
 - **Scope:** These are concrete *view-adapter protocols/messages* implementing model/state association for child views. No direct `UIView setFrame:` or header/avatar/body coordinate is established by the inspected code, and exact runtime adapter classes remain unidentified. The previous OX-133 source investigation was reported conversationally but blocked at GitHub write time; this independent entry does not claim that OX-133 was committed.
 
 **Reproduce:** `llvm-objdump -d --start-address=0xcd7840 --stop-address=0xcd7980 XServiceLibraries`; `llvm-objdump -d --start-address=0x2f40ec0 --stop-address=0x2f40ed0 XServiceLibraries` and likewise four other stubs; `llvm-objdump --macho --dyld-info XServiceLibraries | grep -iE '43CCDA8|43CF590|43D4FC0|43CD5B0|43D4008'`, then read selector bytes at target VM addresses. Static v12.25 only; SE validation deferred. No app/Probe/main/version changes.
+
+
+## OX-135 — Base TFNComposableViewAdapter layout/model setters are no-ops (2026-10-22)
+
+**Evidence:** Original user-supplied official X v12.25 IPA, unchanged `Payload/Twitter.app/Frameworks/XServiceLibraries.framework/XServiceLibraries`. Mach-O class symbol `_OBJC_CLASS_$_TFNComposableViewAdapter` resides at **0x4423710**. Its class_ro_t at **0x41C98F8** has native relative method list **0x2FB4810** (28 entries). Method names and IMPs were decoded directly from each 12-byte relative-method record and original selref target strings. Native `llvm-objdump` verified machine code.
+
+- Method entry index **12**: **`setLayoutState:forView:`** → IMP **`0xCD7FC0`**; native instruction at this address is **`ret`** only.
+- Method entry index **9**: **`setViewModel:forView:`** → IMP **`0xCD7FB4`**; **`ret`** only.
+- Method entry index **10**: **`unsetViewModelForView:`** → IMP **`0xCD7FB8`**; **`ret`** only.
+- Method entry index **8**: **`view:willMoveToHostView:`** → IMP **`0xCD7FB0`**; **`ret`** only.
+- The same class includes `layoutStateForViewModel:layoutMetrics:` at **`0xCD7FC4`**, returning nil (`mov x0,#0; ret`), and `isLayoutState:validForViewModel:layoutMetrics:` at **`0xCD7FCC`**, returning true (`mov w0,#1; ret`).
+
+**Implication:** OX-134 established that `TFNComposableViewSet` dispatches model/state messages to a view adapter. This entry establishes the **base adapter is intentionally inert for those dispatches**. A frame update, model binding or other concrete visual effect must come from a subclass override, a different receiver implementation, or an independently executed code path; the dispatch alone is not evidence of an actual `UIView.frame` change. The exact adapter instance and override chosen for standard home-timeline body/header/avatar remain unproven.
+
+**Reproduce:** `llvm-objdump --syms XServiceLibraries | grep '_OBJC_CLASS_$_TFNComposableViewAdapter'`; read `class_ro_t` at 0x41C98F8 and relative methods at 0x2FB4810; `llvm-objdump -d --start-address=0xcd7fa0 --stop-address=0xcd7fdc XServiceLibraries`.
+
+Research only; no changes to Scarlet X app, Probe, main or versions. No SE runtime claims.
