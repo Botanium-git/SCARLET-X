@@ -562,3 +562,20 @@ No Scarlet X application or Probe modification; v12.35 runtime values and font/d
 **Reproduce:** `llvm-objdump -d --start-address=0x199118 --stop-address=0x199154 T1Twitter`; `llvm-objdump -d --start-address=0x12b03cc --stop-address=0x12b03d8 T1Twitter`; `llvm-objdump --macho --dyld-info T1Twitter` for `0x186DAE8`, `0x1AA8FF0`, `0x1AD8810`, `0x1AE8870`.
 
 No application, Probe, main branch or version changes.
+
+
+## OX-100 — XAppLibraries combined-view-model superclass stores options at +0x50 (2026-10-22)
+
+**Primary evidence:** Original user-supplied official X v12.25 IPA. Extracted `Payload/Twitter.app/Frameworks/XAppLibraries.framework/XAppLibraries` (124,141,728-byte ARM64 Mach-O). Parsed native `__objc_data`, `class_ro_t`, and 12-byte relative `__objc_methlist` records, with original selector strings decoded from selref pointer targets; checked implementation with `llvm-objdump` disassembly. This investigates imported superclass from OX-099; not device v12.35 data.
+
+- `_OBJC_CLASS_$_TTAStatusViewCombinedViewModel` is defined at **`0x65BC388`**. Its class data points to class_ro_t **`0x645EBE0`**, whose method-list pointer resolves to **`0x4B73A08`**. Header `0x8000000C`, count **60 instance methods**.
+- Method-list entry index 0: **`initWithStatusViewModel:options:account:scribeContext:cardAttachmentDecider:` → IMP `0x2CDA960`**. Entry 53: **`options` → IMP `0x2CDD304`**; adjacent getters: `statusViewModel` → `0x2CDD2FC`, `account` → `0x2CDD30C`, `scribeContext` → `0x2CDD314`.
+- Initializer directly retains `x3` options into **`x24`** at `0x2CDA988`. It checks original model `x19` and account `x20` for nonnull at `0x2CDA9B8..0x2CDA9BC`; thus successful initialization is conditional.
+- In the successful initialization branch, **`0x2CDA9F8: str x24, [x23,#0x50]`** writes the original options value to instance offset **`+0x50`**. Getter `0x2CDD304: ldr x0,[x0,#0x50]`; `0x2CDD308: ret` reads the exact same field. This proves actual storage and retrieval, not just argument forwarding or a guessed ivar.
+- Other retained fields on this branch: status view model at `+0x48`, account at `+0x58`, scribe context at `+0x60`, card-attachment decider at `+0x78`. Their exact ownership/lifetime concerns are separate from the option-value observation.
+
+**Interpretation:** The OX-097 generator → OX-098/099 subclass super-dispatch → this XAppLibraries superclass initializer chain now has a concrete options storage point. No bit decoding was observed inside the inspected initializer. **Still unresolved:** readers of `options`, per-bit semantics, propagation to final body view `displayType` and height, and official v12.35 runtime conditions.
+
+**Reproduce:** Extract `XAppLibraries` from the source IPA and inspect `llvm-objdump -d --start-address=0x2cda960 --stop-address=0x2cdaaac XAppLibraries` and `llvm-objdump -d --start-address=0x2cdd2fc --stop-address=0x2cdd31c XAppLibraries`. Decode class `0x65BC388` → class_ro_t `0x645EBE0` → method list `0x4B73A08`, relative entry 0 and 53.
+
+Research-only change; no Scarlet X app, Probe, main branch or version changes.
