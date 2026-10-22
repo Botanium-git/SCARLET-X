@@ -753,3 +753,24 @@ No app/Probe/main/version change.
 **Reproduce:** `llvm-objdump -d --start-address=0x96e3c4 --stop-address=0x96e658 XAppLibraries` and corresponding ObjC stubs; `llvm-objdump --macho --dyld-info XAppLibraries` for listed selector refs.
 
 Documentation only. Scarlet X production code, Probe, main branch and versions unchanged.
+
+
+## OX-112 — Cache validation and post-measurement helper control flow (2026-10-22)
+
+**Primary source:** Original user-provided official X v12.25 IPA, unmodified `Payload/Twitter.app/Frameworks/XAppLibraries.framework/XAppLibraries` (124,141,728 bytes), freshly extracted and disassembled with native `llvm-objdump`. Focused on OX-111's two local helpers `0x96E694` and `0x96EAC8`. Nearest broad objdump symbol names are not assumed to identify these local functions.
+
+**Cache-read gate from caller `0x96E3C4`:** width is required to pass ordered `>0` at `0x96E3F8..0x96E400`. The routine obtains a display-text cache entry; `cachingEnabled` must be nonzero at `0x96E444..0x96E448`; helper `0x96E694` must return nonzero at `0x96E454..0x96E458`. Only then does the caller read `textHeight` and integer-convert it at `0x96E460..0x96E464`.
+
+**Validation helper `0x96E694`:** It receives a cache entry in x0 and options in x1; retains both at `0x96E6BC..0x96E6C0`. It obtains options `width` at `0x96E700`, converts it to an unsigned integer `fcvtzu x8,d0` at `0x96E704`, and packs a portion using `and x28,x8,#0xfff` at `0x96E714`. Another float-derived integer is shifted/packed at `0x96E7B8`. It compares an object/string-derived pair at `0x96E78C`; calls an equality-like ObjC stub at `0x96E7A8` only when both compared objects are nonnull. It performs multiple symmetric floating comparisons with a loaded constant `d11` at `0x96E82C..0x96E8D0`, and at `0x96E954..0x96E968` compares d8/d9 using `d11` as a tolerance. It also checks `textHeight` against floating 0 at `0x96E928..0x96E930`, compares a stored packed/integer value to current x28 at `0x96E938..0x96E950`, and combines additional Boolean predicates before eventual return. This is a **multi-condition validity check**, not merely a `cachingEnabled` flag check. Exact property names for each underlying metric, tolerance constant, and precise total predicate remain to decode.
+
+**Post-measurement `0x96EAC8`:** Caller `0x96E604..0x96E614` passes x0=cache entry, x1=options, x2=measured object, and double d0 obtained from the rounded single-precision height; call occurs only if `cachingEnabled` is true. Inside helper, x0/x1/x2 are retained into x19/x20/x21 and d0 into d8 (`0x96EAEC..0x96EAF4`). It queries options width at `0x96EB40`, checks d8 != 0 at `0x96EB58..0x96EB5C`, and performs further processing. The code contains additional conditional calls and does **not** establish a direct write to a named height property without selector identification. This is therefore a **post-measurement cache-update candidate**, not yet fully confirmed as a height setter.
+
+**Interpretation:** Cache reuse depends on substantial content/metric compatibility, explaining why equal width alone need not imply a reusable height. The precise reuse predicate, cache invalidation and update assignments remain unresolved. All findings refer to static official X v12.25, not live v12.35 results or final timeline-cell height.
+
+Reproduce:
+```sh
+llvm-objdump -d --start-address=0x96e3c4 --stop-address=0x96e470 XAppLibraries
+llvm-objdump -d --start-address=0x96e694 --stop-address=0x96eac8 XAppLibraries
+llvm-objdump -d --start-address=0x96eac8 --stop-address=0x96ee74 XAppLibraries
+```
+Research only; application, Probe, versions and main unchanged.
