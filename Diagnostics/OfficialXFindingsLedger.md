@@ -693,3 +693,23 @@ Research only. SCARLET-X app, Probe, main and versions unchanged.
 **Reproduce:** `llvm-objdump -d --start-address=0x2ccc9ec --stop-address=0x2cccbc0 XAppLibraries`. Cross-check the IMP in SQLite with `SELECT imp FROM objc_methods WHERE selector LIKE 'heightForViewModel:options:displayTextOptions:%';`. Do not use objdump's nearest symbol label as the owner name: the exact method identity comes from native/indexed ObjC metadata.
 
 Documentation only: no Scarlet X app, Probe, main or version changes.
+
+
+## OX-109 — Resolve both body-height branch selector targets (2026-10-22)
+
+**Primary evidence:** Original user-provided official X v12.25 IPA, freshly extracted `Payload/Twitter.app/Frameworks/XAppLibraries.framework/XAppLibraries` (124,141,728 bytes). Native `llvm-objdump -d` of body-height IMP `0x2CCC9EC` and its three ObjC dispatch stubs; selector reference pointers verified against `llvm-objdump --macho --dyld-info` chained rebases and NUL-terminated text in `__TEXT,__objc_methname`.
+
+- The displayType 0/3/4/5/6 path calls stub **`0x4A64BE0`** at **`0x2CCCB1C`**. Stub loads selector ref **`0x6505240`** → text **`0x581490B`**: **`attributedTextModelHeightForOptions:`**. The integer result is converted to floating point at `0x2CCCB20`.
+- The displayType 1/2 path calls stub **`0x4A64BC0`** at **`0x2CCCB40`**. Stub loads selector ref **`0x6505238`** → text **`0x58148EC`**: **`attributedTextModelForOptions:`**. After retaining the returned model, a subsequent dispatch at **`0x2CCCB68`** targets stub **`0x4AE9820`**, whose selref **`0x6526550`** → text **`0x58D8533`**: **`sizeForAttributedTextModel:width:textKit2Enabled:`**.
+- The native `__objc_methname` section has VM starting `0x5765340` and file offset `91640640` in this Mach-O; for these three strings the file offsets happen to coincide numerically with VM addresses. Decoding was validated from original bytes rather than nearest disassembler symbol labels.
+- **Established:** explicit split between height-from-attributed-model and obtaining model then measuring its size. **Not established:** exact implementation ownership of those three selectors, attributed-model-height caching and invalidation, how the size helper uses textKit2Enabled, final rounding and measured values, actual v12.35 displayType.
+
+**Reproduce:**
+```sh
+llvm-objdump -d --start-address=0x2cccae0 --stop-address=0x2cccb90 XAppLibraries
+llvm-objdump -d --start-address=0x4a64bc0 --stop-address=0x4a64c00 XAppLibraries
+llvm-objdump -d --start-address=0x4ae9820 --stop-address=0x4ae9840 XAppLibraries
+llvm-objdump --macho --dyld-info XAppLibraries | grep -E '0x6505238 |0x6505240 |0x6526550 '
+```
+
+Research documentation only; no Scarlet X app, Probe, main branch, or version changes.
