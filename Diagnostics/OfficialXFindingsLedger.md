@@ -774,3 +774,27 @@ llvm-objdump -d --start-address=0x96e694 --stop-address=0x96eac8 XAppLibraries
 llvm-objdump -d --start-address=0x96eac8 --stop-address=0x96ee74 XAppLibraries
 ```
 Research only; application, Probe, versions and main unchanged.
+
+
+## OX-113 — Confirm post-measurement cache writes and seed metric setters (2026-10-22)
+
+**Primary evidence:** Original user-supplied official X v12.25 IPA, extracted `Payload/Twitter.app/Frameworks/XAppLibraries.framework/XAppLibraries`. ARM64 instructions directly disassembled at `0x96EAC8..0x96EE70`; Objective-C stubs and rebased `__objc_selrefs` resolved against original NUL-terminated strings. This advances OX-112 from an update *candidate* to concrete setters.
+
+- Helper `0x96EAC8` retains **x0 cache entry in x19**, **x1 options in x20**, **x2 measured model in x21**, and floating-point **d0 height in d8**. At `0x96EB58`, it branches depending on whether d8 is zero. The zero-height branch runs separate diagnostic/assert-like calls, then exits without reaching the normal setter sequence; the precise diagnostics remain to be identified.
+- For a nonzero height, the helper derives packed data from numeric values (including width and a value multiplied by 10) at `0x96EBDC..0x96EBF0`. At `0x96EBF4`, x0 is the **cache entry**, and the setter sequence begins.
+- The following **confirmed selector stub → rebased selector name** pairs operate on that same cache entry:
+  - `0x96EBF8` → stub `0x4ADF200` → **`setSeed:`**.
+  - `0x96EC38` → `0x4ADF240` → **`setSeedFontName:`**.
+  - `0x96EC70` → `0x4ADF280` → **`setSeedLineSpacing:`**.
+  - `0x96EC98` → `0x4ADF2A0` → **`setSeedEmptyLineMaxHeight:`**.
+  - `0x96ECC0` → `0x4ADF220` → **`setSeedLineHeight:`**.
+  - `0x96ECE8` → `0x4ADF260` → **`setSeedKerning:`**.
+  - `0x96ECFC` → stub `0x4AE21C0` → **`setTextHeight:`** with x0=x19 cache entry, and d0 restored from d8.
+  - `0x96ED10` → stub `0x4AE22E0` → **`setTextModelColorStateIdentifier:`** (derived from measured model).
+  - `0x96ED1C` → stub `0x4AE2240` → **`setTextModel:`** with x0=x19 cache entry and x2=x21 measured model.
+- These native calls establish that the **successful nonzero-measurement path writes height, text model and multiple seed metrics to a cache-entry receiver**. It goes beyond the OX-112 tentative identification, but does not yet prove storage durability, eviction/invalidation policy or full equivalence predicate in `0x96E694`.
+- Note a later `0x96ED60` setter `0x4AE2260` exists in a diagnostic/assert-related region; do not describe it as always executed in the normal path without tracing its branch.
+
+**Reproduce:** `llvm-objdump -d --start-address=0x96eac8 --stop-address=0x96ee74 XAppLibraries`; `llvm-objdump -d --start-address=0x4adf200 --stop-address=0x4adf2bc XAppLibraries`; `llvm-objdump -d --start-address=0x4ae21c0 --stop-address=0x4ae2290 XAppLibraries`; inspect dyld-info selrefs `0x6523BC8..0x6523BF0` and `0x65247B8..0x65247E0`.
+
+Static official X v12.25 only; no X v12.35 device validation. No SCARLET-X app/Probe/main/version changes.
