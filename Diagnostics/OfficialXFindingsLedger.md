@@ -798,3 +798,34 @@ Research only; application, Probe, versions and main unchanged.
 **Reproduce:** `llvm-objdump -d --start-address=0x96eac8 --stop-address=0x96ee74 XAppLibraries`; `llvm-objdump -d --start-address=0x4adf200 --stop-address=0x4adf2bc XAppLibraries`; `llvm-objdump -d --start-address=0x4ae21c0 --stop-address=0x4ae2290 XAppLibraries`; inspect dyld-info selrefs `0x6523BC8..0x6523BF0` and `0x65247B8..0x65247E0`.
 
 Static official X v12.25 only; no X v12.35 device validation. No SCARLET-X app/Probe/main/version changes.
+
+
+## OX-114 — Resolve cache validity accessors against saved seed metrics (2026-10-22)
+
+**Primary evidence:** User-provided original X v12.25 IPA; directly extracted `XAppLibraries.framework/XAppLibraries`. Disassembled helper `0x96E694..0x96E9D0` with `llvm-objdump`. Verified Objective-C stub selrefs against original Mach-O `--dyld-info` chained rebases and the corresponding native selector C strings.
+
+**Confirmed cache-entry getters in validation helper:**
+
+| Native call | Resolved selector |
+|---|---|
+| `0x96E770` → stub `0x4AC8CC0` | `seedEmptyLineMaxHeight` |
+| `0x96E7D0` → stub `0x4AC8D00` | `seedLineHeight` |
+| `0x96E800` → stub `0x4AC8D20` | `seedKerning` |
+| `0x96E850` → stub `0x4AC8CA0` | `seedFontName` |
+| `0x96E898` → stub `0x4AC8CE0` | `seedLineSpacing` |
+| `0x96E938` → stub `0x4AC8C80` | `seed` |
+| `0x96E98C` → stub `0x4A9F820` | `isHashflagVersionValid` |
+| `0x96E994` → stub `0x4AA27A0` | `isTextModelColorStateIdentifierValid` |
+
+**Corresponding source-option getters:**
+- `0x96E7F0` → stub `0x4AA62E0`: `lineHeight`
+- `0x96E81C` → stub `0x4AA6320`: `lineSpacing`
+- `0x96E86C` → stub `0x4A80960`: `emptyLineMaxHeight`
+- `0x96E8B4` → stub `0x4AA4000`: `kerning`
+- `0x96E700` → stub `0x4B016C0`: `width`
+
+**Additional verified control flow:** At `0x96E704..0x96E7B8`, the helper converts width and a second floating-point parameter (scaled by ten) to integers and packs them into a 24-bit portion of a seed value using `and #0xfff` and `bfi #12,#12`. A cached `seed` is compared to the constructed value at `0x96E938..0x96E950`. At `0x96E820..0x96E8D0`, a tolerance `d11` is used in several pairwise double comparisons. A `textHeight` nonzero check occurs at `0x96E928`. Other conditions, including the two validity predicates, are combined before returning; do not interpret this as every seed value needing strict bit-for-bit equality.
+
+**Interpretation:** The same kinds of seed metrics that OX-113 observed being written to a cache entry are subsequently read and checked by this validator. The precise tolerance value, class/method owner, and complete Boolean reduction remain to verify, as does runtime behavior in official v12.35. No claim about final row height or all posts is implied.
+
+**Reproduce:** `llvm-objdump -d --start-address=0x96e694 --stop-address=0x96e9d0 XAppLibraries`, plus the indicated stub addresses and `llvm-objdump --macho --dyld-info XAppLibraries` rebases. No app/Probe/main/version changes.
