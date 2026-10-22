@@ -1016,3 +1016,17 @@ Documentation only, no SCARLET-X application, Probe, main branch or version chan
 - **Important limit:** An Objective-C protocol-qualified UIView type **does not identify the actual concrete subclass created at runtime**, nor does it prove which of the multiple `setLayoutState:` IMPs from OX-126 is dispatched. Continue by tracing the constructor or `statusViewClass` selection and identifying the actual init/assignment to `_statusView`. Do not infer exact child view frames, layout insets, or v12.35 values.
 
 **Reproduce:** `llvm-objdump -d --start-address=0x2f09f4 --stop-address=0x2f0a64 T1Twitter`; read original Mach-O native ivar record at `0x1996CC0` and `__objc_selrefs`-style dyld fixups for pointers `0x1ADD804`, `0x15B0B03`, `0x16C36C3`. No SCARLET-X production, Probe, main or version changes.
+
+
+## OX-128 — Identify actual _statusView factory through statusViewClass (2026-10-22)
+
+**Evidence:** Original user-supplied official X v12.25 IPA, native T1Twitter framework at `/tmp/T1Twitter`; direct `llvm-objdump` disassembly and original chained Objective-C selector-reference bytes. No SE needed.
+
+- The `T1StatusCell` instance method `initWithStyle:reuseIdentifier:` has IMP **`0x2EF97C`** (method list `0x13D37C0`). After superclass initialization, at **`0x2EF9C0`** it sends **`statusViewWithFrame:`** via stub `0x135CC00` to the cell. The returned view is retained, stored into the cell's **`_statusView`** ivar (offset pointer **`0x1ADD804`**) at **`0x2EF9CC..0x2EF9D8`**, and later added to `contentView` at `0x2EFA04..0x2EFA08` using an as-yet-unresolved add-subview stub.
+- The same method list has **`statusViewWithFrame:`** IMP **`0x2F099C`**. At **`0x2F09BC`** it obtains the cell class via an ObjC runtime stub; at **`0x2F09C0`** it sends **`statusViewClass`** via stub **`0x135CB40`** (native selref slot `0x1ABF498` points to original selector string `statusViewClass` at `0x1554063`). At `0x2F09C4` it allocates the class returned, then at **`0x2F09E0`** sends **`initWithFrame:isInCell:isDarkBackground:`** via stub **`0x12FFE60`** (native selref slot `0x1AA8160` points to selector C-string at `0x161A94B`). The two explicit integer flags passed at `0x2F09D8..0x2F09DC` are x2=1 (`isInCell`) and x3=0 (`isDarkBackground`); the CGRect frame is preserved in SIMD registers.
+- Therefore the `_statusView` is **created through a dynamically selected class** returned by `statusViewClass`, rather than an obviously hard-coded `T1StandardStatusView` allocation in the initializer. The class-level implementation and actual subclass selected at runtime remain to be identified. This limits which `setLayoutState:` IMP can be assigned to the OX-125/126 child dispatch.
+- The method/selector identities are cross-checked from original ARM64 code and Mach-O pointer bytes, not inferred from nearest disassembler symbol header.
+
+**Reproduce:** `llvm-objdump -d --start-address=0x2ef97c --stop-address=0x2efa78 T1Twitter`; `llvm-objdump -d --start-address=0x2f099c --stop-address=0x2f09f4 T1Twitter`; ObjC stubs `0x135cb40`, `0x12ffe60` and raw selrefs `0x1abf498`, `0x1aa8160`. Next: find class/metaclass implementations of `statusViewClass` and distinguish possible subclasses.
+
+Static v12.25 evidence only; no runtime v12.35 class selection, child coordinates, app/Probe/main/version changes.
