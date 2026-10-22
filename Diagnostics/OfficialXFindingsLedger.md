@@ -608,3 +608,19 @@ Only documentation updated; no application, Probe, main or version changes.
 **Reproduce:** `llvm-objdump -d --start-address=0x2cdbb6c --stop-address=0x2cdbc64 XAppLibraries`; cross-check `options` selector stub `0x4AB2700`. Scan executable ARM64 BL imm26 targets for destination `0x4AB2700`.
 
 Documentation only. SCARLET-X production app, Probe, version and `main` branch unchanged.
+
+
+## OX-104 — Multiple options-dependent classification calls near combined-view-model presentation setup (2026-10-22)
+
+**Primary evidence:** Original user-provided X v12.25 IPA `XAppLibraries.framework/XAppLibraries` ARM64 executable (124,141,728 bytes), disassembled directly with `llvm-objdump`. Starting with OX-103's ObjC `options` stub `0x4AB2700`, independently scanned the full executable for directly targeting ARM64 BL instructions and recovered **77** callsites, including a dense cluster at `0x2CBB708..0x2CC0BF4`. This scan counts direct call instructions only, not the number of methods or actual runtime invocations.
+
+Concrete sample at `0x2CBC680..0x2CBC750`:
+- `0x2CBC68C..0x2CBC694` sends `options` to the object retained in x19, then forwards its result as **x3** into helper **`0x2CC6D80`**, with x0 from a separate getter call and x1/x2 from retained values.
+- The helper's returned x0 is compared to **1** at `0x2CBC6A8`; a Boolean equal-result is forwarded to another ObjC method call.
+- The same receiver's `options` is read again at `0x2CBC6C8`, passed to **the same helper**, and compared to **4** at `0x2CBC6E0`.
+- A third `options` getter call at `0x2CBC700` again feeds helper `0x2CC6D80`, whose result is compared to **3** at `0x2CBC718`.
+- A fourth options call at `0x2CBC738` feeds another downstream call at `0x2CBC750`, showing repeated use beyond the three equality checks.
+
+**Established:** This region reads saved options and repeatedly passes them into a common classifier/helper, then branches on its result. **Unresolved:** exact owner of the containing method, identity and behavior of helper `0x2CC6D80`, whether return values 1/4/3 correspond to any body displayType or a different enum, and whether these presentation calls are used by standard home posts. Do not identify numeric return values as text renderer modes without resolving the helper's actual inputs/output.
+
+**Reproduce:** `llvm-objdump -d --start-address=0x2cbc680 --stop-address=0x2cbc760 XAppLibraries`, followed by `llvm-objdump -d --start-address=0x2cc6d80 --stop-address=0x2cc6e70 XAppLibraries`. No production application/Probe/version or main-branch changes.
