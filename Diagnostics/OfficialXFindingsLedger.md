@@ -447,3 +447,22 @@ No application/Probe code or versions modified.
 **Next:** Examine `T1StatusTableRowAdapter`'s own `statusAdapter` accessor and the owner/implementation of `tableViewController:statusOptionsForViewModel:withOptions:atIndexPath:`; separately trace the normal adapter's `setStatusOptionsBlock:` use. Do not conflate the quoted-status holder with ordinary home status-option forwarding.
 
 Research/documentation only; no production application, Probe or version changes.
+
+
+## OX-094 — Lazy statusAdapter creation and statusOptionsBlock installation (2026-10-22)
+
+**Primary evidence:** Original user-supplied official X v12.25 IPA; directly extracted `T1Twitter.framework/T1Twitter`, disassembled with `llvm-objdump`. Cross-checked `objc_methods` in supplied SQLite (method list `0x13A6278`).
+
+The verified `T1StatusTableRowAdapter` `statusAdapter` instance Getter (IMP **`0x3AAF9C`**) is **not a simple field load**:
+- At `0x3AAFB0..0x3AAFBC`, it loads ivar offset via `0x1ADE4E8` and checks whether cached object x20 is nonzero; existing instance branches to `0x3AB080`.
+- On a cache miss, `0x3AAFC4..0x3AAFF4` allocates via a classref at `0x1AD4848` (dyld rebase target `0x1AF4618`, symbol `_OBJC_CLASS_$_T1StatusTableRowAdapter`), loads another ivar from self at offset-symbol `0x1ADE4E0`, and sends ObjC stub `0x12FC100`. Its selref `0x1AA7208` resolves to **`initWithAccount:scribeImpressionCache:`** (literal at `0x161409A`).
+- At `0x3AB000..0x3AB008`, the initialized result is stored in the cached-object ivar. At `0x3AB03C..0x3AB068`, a stack block is constructed and **`setStatusOptionsBlock:`** is sent to that newly cached object via stub `0x134DD60`, whose selref `0x1ABB920` resolves to the exact setter selector (literal `0x167DE53`).
+- The method then returns the cached object through the retain/autorelease return sequence `0x3AB080..0x3AB09C`.
+
+**Interpretation:** This is a concrete lazy construction and block-installation pathway for the object returned by the row adapter's `statusAdapter` Getter. It strengthens OX-091's finding that the subsequent helper selector is messaged to the Getter result. The classref rebase resolves to `T1StatusTableRowAdapter` itself in this inspected image; the precise runtime class and whether any subclass/bridging behavior affects dispatch should not be assumed from name alone. **Still unresolved:** stack-block invoke body `0x3AB0BC`, where and how that block invokes the owner row adapter's stored `statusOptionsBlock`, concrete implementation of `tableViewController:statusOptionsForViewModel:withOptions:atIndexPath:`, and values of individual option flags.
+
+**Additional evidence check:** Getter `statusOptionsBlock` `0x3AC5A0` and setter `0x3AC5B0` read/write the same offset symbol `0x1ADE4EC`, separate from the cached `statusAdapter` slot `0x1ADE4E8`. This is why the two getters cannot be treated as aliases.
+
+Reproduce with `llvm-objdump -d --start-address=0x3aaf9c --stop-address=0x3ab0a0 T1Twitter`, `llvm-objdump -d --start-address=0x12fc100 --stop-address=0x12fc114 T1Twitter`, `llvm-objdump -d --start-address=0x134dd60 --stop-address=0x134dd74 T1Twitter`, and `llvm-objdump --macho --dyld-info T1Twitter` for `0x1AA7208`, `0x1ABB920`, and `0x1AD4848`.
+
+No production app, Probe, main branch or version changes.
