@@ -845,3 +845,29 @@ Static official X v12.25 only; no X v12.35 device validation. No SCARLET-X app/P
 **Interpretation:** A precise `0.001` double tolerance applies to four symmetric metric comparisons, in addition to seed, text/model identity/validity and cached nonzero height. Cache hits require more than same width or same text. Caution: this is static official v12.25 helper behavior; actual v12.35 usage and final timeline-row height not validated.
 
 **Reproduce:** `llvm-objdump -d --start-address=0x96e694 --stop-address=0x96eac8 XAppLibraries`; read `<d` bytes at file offset `0x4c15f18` of this Mach-O (VM=file offset for this constant). No app, Probe, main or version changes.
+
+
+## OX-116 — Resolve previously unnamed cache validation inputs: font point size, font name, maxLines, model (2026-10-22)
+
+**Primary source:** Original user-supplied X v12.25 IPA `Payload/Twitter.app/Frameworks/XAppLibraries.framework/XAppLibraries`, unmodified. Native instructions at `0x96E694..0x96E9B4` disassembled and dispatch stubs' `adrp/ldr` selector slots resolved against `llvm-objdump --macho --dyld-info` rebases and original selector C strings. Comparison made with OX-113's cache setter at `0x96EBDC..0x96EBF8`.
+
+**Newly resolved selector stubs:**
+- `0x4A86200` (`selref 0x650D7C8`): **`fontOptions`**.
+- `0x4A860E0` (`0x650D780`): **`font`**.
+- `0x4A861E0` (`0x650D7C0`): **`fontName`**.
+- `0x4AB6DE0` (`0x6519AC0`): **`pointSize`**.
+- `0x4A9EE20` (`0x6513AD0`): **`isEqualToString:`**.
+- `0x4AAA100` (`0x6516788`): **`maxLines`**.
+- `0x4AF98C0` (`0x652A578`): **`unsignedIntegerValue`**.
+- `0x4AF0D00` (`0x6528288`): **`textModel`**.
+
+**Verified interpretation:**
+1. At `0x96E6D0..0x96E6F8` the validator invokes options `fontOptions`, then `font`, then `pointSize`. At `0x96E6FC..0x96E7B8`, it extracts current `width`, converts it to unsigned integer, multiplies the font point size by ten, converts it to unsigned integer, retains the low 12 bits of width, and inserts the low 12 bits of ten-times-point-size at bits 12..23 of constructed x28. At `0x96E938..0x96E950`, this is compared against the cached `seed` plus a font name equality flag.
+2. This construction agrees directly with the cache write helper's `0x96EBDC..0x96EBF8`: multiply **pointSize** (held in d9 in that function) by ten; convert, combine its 12 bits with 12 low width bits (d10), and invoke **`setSeed:`**.
+3. At `0x96E728..0x96E7AC`, another font-options retrieval and `fontName` is compared with cached `seedEmptyLineMaxHeight` object at `0x96E770` using **`isEqualToString:`** if pointers differ; **the receiver pairing is unusual** (the selector getter name does not naturally imply a string). The exact object source chain and whether previous OX-114's field label was reliably resolved require renewed verification before confidently equating this comparison to seedFontName. Direct instruction and stub identity are separately recorded.
+4. At `0x96E8DC..0x96E910`, cached `textModel` and live options are each sent **`maxLines`**, and the live value is additionally sent `unsignedIntegerValue`. x25 and x26 are compared for **pointer equality** at `0x96E998`; earlier result depends on what objects these methods return. Crucially, do not describe this as numeric maxLines equality: x25 derives from cached model's `maxLines` and x26 from current option's `maxLines` via `unsignedIntegerValue`; type semantics need further investigation.
+5. The already identified line height, line spacing, empty-line maximum and kerning comparisons use exact double tolerance `0.001` (OX-115), while cache `textHeight`, `seed`, `isHashflagVersionValid`, `isTextModelColorStateIdentifierValid` and text/model presence gate return as previously documented.
+
+**Boundary:** Getter names confirmed. Some receiver chains and `maxLines` conversion/pointer equality remain nonobvious; do not equate pointer comparisons to numeric equality without further evidence. This is v12.25 static analysis only, not proof of the runtime chosen path in v12.35.
+
+**Reproduction:** `llvm-objdump -d --start-address=0x96e694 --stop-address=0x96eac8 XAppLibraries`; inspect listed `__objc_stubs`, `llvm-objdump --macho --dyld-info XAppLibraries` for slot addresses. Compare `0x96ebdc..0x96ebfc` in cache write helper. No application, Probe, main, or version changes.
