@@ -829,3 +829,19 @@ Static official X v12.25 only; no X v12.35 device validation. No SCARLET-X app/P
 **Interpretation:** The same kinds of seed metrics that OX-113 observed being written to a cache entry are subsequently read and checked by this validator. The precise tolerance value, class/method owner, and complete Boolean reduction remain to verify, as does runtime behavior in official v12.35. No claim about final row height or all posts is implied.
 
 **Reproduce:** `llvm-objdump -d --start-address=0x96e694 --stop-address=0x96e9d0 XAppLibraries`, plus the indicated stub addresses and `llvm-objdump --macho --dyld-info XAppLibraries` rebases. No app/Probe/main/version changes.
+
+
+## OX-115 — Confirm cache comparison tolerance 0.001 and Boolean reduction (2026-10-22)
+
+**Primary evidence:** Original user-supplied official X v12.25 IPA, native `XAppLibraries.framework/XAppLibraries` disassembled directly. Helper `0x96E694..0x96EAC4` inspected with `llvm-objdump`; numeric constant read directly from the binary via `struct.unpack('<d', ...)`.
+
+- At **`0x96E820`**, `adrp x8,0x4C15000`; at **`0x96E824`**, `ldr d11,[x8,#0xF18]` loads a 64-bit double at **`0x4C15F18`**. The original bytes are `fc a9 f1 d2 4d 62 50 3f`, little-endian IEEE-754 **0.001**.
+- For three double-valued formatting metrics, instructions `0x96E828..0x96E840`, `0x96E870..0x96E888` and `0x96E8B8..0x96E8D0` respectively compare a current value and cached value with symmetric tolerance: `current <= cached + 0.001` **and** `cached <= current + 0.001`. The comparisons use `fcmp`, `cset le`, `csel ... gt`, so NaN/unordered handling should be analyzed separately before reducing these unconditionally to absolute-difference formulas.
+- At **`0x96E954..0x96E968`** a fourth pair in `d8/d9` is checked analogously, with `b.gt` rejecting either excess. These registers originate from earlier metric getters; do not assign their semantic names without decoding their exact call targets.
+- The cached `textHeight` must be nonzero: `0x96E928..0x96E930`. The packed `seed` must equal the locally constructed x28 **and** the object/font-name comparison flag w23 must hold (`0x96E938..0x96E950`), or the function returns false.
+- After the fourth tolerance comparison, it checks for a nonnull cache text/model object and obtains **`isHashflagVersionValid`** and **`isTextModelColorStateIdentifierValid`**. At **`0x96E998..0x96E9B0`**, an equality check between two additional x25/x26 objects is combined with three saved tolerance Boolean flags and the color-state validity result to form the returned w24; the hashflag validity check provides an early-false branch. The exact meaning of the compared object pointers still needs selector-level confirmation.
+- Return at `0x96EA9C`: `mov x0,x24` before epilogue. A diagnostic/logging conditional at `0x96E9CC..0x96EA7C` does not appear to overwrite the accumulated Boolean, but its logging semantics were not fully decoded.
+
+**Interpretation:** A precise `0.001` double tolerance applies to four symmetric metric comparisons, in addition to seed, text/model identity/validity and cached nonzero height. Cache hits require more than same width or same text. Caution: this is static official v12.25 helper behavior; actual v12.35 usage and final timeline-row height not validated.
+
+**Reproduce:** `llvm-objdump -d --start-address=0x96e694 --stop-address=0x96eac8 XAppLibraries`; read `<d` bytes at file offset `0x4c15f18` of this Mach-O (VM=file offset for this constant). No app, Probe, main or version changes.
