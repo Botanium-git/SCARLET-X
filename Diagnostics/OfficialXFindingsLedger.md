@@ -1086,3 +1086,25 @@ No Scarlet X production code, Probe, versions or main changes. Documentation onl
 - Next static target: locate `TFNComposableViewSet` definition (possibly in another IPA framework) and `setLayoutStateSet:` implementation, then follow child layout application and frame setting. Avoid ungrounded SE-only numeric insets.
 
 **Reproduce:** In original T1Twitter Mach-O read 24-byte ivar records at `0x198D2F8` and `0x198D4B8`, decode chained rebase pointer targets `0x1ADD224/0x1ADD228`, `0x15D41A8/0x15D420B`, `0x16BFA9A/0x16B75B6`; cross-check ARM64 `llvm-objdump -d --start-address=0x2a8b50 --stop-address=0x2a8b70 T1Twitter`. No app/Probe/main/version changes.
+
+
+## OX-134 — Concrete child-view state and view-model forwarding in TFNComposableViewSet (2026-10-22)
+
+**Primary source:** User-supplied unmodified official X v12.25 IPA, native `Payload/Twitter.app/Frameworks/XServiceLibraries.framework/XServiceLibraries` extracted to `/tmp/XServiceLibraries`. Independent native `llvm-objdump` disassembly of `_tfn_setupStateForView:withViewAdapter:includeViewModel:layoutState:` **IMP 0xCD7840** and `_tfn_removeView:fromHostViewWithViewAdapter:` **IMP 0xCD78F8**, method owners from original ObjC metadata as established in OX-133 (OX-133 standalone ledger addition was blocked). Each dispatch stub's selector-reference address was resolved via native Mach-O dyld chained rebases and read directly from original selector C strings.
+
+**Resolved stub → selector pairs used by these methods:**
+- `0x2F40EC0`: `__objc_selrefs 0x43CCDA8` → C-string `0x3740C9C` = **`setLayoutState:forView:`**.
+- `0x2F4AE60`: `0x43CF590` → `0x374C336` = **`setViewModel:forView:`**.
+- `0x2F61720`: `0x43D4FC0` → `0x3770B15` = **`view:willMoveToHostView:`**.
+- `0x2F42EE0`: `0x43CD5B0` → `0x374323E` = **`setObject:atIndexedSubscript:`**.
+- `0x2F5D840`: `0x43D4008` → `0x376A9D6` = **`unsetViewModelForView:`**.
+
+**Concrete flow:**
+- At `0xCD7854..0xCD7864`, the state-setup method saves x2 as x19 (view), x3 as x20 (view adapter), x4 as w22 (include-view-model flag) and x5 as w23 (layout-state flag).
+- `0xCD7878` exits if view x19 is nil.
+- If layout-state flag is nonzero, it looks up the view's layout state via the currently stored layout-state-set `[self+0x40]`, using adapter-associated lookup, and conditionally invokes **`setLayoutState:forView:`** on receiver x20 at **`0xCD78B4`** with x2=view x19 and x3=derived layout state x23.
+- If include-view-model flag is nonzero and `[self+0x48]` is nonnull, it invokes **`setViewModel:forView:`** on x20 at **`0xCD78D4`** with x2=view x19 and x3=model in `[self+0x48]`.
+- In removal helper `0xCD78F8`, a nonnull view triggers `view:willMoveToHostView:` with host argument zero at `0xCD7934`; a view-related remove action follows at `0xCD7940`; the method then clears an indexed object via `setObject:atIndexedSubscript:` and sends **`unsetViewModelForView:`** to the adapter at `0xCD7960`. This establishes a cleanup/unbinding path rather than a mere view-pointer release.
+- **Scope:** These are concrete *view-adapter protocols/messages* implementing model/state association for child views. No direct `UIView setFrame:` or header/avatar/body coordinate is established by the inspected code, and exact runtime adapter classes remain unidentified. The previous OX-133 source investigation was reported conversationally but blocked at GitHub write time; this independent entry does not claim that OX-133 was committed.
+
+**Reproduce:** `llvm-objdump -d --start-address=0xcd7840 --stop-address=0xcd7980 XServiceLibraries`; `llvm-objdump -d --start-address=0x2f40ec0 --stop-address=0x2f40ed0 XServiceLibraries` and likewise four other stubs; `llvm-objdump --macho --dyld-info XServiceLibraries | grep -iE '43CCDA8|43CF590|43D4FC0|43CD5B0|43D4008'`, then read selector bytes at target VM addresses. Static v12.25 only; SE validation deferred. No app/Probe/main/version changes.
