@@ -367,3 +367,10 @@ llvm-objdump -d --start-address=0x1000becfc --stop-address=0x1000beef0 Twitter
 Method-list decode: class data `0x100276EE0 + 0x20 → 0x100256AE8`; `class_ro_t + 0x20 → 0x10019FE78`; header `<II`, relative entries `<iii` with selector references through native rebase pointers.
 
 Documentation only; no Scarlet X app, Probe, or main changes.
+
+
+## OX-088 — Home status-options block invokes controller method (2026-10-22)
+
+Original official X v12.25 IPA main Mach-O checked with llvm-objdump. In `-[THFHomeTimelineItemsViewController _registerAdaptersAndTransformersThatRequireStream:]` (0x1000BECFC), the block passed to `setStatusOptionsBlock:` is created with an invoke pointer at `0x1000BEF10`. Its `0x1000BEF58` BL targets ObjC stub `0x10017DF20`, which loads selector reference `0x100266790`; the Mach-O rebase resolves that pointer to string `_statusOptionsForAdapter:args:options:` at `0x1001DE6D5`. This confirms the block delegates status-option calculation to that controller method.
+
+The method's previously established IMP `0x1000BDA54` was disassembled. It accepts incoming options in x4, processes conditional branches and ORs option bits into x20, and returns x20. The selection rules require decoding called selector stubs and conditions before attributing meaning to specific bits. In particular, neither actual runtime option values nor final body displayType is established here. This is v12.25 static evidence only; no application or Probe changes.
