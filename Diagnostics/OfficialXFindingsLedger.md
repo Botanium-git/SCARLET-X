@@ -1345,3 +1345,18 @@ Documentation-only, static official v12.25. No SCARLET-X application, Probe, mai
 **Reproduce:** `llvm-objdump -d --start-address=0x2af870 --stop-address=0x2af9c0 T1Twitter`; inspect stubs at 0x12D92E0, 0x13370C0, 0x1319680; `llvm-objdump --macho --dyld-info T1Twitter` for rebase slots 0x1A9E680, 0x1AB5DF8, 0x1AAE768; read native selector strings 0x15E0163, 0x156B1C7, 0x163E255.
 
 Documentation only: no Scarlet X app, Probe, main, or version changes.
+
+
+## OX-151 — Identify maxAnscestorHeight accessor owner as reply-connectors layout state (2026-10-22)
+
+**Primary source:** User-provided official X v12.25 IPA, directly inspected original `T1Twitter.framework/T1Twitter`; supplied `scarlet_macho(1).sqlite` cross-check. No SE needed.
+
+- SQLite `objc_methods` associates **`maxAnscestorHeight`** with IMP **`0x4D53C8`** and direct method list **`0x13D3658`**. Original Mach-O chained rebase at **`0x19D18C0`** points to that method list, in **`class_ro_t 0x19D18A0`**. Its class name ref **`0x19D18B8`** rebases to the original C-string at **`0x142B2D4`**, exactly **`T1StatusBasedReplyConnectorsLayoutState`**.
+- Direct disassembly `0x4D53C8..0x4D53D4` reads an ivar offset from slot **`0x1ADFED8`** and performs **`ldr d0,[x0,x8]`** then `ret`. This method is a **double-precision ivar getter**, not an inline height calculation. Adjacent `setMaxAnscestorHeight:` IMP at **`0x4D53D8`** writes d0 through the same ivar-offset slot. Preserve native method spelling `Anscestor`.
+- The same direct method list includes **`ancestorConnectorViewFrames`**, **`parentConnectorViewFrame`**, **`conversationContext`**, **`bottomAvatarFrame`**, and corresponding setters. The concrete owner name and these properties strongly connect this stored metric to **reply-connector layout state**, rather than a generic text-height cache.
+- OX-149/150 previously found that the standard status layout generator checks the *old index-24 entry's* `maxAnscestorHeight`, with a 0.001 tolerance, before deciding reuse/rebuild. The getter owner identity now narrows that entry's likely purpose to reply connectors; **the actual generated state's class/viewIdentifier at index 24 still needs direct factory/adapter identity proof**. A dynamic ObjC send does not prove the runtime object class solely from the existence of a matching selector.
+- OX-150 was analyzed conversationally but its GitHub entry was previously blocked; this OX-151 records the verified 0.001 comparison as background without claiming OX-150 was committed.
+
+**Reproduce:** `SELECT selector,imp,list_address FROM objc_methods WHERE binary_id=1 AND selector='maxAnscestorHeight';`; `llvm-objdump --macho --dyld-info T1Twitter | grep '0x19D18C0'`; read class metadata `0x19D18A0` and name string `0x142B2D4`; `llvm-objdump -d --start-address=0x4d53c8 --stop-address=0x4d53e8 T1Twitter`.
+
+Static investigation only. No Scarlet X app/Probe/main/version change.
