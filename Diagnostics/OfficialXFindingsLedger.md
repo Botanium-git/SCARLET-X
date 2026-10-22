@@ -1324,3 +1324,24 @@ Documentation only; Scarlet X app, Probe, main branch and version unchanged. Off
 **Reproduce:** `llvm-objdump -d --start-address=0x2af900 --stop-address=0x2af9b0 T1Twitter`; inspect ObjC stubs `0x1370be0`, `0x12d92c0`, `0x131ec80`, `0x1345f40`; chained selector slots `0x1AC44C0`, `0x1A9E678`, `0x1AAFCE8`, `0x1AB9998`, and original selector C strings.
 
 Documentation-only, static official v12.25. No SCARLET-X application, Probe, main or version changes.
+
+
+## OX-149 — Identify slot-24 conditional reuse by avatar frame and ancestor-height comparison (2026-10-22)
+
+**Primary evidence:** User-provided unchanged official X v12.25 `T1Twitter.framework/T1Twitter` from IPA; ARM64 disassembly `0x2AF870..0x2AF9BC` and native Objective-C stub selectors resolved through Mach-O chained dyld rebases. Follow-up to OX-147/148; no SE needed.
+
+**Additional resolved stubs:**
+- `0x12D92E0` loads selref **`0x1A9E680`** → original selector C string at **`0x15E0163`** = **`avatarFrameForBodyLayoutOriginY:viewModel:layoutMetrics:`**; invoked at `0x2AF888`.
+- `0x13370C0` loads selref **`0x1AB5DF8`** → C string at **`0x156B1C7`** = **`setAvatarFrame:`**; invoked at `0x2AF894`, with receiver x23 previously loaded from stack `[sp+0x68]` at `0x2AF88C`.
+- `0x1319680` loads selref **`0x1AAE768`** → C string at **`0x163E255`** = **`maxAnscestorHeight`** (preserve native spelling `Anscestor`); invoked at `0x2AF8DC` on x20, which is the previously retained **index-24 element** obtained at `0x2AF89C..0x2AF8AC`.
+
+**Instruction-based control flow:**
+1. `0x2AF898..0x2AF8AC` retrieves `objectAtIndexedSubscript:24` from the local indexed container (x23) and retains result in x20; before this it sent `setAvatarFrame:` to that x23 object.
+2. `0x2AF8B0..0x2AF8D4` loads `avatarFrame` from x23 and a second frame-like value from x24 (stub 0x12D9460, **selector not resolved in this entry**), compares two SIMD-returned double components. If either differs, control branches to recomputation at **`0x2AF900`**.
+3. If those components match, `0x2AF8DC` reads the retained prior slot-24 state's **`maxAnscestorHeight`**, and `0x2AF8E0..0x2AF8FC` compares its double result against existing d9 within a **double tolerance loaded from constant address 0x144DB60**. The comparison can branch to skip the index-24 rebuild at `0x2AF9B8`, or recompute at `0x2AF900`. **Numeric value of the tolerance not decoded in this entry.**
+4. Recompute path `0x2AF900..0x2AF9A4` obtains the prior index-86 object via `objectAtIndexedSubscript:`, derives its metrics, gets source `viewModel` and `avatarFrame` (OX-148), invokes `layoutStateForViewModel:layoutMetrics:avatarFrame:containerHeight:tweetStormIndicatorMidY:` at **`0x2AF974`**, and writes its result with **`setObject:atIndexedSubscript:24`** at **`0x2AF9A4`**.
+5. The static code therefore implements a **conditional reuse/recomputation** policy for an indexed layout-state entry 24 keyed partly to avatar geometry and a height-like metric. The index24 component identity and exact concrete class of the container are **not established**, so it is not legitimate to label it `avatar`, `body`, or `header` solely from the argument names.
+
+**Reproduce:** `llvm-objdump -d --start-address=0x2af870 --stop-address=0x2af9c0 T1Twitter`; inspect stubs at 0x12D92E0, 0x13370C0, 0x1319680; `llvm-objdump --macho --dyld-info T1Twitter` for rebase slots 0x1A9E680, 0x1AB5DF8, 0x1AAE768; read native selector strings 0x15E0163, 0x156B1C7, 0x163E255.
+
+Documentation only: no Scarlet X app, Probe, main, or version changes.
