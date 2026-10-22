@@ -466,3 +466,28 @@ The verified `T1StatusTableRowAdapter` `statusAdapter` instance Getter (IMP **`0
 Reproduce with `llvm-objdump -d --start-address=0x3aaf9c --stop-address=0x3ab0a0 T1Twitter`, `llvm-objdump -d --start-address=0x12fc100 --stop-address=0x12fc114 T1Twitter`, `llvm-objdump -d --start-address=0x134dd60 --stop-address=0x134dd74 T1Twitter`, and `llvm-objdump --macho --dyld-info T1Twitter` for `0x1AA7208`, `0x1ABB920`, and `0x1AD4848`.
 
 No production app, Probe, main branch or version changes.
+
+
+## OX-095 — Status-options trampoline invokes stored block and post-processes flags (2026-10-22)
+
+**Primary evidence:** Original user-supplied official X v12.25 `T1Twitter.framework/T1Twitter` extracted from IPA, disassembled directly using `llvm-objdump -d --start-address=0x3ab0bc --stop-address=0x3ab204`. Selector stub pointers cross-checked with `llvm-objdump --macho --dyld-info` and raw Mach-O strings.
+
+The invoke function of the block constructed in `-[T1StatusTableRowAdapter statusAdapter]` (OX-094) is **`0x3AB0BC`**.
+
+- Incoming x0 is the block, whose weak-captured object is read via `x0 + 0x20` at `0x3AB0F4..0x3AB100`; the retain-weak helper returns nil on failure, leading to cleanup and return.
+- At `0x3AB104`, ObjC stub **`0x135CA80`** sends selector **`statusOptionsBlock`** (selref `0x1ABF468`) to the captured object. If the returned property/block is nonnull, **`0x3AB118..0x3AB12C`** reads its invoke pointer at offset `+0x10` and executes **`blr x8`**. Parameters passed are x1/x2/x3 received by the trampoline (saved in x19/x20/x21).
+- The invoked block's return value is retained as the base options (`x21`, `0x3AB130`), before further post-processing.
+- The later ObjC selector calls are **`item`** (stub `0x1313060`, selref `0x1AACDE0`), **`composition`** (stub `0x12E2FE0`, selref `0x1AA0DC0`), and **`isUndoable`** (stub `0x1311B60`, selref `0x1AAC8A0`). The resulting predicates and branches require care: the `item` object and its composition are involved, and an `isUndoable` decision changes whether bit `0x10` is kept.
+- At `0x3AB18C`, `orr x26, x21, #0x800000` adds bit `0x800000`. At `0x3AB1B4..0x3AB1BC`, an `and` mask clears bit `0x10` in one branch, selected against the unmodified x26 according to an `isUndoable` result. The final value is returned in x0.
+
+**Confirmed:** the normal row adapter's trampoline actively retrieves and executes the owner's stored `statusOptionsBlock`; this closes the gap from block installation (OX-094) to block execution. **Not yet confirmed:** implementation and runtime selection of the home-controller block that supplies those options, complete semantics of the flag masks, runtime values for official X 12.35, and propagation to particular `TTAStatusBodyTextView` displayType/font/layout choices.
+
+Reproduce:
+```sh
+llvm-objdump -d --start-address=0x3ab0bc --stop-address=0x3ab204 T1Twitter
+llvm-objdump -d --start-address=0x135ca80 --stop-address=0x135ca94 T1Twitter
+llvm-objdump -d --start-address=0x1313060 --stop-address=0x1313074 T1Twitter
+llvm-objdump -d --start-address=0x12e2fe0 --stop-address=0x12e2ff4 T1Twitter
+llvm-objdump -d --start-address=0x1311b60 --stop-address=0x1311b74 T1Twitter
+```
+Documentation only; no Scarlet X or Probe code, version or main-branch changes.
