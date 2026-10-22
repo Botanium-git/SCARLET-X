@@ -871,3 +871,16 @@ Static official X v12.25 only; no X v12.35 device validation. No SCARLET-X app/P
 **Boundary:** Getter names confirmed. Some receiver chains and `maxLines` conversion/pointer equality remain nonobvious; do not equate pointer comparisons to numeric equality without further evidence. This is v12.25 static analysis only, not proof of the runtime chosen path in v12.35.
 
 **Reproduction:** `llvm-objdump -d --start-address=0x96e694 --stop-address=0x96eac8 XAppLibraries`; inspect listed `__objc_stubs`, `llvm-objdump --macho --dyld-info XAppLibraries` for slot addresses. Compare `0x96ebdc..0x96ebfc` in cache write helper. No application, Probe, main, or version changes.
+
+
+## OX-117 — Resolve maxLines comparison as numeric equality in cache validator (2026-10-22)
+
+**Source:** Original official X v12.25 `XAppLibraries` from user-provided IPA, ARM64 `llvm-objdump -d --start-address=0x96e8dc --stop-address=0x96e9b8`. This refines and partly corrects the uncertainty in OX-116.
+
+- `0x96E8DC..0x96E8F4`: `cacheEntry.textModel.maxLines` via stubs `textModel` (0x4AF0D00) and `maxLines` (0x4AAA100) is held in x25; no object retain/conversion follows this return.
+- `0x96E8F8..0x96E910`: `options.maxLines` obtained through the same `maxLines` stub; this returned object is retained into x27; its `unsignedIntegerValue` (stub 0x4AF98C0) is placed in x26. The object x27 is then released at `0x96E914..0x96E918`.
+- `0x96E998`: `cmp x25,x26`, and `0x96E9B0`: `csel w24,wzr,w8,ne`. This is **numeric maximum-lines equivalence**, not a pointer-identity test, because one side has been explicitly unboxed from the option's number object and the other side is the direct integer result of the model getter.
+- The predicate also combines other previously documented checks (cached nonzero height, packed seed, 0.001-tolerance metrics, hashflag and color-state validity).
+- **Still unresolved:** the `0x96E770` cached-entry getter previously decoded as `seedEmptyLineMaxHeight` appears to return an object passed to `isEqualToString:` for comparison with live `fontName`. This mismatch deserves an independent native stub/receiver verification before claiming a definite font-name matching field. Do not silently reinterpret the strange selector identity.
+
+**Result:** One formerly unresolved OX-116 comparison is resolved with instruction-level evidence; do not extrapolate to runtime home-timeline displayType/width on official v12.35. Static analysis only; no production/Probe/version modification.
