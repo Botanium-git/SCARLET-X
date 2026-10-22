@@ -1057,3 +1057,19 @@ Static reference only. No Scarlet X application, Probe, main, or version change.
 - **Next static step:** analyze `T1StandardStatusView`'s concrete layout-state setting/layoutSubviews or layout-state application, now that its relation to `T1StatusCell` is grounded. Locate any handling of header/avatar/body child frames and `contentEdgeInsets` without guessing numeric runtime values.
 
 **Reproduce:** Query `objc_methods` in supplied SQLite where `selector='statusViewClass'`; `llvm-objdump --macho --dyld-info T1Twitter` for rebase locations `0x1939150`, `0x1939158`, `0x1996C88`, `0x1996C90`; read strings at `0x141DFB9` and `0x1426367` directly from the unchanged binary. No production application, Probe, main or version changes.
+
+
+## OX-131 — T1StandardStatusView forwards generated layout-state set to internal view set (2026-10-22)
+
+**Primary evidence:** User-supplied official X v12.25 original `T1Twitter.framework/T1Twitter`; direct ARM64 disassembly of **`-[T1StandardStatusView _t1_updateLayoutStateWithLayoutMetrics:]`**, IMP `0x2A8A80` (owner previously verified in OX-044), and original ObjC dispatch stub + rebased selector bytes. SE not required.
+
+- At **`0x2A8AA8..0x2A8ABC`**, method obtains `layoutStateGenerator` from the view class and retains it as x22.
+- At **`0x2A8AC0..0x2A8B14`**, it loads two distinct view-owned ivars through offset slots `0x1ADD224` (x24) and **`0x1ADD228`** (x26), retrieving current model/options/account from the first and an earlier state from the second. The exact names of the ivars and `0x1314CE0` getter require independent metadata resolution.
+- At **`0x2A8B18..0x2A8B30`**, x0=generator x22, x2=viewModel x23, x3=options x21, x4=account x24, x5=layoutMetrics x19, and x6=prior state x25. It invokes **`layoutStateForViewModel:options:account:layoutMetrics:withPreviousLayoutState:`** via stub `0x1314C80`, retaining generated state as x21 at **`0x2A8B3C`**.
+- Critically, at **`0x2A8B60..0x2A8B68`** it loads the second ivar into x0, sets x2=generated state x21, and calls stub **`0x13431C0`**. Original stub instructions `0x13431C0: adrp x1,0x1AB8000`; `0x13431C4: ldr x1,[x1,#0xE38]` identify selref slot **`0x1AB8E38`**; original dyld rebase targets native selector string **`0x1673748`**, reading **`setLayoutStateSet:`**.
+- This proves the standard status view **hands the generated layout-state set to an internal receiver** through `setLayoutStateSet:`. It should not be conflated with **`T1StatusCell` → child `setLayoutState:`** (OX-125). The latter passes the wrapper status-view layout state to the status view; the former updates a separate internal view-set component. This suggests a layered layout propagation architecture; it does **not yet** identify the internal receiver's concrete class or child frame computations.
+- Immediate next static step: resolve view ivar offset slot `0x1ADD228` through native ivar metadata to obtain the name/type of the internal receiver. Then locate `setLayoutStateSet:` IMP(s) to follow frame application. Do not invent header/body/avatar frame coordinates or v12.35 runtime values.
+
+**Reproduce:** `llvm-objdump -d --start-address=0x2a8a80 --stop-address=0x2a8b70 T1Twitter`; `llvm-objdump -d --start-address=0x13431c0 --stop-address=0x13431d0 T1Twitter`; `llvm-objdump --macho --dyld-info T1Twitter | grep '0x1AB8E38'`; original bytes at `0x1673748` contain the NUL-terminated selector `setLayoutStateSet:`.
+
+No Scarlet X production code, Probe, versions or main changes. Documentation only.
