@@ -944,3 +944,24 @@ The class's direct ivar list at `0x1996EB8` contains exactly two entries: `_stat
 Thus the newly created layout container in OX-120/121 explicitly owns the status flags and status-view layout-state reference. It has **no direct declared size/contentEdgeInsets ivars or accessors in this class method list**; those may come from its superclass or other inherited behavior and require separate superclass identification. This evidence does not itself specify avatar/header/body frames.
 
 **Reproduce:** For Mach-O with matching VM/file offsets read `class_ro_t` at `0x1996F28`, relative methods at `0x13D3AA8`, ivars at `0x1996EB8`, and property list at `0x1996F00`; dereference each relative method name through its `__objc_selrefs` slot. No app/Probe/main/version changes.
+
+
+## OX-123 — Resolve T1StatusCellLayout superclass and actual size/insets storage (2026-10-22)
+
+**Primary evidence:** Original user-provided official X v12.25 IPA. Original `T1Twitter.framework/T1Twitter` class object `0x1AEF348` superclass slot **`0x1AEF350`** is a dyld bind to **`XServiceLibraries:_OBJC_CLASS_$_TFNDataViewCellLayout`**. The actual `XServiceLibraries.framework/XServiceLibraries` was independently extracted from that *same IPA* (87 MB approx.) and its ObjC metadata inspected (no SE required).
+
+**Superclass concrete definition:** `llvm-objdump --syms XServiceLibraries` locates **`_OBJC_CLASS_$_TFNDataViewCellLayout` at `0x4423D00`**. Its superclass binding at `0x4423D08` is `libobjc:_OBJC_CLASS_$_NSObject`; its `class_ro_t` pointer at `0x4423D20` rebases to **`0x41CB720`**. The class's ivar list at **`0x41CB680`** and property list at **`0x41CB6E8`** contain:
+
+| Own ivar | Type encoding | Offset |
+|---|---|---|
+| `_objectIdentifier` | `@\"<NSCopying>\"` | **0x08** |
+| `_size` | `{CGSize=\"width\"d\"height\"d}` | **0x10** |
+| `_contentEdgeInsets` | `{UIEdgeInsets=\"top\"d\"left\"d\"bottom\"d\"right\"d}` | **0x20** |
+
+Property list entries are `objectIdentifier` (`T@\"<NSCopying>\",&,N,V_objectIdentifier`), **`size`** (`T{CGSize=dd},N,V_size`), and **`contentEdgeInsets`** (`T{UIEdgeInsets=dddd},N,V_contentEdgeInsets`). Therefore the previously observed `setSize:` and `setContentEdgeInsets:` on `T1StatusCellLayout` (OX-120; not yet committed) have a **concrete superclass storage owner** rather than merely a presumed one. The subclass's direct fields remain `_statusOptions` and `_statusViewLayoutState` (OX-122).
+
+**Reproduce:** `llvm-objdump --macho --dyld-info T1Twitter | grep '0x1AEF350'`; `llvm-objdump --syms XServiceLibraries | grep 'TFNDataViewCellLayout'`; inspect rebased class/data pointers at `0x4423D00..0x4423D20` and `class_ro_t` `0x41CB720`; decode ivar/property entry pointers in `0x41CB680..0x41CB720` with Mach-O chained-fixup rebases. These addresses apply to the original v12.25 libraries.
+
+**Limits:** Defines where layout size/insets are stored, not actual runtime numerical inset values, child view frames, or how the cell applies them; v12.35 behavior remains unverified. OX-120 and OX-121 were documented conversationally but their earlier GitHub writes were blocked. This OX-123 entry contains the independently verified superclass/storage finding, without implying that those missing numbered entries were committed.
+
+Documentation only, no SCARLET-X application, Probe, main branch or version changes.
