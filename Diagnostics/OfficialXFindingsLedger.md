@@ -506,3 +506,21 @@ Documentation only; no Scarlet X or Probe code, version or main-branch changes.
 **Scope and caution:** The instructions establish an adapter/cell-layout → generator **parameter handoff**, not that the user-visible home cell always takes this branch, and not a complete proof that a particular upstream mask from OX-089/095 changes `TTAStatusBodyTextView` displayType or text height. The identity of the class returned by `statusViewClass` and the result of `layoutStateGenerator` at runtime remain subject to the class-selection conditions already noted in OX-047/048. Do not assume the numeric flags are text-format flags.
 
 **Reproduce:** `llvm-objdump -d --start-address=0x2ef7c4 --stop-address=0x2ef8a4 T1Twitter`; `llvm-objdump -d --start-address=0x2ae63c --stop-address=0x2ae6e0 T1Twitter`. Code, Probe, version and main branch unchanged.
+
+
+## OX-097 — Layout generator constructs combined status view model with forwarded options (2026-10-22)
+
+**Primary evidence:** Original user-supplied X v12.25 IPA, `Payload/Twitter.app/Frameworks/T1Twitter.framework/T1Twitter`, directly inspected with `llvm-objdump`, raw Mach-O bytes, and SQLite `symbols` index; extends OX-096.
+
+In the generator method with IMP **`0x2AE63C`** (indexed selector `layoutStateForViewModel:options:account:layoutMetrics:withPreviousLayoutState:`):
+
+- At `0x2AE678`, incoming **x3 options** are retained in **x21**. The incoming model (x2) is retained in x23, account (x4) in x25, metrics (x5) in x19 and previous layout (x6) in x26.
+- At `0x2AE6AC..0x2AE6C0`, classref **`0x1AD3868`** rebases to class **`0x1AE8868`**, identified by indexed class symbol as **`_OBJC_CLASS_$_T1StatusViewCombinedViewModel`**. It is passed to the allocator.
+- At `0x2AE6C4..0x2AE6D4`, the allocated object receives ObjC selector **`initWithStatusViewModel:options:account:scribeContext:`**: stub `0x1303880` → selref `0x1AA8FE8` → native selector literal at `0x162099F`. The call passes **x2=x23 original status view model; x3=x21 original options; x4=x25 account; x5=0 nil scribe context**. Result is held in x22. Hence options definitely reach a concrete combined-view-model initializer in this code path, without modification at this handoff.
+- At `0x2AE6DC..0x2AE6E4`, the generator sends **`isStatusViewLayoutStateGeneratorCachedViewAdapterSetEnabled`** (stub `0x13104E0`, selref `0x1AAC300`, literal `0x163094B`) to x25 (account). On nonzero return, it loads a cached object at `self+8`; otherwise it obtains a separately generated result by the alternate call at `0x2AE6F8..0x2AE70C`.
+
+**Boundary:** This confirms a status-view combined-model construction and a cache-feature branch after options handoff. It does **not** yet decode the initializer's internal option-mask interpretation, establish which adapter set is actually used on v12.35, or imply that cache choice changes font size, body displayType or final row height.
+
+**Reproduce:** `llvm-objdump -d --start-address=0x2ae63c --stop-address=0x2ae710 T1Twitter`; `llvm-objdump -d --start-address=0x1303880 --stop-address=0x1303894 T1Twitter`; `llvm-objdump -d --start-address=0x13104e0 --stop-address=0x13104f4 T1Twitter`; `llvm-objdump --macho --dyld-info T1Twitter` checking selrefs `0x1AA8FE8`, `0x1AAC300`, classref `0x1AD3868`.
+
+No SCARLET-X production code, Probe, version or main branch changes.
