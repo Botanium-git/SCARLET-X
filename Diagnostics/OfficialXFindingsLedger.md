@@ -374,3 +374,21 @@ Documentation only; no Scarlet X app, Probe, or main changes.
 Original official X v12.25 IPA main Mach-O checked with llvm-objdump. In `-[THFHomeTimelineItemsViewController _registerAdaptersAndTransformersThatRequireStream:]` (0x1000BECFC), the block passed to `setStatusOptionsBlock:` is created with an invoke pointer at `0x1000BEF10`. Its `0x1000BEF58` BL targets ObjC stub `0x10017DF20`, which loads selector reference `0x100266790`; the Mach-O rebase resolves that pointer to string `_statusOptionsForAdapter:args:options:` at `0x1001DE6D5`. This confirms the block delegates status-option calculation to that controller method.
 
 The method's previously established IMP `0x1000BDA54` was disassembled. It accepts incoming options in x4, processes conditional branches and ORs option bits into x20, and returns x20. The selection rules require decoding called selector stubs and conditions before attributing meaning to specific bits. In particular, neither actual runtime option values nor final body displayType is established here. This is v12.25 static evidence only; no application or Probe changes.
+
+
+## OX-089 — Decode conditions and masks in home status options (2026-10-22)
+
+**Primary evidence:** User-provided official X v12.25 IPA, original ARM64 main Mach-O `Payload/Twitter.app/Twitter`. Direct `llvm-objdump` disassembly of `-[THFHomeTimelineItemsViewController _statusOptionsForAdapter:args:options:]` at `0x1000BDA54..0x1000BDBC8`, selector-stub instruction decoding and chained dyld selref rebases.
+
+The method copies incoming options `x4` into `x20` at `0x1000BDA6C`. It gets `item` (stub `0x100188120`; selref `0x100269010` resolves to `item`), then obtains a perspective/status through `statusForPerspectiveOrNil:` (stub `0x1001944E0`; selref `0x10026C100`). If `x23` status is nonnull (`0x1000BDB34..0x1000BDB38`), it branches on:
+
+- `isSelfThreadStatus` at `0x1000BDB3C` (stub `0x100187EE0`, selref `0x100268F80` → `isSelfThreadStatus`). **False:** OR `0x81` into incoming options (`0x1000BDB68..0x1000BDB6C`).
+- **True:** call `isReply` at `0x1000BDB48` (stub `0x100187E00`, selref `0x100268F48` → `isReply`). Both reply branches start from `0x20081` (mov 0x81, movk high 0x2). For nonzero `isReply`, the selected additional mask is `0x60081` (adds `0x40000`); for zero `isReply`, it is `0x20081`. Selected mask OR'ed with previous options at `0x1000BDB60`.
+- Independently, `0x1000BDB88` calls selector `canShowCommunityAvatarForStatusViewModel:account:` (stub `0x1001804A0`, selref `0x1002670F0`) and conditional-selects `x20 | 0x8000000000` at `0x1000BDB8C..0x1000BDB94` when the call returns nonzero. This latter branch is within the nonnull-status region.
+- **Null status:** `0x1000BDB34` branches to `0x1000BDBA0` without the above OR masks, returning the incoming options unchanged at `0x1000BDBB0`.
+
+**Interpretation boundary:** These masks and branch conditions are directly evidenced for this function, but their individual semantic flag names, caller-supplied incoming options, runtime values and implications for `TTAStatusBodyTextView` displayType remain unverified. Do not equate the numeric masks with font size, paragraph spacing, or final cell height.
+
+Reproduction: `llvm-objdump -d --start-address=0x1000bda54 --stop-address=0x1000bdbcc Twitter` and `llvm-objdump --macho --dyld-info Twitter` for selrefs `0x100269010`, `0x10026C100`, `0x100268F80`, `0x100268F48`, `0x1002670F0`. Read rebased NUL-terminated selector strings in original Mach-O.
+
+Documentation only; no application, Probe, main branch, or version changes.
