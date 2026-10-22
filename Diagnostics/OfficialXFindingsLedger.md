@@ -642,3 +642,39 @@ Concrete sample at `0x2CBC680..0x2CBC750`:
 **Reproduce:** `llvm-objdump -d --start-address=0x2cc6d80 --stop-address=0x2cc7100 XAppLibraries` and `llvm-objdump -d --start-address=0x2cc72c8 --stop-address=0x2cc7360 XAppLibraries`.
 
 Documentation only, no app/Probe/main/version changes.
+
+
+## OX-106 — Bit gates in helper 0x2CC72C8 (2026-10-22; delayed entry)
+
+**Source:** Original official X v12.25 XAppLibraries Mach-O. At `0x2CC7304` the helper extracts options bit 59. It tests option mask `0x2000004000000000` (bits 61 and 38); either bit set branches to Boolean false. The helper then requires input x22==2 or bit59 set. If bit59 is set it returns bit60; otherwise it enters an extended predicate path. Common return at `0x2CC7560` masks the result to one bit (`and w0,w23,#1`). This helper is Boolean, distinct from the outer classifier's multi-valued result. Semantics of the bits remain unverified. Native disassembly: `llvm-objdump -d --start-address=0x2cc72c8 --stop-address=0x2cc7578 XAppLibraries`.
+
+## OX-107 — Decode extended predicate calls: promotion/boost feature path (2026-10-22)
+
+**Primary source:** User-provided original official X v12.25 IPA `XAppLibraries.framework/XAppLibraries`. ARM64 code inspected at `0x2CC7330..0x2CC7550`, corresponding objc stub `adrp/ldr` selector refs decoded through Mach-O chained-rebase words and selector strings. Following are **directly resolved selector strings** with exact calls:
+
+| Call stub | Selector |
+|---|---|
+| `0x4AC35C0` | `representedStatus` |
+| `0x4A5DDA0` | `accountID` |
+| `0x4A83CE0` | `featureSwitchesForAccountID:` |
+| `0x4AA2C20` | `isTweetedByAuthenticatedAccount` |
+| `0x4A68400` | `boolForKey:` |
+| `0x4AA17A0` | `isQuoteStatus` |
+| `0x4AEEA40` | `superFollowInfo` |
+| `0x4AA6240` | `limitedActions` |
+| `0x4A75FA0` | `count` |
+| `0x4AA15C0` | `isPromoted` |
+| `0x4ABDC60` | `quickPromoteEligibility` |
+| `0x4A9E8E0` | `isEligibleForPromotion` |
+| `0x4AA1D60` | `isRunningPromotion` |
+| `0x4AA2B40` | `isTweetPromoteButtonInFocalTopToolbarEnabled` |
+| `0x4AA2B00` | `isTweetPromoteButtonBoostAgainInAuthorViewEnabled` |
+| `0x4AA27C0` | `isThirdPartyBoostAuthorViewButtonEnabled` |
+
+These selector names establish that the extended predicate checks tweet identity, feature switches, promotion eligibility/current promotion, and Boost button flags. At `0x2CC73A0`, the return of `isTweetedByAuthenticatedAccount` gates a branch; a series of `boolForKey:` tests and the promotion-related selector checks control later branches. An explicit `0x2CC753C` path sets Boolean false before common return.
+
+**Interpretation correction:** This is strong evidence of a *promotion/Boost button eligibility* path rather than text-body renderer selection. The precise owner of `0x2CC72C8`, each `boolForKey:` key, and its connection (if any) to the outer 0/1/3/4 classifier still require proof. Do **not** label the numeric classifier outputs as `TTAStatusBodyTextView.displayType`. This path is deprioritized for the goal of matching ordinary home-timeline body text heights unless stronger evidence links it to text rendering. Static original v12.25 only, no official v12.35 runtime confirmation.
+
+**Reproduce:** disassemble `0x2cc7330..0x2cc7570` and listed objc stubs in original XAppLibraries, resolve each stub's `__objc_selrefs` slot with Mach-O chained rebases into `__objc_methname`.
+
+Research only. SCARLET-X app, Probe, main and versions unchanged.
