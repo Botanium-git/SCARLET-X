@@ -1073,3 +1073,16 @@ Static reference only. No Scarlet X application, Probe, main, or version change.
 **Reproduce:** `llvm-objdump -d --start-address=0x2a8a80 --stop-address=0x2a8b70 T1Twitter`; `llvm-objdump -d --start-address=0x13431c0 --stop-address=0x13431d0 T1Twitter`; `llvm-objdump --macho --dyld-info T1Twitter | grep '0x1AB8E38'`; original bytes at `0x1673748` contain the NUL-terminated selector `setLayoutStateSet:`.
 
 No Scarlet X production code, Probe, versions or main changes. Documentation only.
+
+
+## OX-132 — Resolve T1StandardStatusView internal _viewSet receiver type (2026-10-22)
+
+**Primary source:** User-supplied official X v12.25 IPA, extracted original `T1Twitter.framework/T1Twitter`. Original Mach-O class-ivar entries and the exact data dereferenced by OX-131's `-[T1StandardStatusView _t1_updateLayoutStateWithLayoutMetrics:]` (IMP `0x2A8A80`) were compared. No SE required.
+
+- **Ivar-offset slot `0x1ADD224`** is named **`_viewModel`**: original native ObjC metadata ivar record at `0x198D2F8` rebase fields point to name string `0x15D41A8` (`_viewModel`) and type encoding string `0x16BFA9A` (`@\"T1StatusViewCombinedViewModel\"`).
+- **Ivar-offset slot `0x1ADD228`** is named **`_viewSet`**: original metadata ivar record at `0x198D4B8` has a rebase to name string `0x15D420B` (`_viewSet`) and to type encoding string `0x16B75B6` (`@\"TFNComposableViewSet\"`). Its offset value is **8** in the original Mach-O.
+- In OX-131's native code at `0x2A8B60..0x2A8B68`, the status view obtains the object through **ivar-offset slot `0x1ADD228`**, and sends **`setLayoutStateSet:`** (ObjC stub `0x13431C0`, selector slot `0x1AB8E38`) with newly generated state in x2. Thus its concrete *declared* receiver is a field named **`_viewSet`**, with static type **`TFNComposableViewSet`**.
+- This confirms **the target of the state-set handoff** beyond OX-131's unnamed internal receiver. Caution: a declared ivar type is not evidence of the actual runtime subclass; no `TFNComposableViewSet -setLayoutStateSet:` implementation or child-view frame setters have yet been verified. Likewise `_viewModel` metadata is independently resolved; it does not establish actual home-timeline dimensions.
+- Next static target: locate `TFNComposableViewSet` definition (possibly in another IPA framework) and `setLayoutStateSet:` implementation, then follow child layout application and frame setting. Avoid ungrounded SE-only numeric insets.
+
+**Reproduce:** In original T1Twitter Mach-O read 24-byte ivar records at `0x198D2F8` and `0x198D4B8`, decode chained rebase pointer targets `0x1ADD224/0x1ADD228`, `0x15D41A8/0x15D420B`, `0x16BFA9A/0x16B75B6`; cross-check ARM64 `llvm-objdump -d --start-address=0x2a8b50 --stop-address=0x2a8b70 T1Twitter`. No app/Probe/main/version changes.
