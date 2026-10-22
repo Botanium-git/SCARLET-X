@@ -579,3 +579,17 @@ No application, Probe, main branch or version changes.
 **Reproduce:** Extract `XAppLibraries` from the source IPA and inspect `llvm-objdump -d --start-address=0x2cda960 --stop-address=0x2cdaaac XAppLibraries` and `llvm-objdump -d --start-address=0x2cdd2fc --stop-address=0x2cdd31c XAppLibraries`. Decode class `0x65BC388` → class_ro_t `0x645EBE0` → method list `0x4B73A08`, relative entry 0 and 53.
 
 Research-only change; no Scarlet X app, Probe, main branch or version changes.
+
+
+## OX-101 / OX-102 — Verify combined-view-model adjacent hash call and options getter (2026-10-22)
+
+**Primary evidence:** Original user-provided X v12.25 IPA, extracted `XAppLibraries.framework/XAppLibraries`. Direct ARM64 disassembly and native Mach-O `__objc_selrefs` chained rebases, verified against original C strings.
+
+- `_TTAStatusViewCombinedViewModelIsEqual` starts at **`0x2CDBB6C`**, with a distinct function following at **`0x2CDBC90`**. Do not merge these function bodies.
+- The latter function reads `self+0x48` at `0x2CDBCA4` and `self+0x58` at `0x2CDBCB4`, using ObjC stub **`0x4A8CAC0`** for both objects. Stub selector ref **`0x650F1F8`** rebases to **`0x58500D0`**, containing the exact selector **`hash`**. It computes **`37 * hash(self+0x48) + hash(self+0x58) + 23273`** at `0x2CDBCBC..0x2CDBCC4`. It does not directly load `self+0x50` (options), although function owner and callers need more investigation.
+- Independently, the known **`options`** accessor at **`0x2CDD304`** directly loads `[x0,#0x50]` and returns. The `options` selector is independently confirmed at ObjC stub **`0x4AB2700`** → selector reference **`0x6518908`** → rebase **`0x579D128`** (`options`).
+- **Boundary:** The adjacent function's hash-like computation is now backed by actual `hash` message sends. This does not prove how the options bits affect layout, nor that all hashing/equality code ignores options. The exact call owners and option-consuming methods remain to trace.
+
+**Reproduce:** `llvm-objdump -d --start-address=0x2cdbb6c --stop-address=0x2cdbcd8 XAppLibraries`; `llvm-objdump -d --start-address=0x4a8cac0 --stop-address=0x4a8cad4 XAppLibraries`; `llvm-objdump --macho --dyld-info XAppLibraries` and confirm refs `0x650F1F8`, `0x6518908`.
+
+Only documentation updated; no application, Probe, main or version changes.
