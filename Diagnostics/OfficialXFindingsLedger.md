@@ -1185,3 +1185,19 @@ Static research only; no Scarlet X app, Probe, main or version changes. SE runti
 - **Boundary:** Confirms allocated class and its immediate superclass plus direct method absence, **not yet** the precise inherited method implementation, underlying ivar offsets, or how negative additional insets affect final UIView frames. Runtime home-timeline class selection in official v12.35 remains unverified.
 
 **Reproduce:** `llvm-objdump -d --start-address=0x3bb168 --stop-address=0x3bb17c T1Twitter`; `llvm-objdump --macho --dyld-info T1Twitter` for `0x1AD5FD8`, `0x1AF2898`, `0x1AF28B0`, `0x19AD318`; original bytes at `0x14280DA`; relative method list at `0x13D17A8`. No Scarlet X application, Probe, main or version changes.
+
+
+## OX-140 — Confirm inherited layout-state size and separate baseline/additional edge-inset storage (2026-10-22)
+
+**Primary evidence:** Original user-supplied official X v12.25 IPA, extracted `Payload/Twitter.app/Frameworks/XServiceLibraries.framework/XServiceLibraries`; original ObjC class metadata and ARM64 instructions independently inspected. No SE used.
+
+- `_OBJC_CLASS_$_TFNComposableViewLayoutState` is at **`0x4423828`**. Its class-ro pointer at **`0x4423848`** rebases to `class_ro_t` **`0x41C9BC8`**, with direct relative-method list **`0x2FB4A50`** (8 entries), ivar list **`0x41C9AF8`** (4 entries), and property list **`0x41C9B80`**.
+- The native ivar records and offset symbols identify `_topContentInset` type `d` offset **0x08**; `_size` type `CGSize` offset **0x10**; `_baselineEdgeInsets` type `UIEdgeInsets` offset **0x20**; `_additionalEdgeInsets` type `UIEdgeInsets` offset **0x40**.
+- Direct method list entries resolved from original native relative method records (in order): `size` **0xCD8B80**, `setSize:` **0xCD8B88**, `topContentInset` **0xCD8B90**, `setTopContentInset:` **0xCD8B98**, `baselineEdgeInsets` **0xCD8BA0**, `setBaselineEdgeInsets:` **0xCD8BAC**, `additionalEdgeInsets` **0xCD8BB8**, and `setAdditionalEdgeInsets:` **0xCD8BC4**.
+- Native code verifies actual storage: `setSize:` does `stp d0,d1,[x0,#0x10]` at **0xCD8B88**; `setAdditionalEdgeInsets:` does `stp d0,d1,[x0,#0x40]` and `stp d2,d3,[x0,#0x50]` at **0xCD8BC4..0xCD8BC8**. Corresponding getters load from those exact offsets. The baseline inset setter independently writes to `+0x20` and `+0x30` (`0xCD8BAC..0xCD8BB0`).
+- OX-139 had established that `T1StandardStatusBodyViewLayoutState` directly inherits `TFNComposableViewLayoutState` and does not directly override these methods. The OX-138 body adapter's calls to `setSize:` and `setAdditionalEdgeInsets:` on the newly allocated body layout-state object thus have a verified **inherited concrete backing store**. **Baseline and additional edge insets are separate four-double values**; do not substitute one for the other or conflate either with `TFNDataViewCellLayout.contentEdgeInsets` from OX-123.
+- This verifies storage and accessors **only**; where and how the additional insets are consumed in child frame calculations, the normal home-TL numerical values, and runtime v12.35 results remain unproven.
+
+**Reproduce:** `llvm-objdump --syms XServiceLibraries | grep TFNComposableViewLayoutState`; inspect native `class_ro_t` at `0x41C9BC8`, method list `0x2FB4A50`, ivars `0x41C9AF8`, and `llvm-objdump -d --start-address=0xcd8b80 --stop-address=0xcd8bd0 XServiceLibraries`.
+
+Documentation only; no SCARLET-X app, Probe, main or version changes.
