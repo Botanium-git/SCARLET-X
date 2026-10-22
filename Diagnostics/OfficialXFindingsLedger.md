@@ -1214,3 +1214,19 @@ Documentation only; no SCARLET-X app, Probe, main or version changes.
 - The presence of forwarding accessors does **not** show that these insets are ultimately used for `UIView.frame`; nor does it establish actual horizontal or vertical values, which remain SE-dependent if not determined statically.
 
 **Reproduce:** `SELECT selector,imp,list_address,entry_index FROM objc_methods WHERE binary_id=1 AND list_address=20499448 ORDER BY entry_index;` and `llvm-objdump -d --start-address=0x7abf28 --stop-address=0x7abfb8 T1Twitter`; compare XServiceLibraries `0xCD8BB8..0xCD8BCC`. Research documentation only; no app, Probe, main or version changes.
+
+
+## OX-142 — Attribute OX-141 inset-forwarding methods to a Swift Grok quoted-annotation layout wrapper (2026-10-22)
+
+**Primary evidence:** Original official X v12.25 IPA, unmodified `T1Twitter.framework/T1Twitter`, supplied Mach-O SQLite, and direct native Mach-O `__objc_data` chained-rebase records. SE not required.
+
+- OX-141 had found a ten-method ObjC method list at **`0x138CBF8`** with forwarding implementations: `size` (`0x7ABF28`), `setSize:` (`0x7ABF48`), `additionalEdgeInsets` (`0x7ABF58`), `setAdditionalEdgeInsets:` (`0x7ABF68`), plus baseline-edge/top-inset accessors.
+- Native dyld chained rebase at **`0x1B0B5F8`** points to this method list. It is the `baseMethods` field of class-ro metadata at **`0x1B0B5D8`**. The neighboring class-ro `name` field **`0x1B0B5F0`** rebases to `0x1434600`, whose exact original zero-terminated name is:
+  `_TtC14T1TwitterSwiftP33_3A09CF4E063C1F38BB397ABF76410C9439GrokTranslateQuotedAnnoationLayoutState`.
+- The class object at **`0x1B0B580`** points via its data field to that class-ro metadata. Thus the **owner of the OX-141 additional-inset delegating accessors** is this Swift private class, identifiable from its name as **GrokTranslateQuotedAnnoationLayoutState** (note the source spelling `Annoation`, not `Annotation`). Do not misattribute these forwarding methods to `T1StandardStatusBodyViewLayoutState` or a generic home status layout.
+- At `0x7ABF58..0x7ABF74`, the getters/setters load an ivar-offset pointer from **`0x1B7A038`** (in native original bytes its stored numeric value is **8**) and dispatch to `additionalEdgeInsets` or `setAdditionalEdgeInsets:` on the contained object. This establishes **composition/delegation** by the Grok annotation wrapper. The wrapped object's concrete class and the view consuming those insets are not identified yet.
+- **Important investigative correction:** OX-141's existence of a T1Twitter forwarding path is valid, but its ownership is a **specialized quoted-annotation layout class**, not evidence of the normal timeline-body frame pipeline. Tracking this class further would be lower priority than directly finding **readers of `TFNComposableViewLayoutState.additionalEdgeInsets`** and the composable host/layout coordinator's placement algorithm. No proof here of applying insets to UIView frames.
+
+**Reproduce:** `SELECT selector,imp FROM objc_methods WHERE binary_id=1 AND list_address=20499448 ORDER BY entry_index;`; `llvm-objdump --macho --dyld-info T1Twitter | grep -E '0x1B0B5F0|0x1B0B5F8'`; inspect class-ro and C-string at file/VM `0x1B0B5D8`, `0x1434600`; `llvm-objdump -d --start-address=0x7abf28 --stop-address=0x7abfb8 T1Twitter`. This entry narrows the meaning of OX-141 rather than claiming an additional body-layout dependency.
+
+Documentation only; no app, Probe, main, or version changes; SE runtime investigation deferred.
