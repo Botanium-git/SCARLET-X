@@ -593,3 +593,18 @@ Research-only change; no Scarlet X app, Probe, main branch or version changes.
 **Reproduce:** `llvm-objdump -d --start-address=0x2cdbb6c --stop-address=0x2cdbcd8 XAppLibraries`; `llvm-objdump -d --start-address=0x4a8cac0 --stop-address=0x4a8cad4 XAppLibraries`; `llvm-objdump --macho --dyld-info XAppLibraries` and confirm refs `0x650F1F8`, `0x6518908`.
 
 Only documentation updated; no application, Probe, main or version changes.
+
+
+## OX-103 — Stored options participates in combined-view-model equality (2026-10-22)
+
+**Primary evidence:** Original supplied X v12.25 IPA, `XAppLibraries.framework/XAppLibraries` extracted and scanned directly for ARM64 BL instructions. The stub `0x4AB2700`, previously resolved in OX-102 to the ObjC selector `options`, has **77 direct BL callsites** in the executable `__TEXT,__text` section (`0x4000..0x4A33508`). These are callsites, not distinct methods, and neither dynamic dispatch nor indirect calls are covered.
+
+**Concrete consumer confirmed:** Function `_TTAStatusViewCombinedViewModelIsEqual` at `0x2CDBB6C` includes `0x2CDBBFC: mov x0,x19`, **`0x2CDBC00: bl 0x4AB2700`** (options getter), **`0x2CDBC04: cmp x0,x23`**, and **`0x2CDBC08: b.ne 0x2CDBC38`**. The x23 comparison operand came from incoming x2 at `0x2CDBB88`; a mismatch takes the not-equal branch and sets result false at `0x2CDBC38`. This proves that the `options` value participates in this equality routine.
+
+**Relation to OX-101/102:** The adjacent separate function at `0x2CDBC90` hashes the model and account fields without a direct options read in that short function. That observation must **not** be generalized to the equality routine, which demonstrably does read and compare options.
+
+**Boundary:** Equality-sensitive options are not proof of an options-to-body-`displayType` transformation or a particular text-height calculation. Next inspect relevant direct consumers within the `0x2CBB...` layout routines and classify masks by their actual receiver and dataflow. Official v12.35 runtime remains unverified.
+
+**Reproduce:** `llvm-objdump -d --start-address=0x2cdbb6c --stop-address=0x2cdbc64 XAppLibraries`; cross-check `options` selector stub `0x4AB2700`. Scan executable ARM64 BL imm26 targets for destination `0x4AB2700`.
+
+Documentation only. SCARLET-X production app, Probe, version and `main` branch unchanged.
