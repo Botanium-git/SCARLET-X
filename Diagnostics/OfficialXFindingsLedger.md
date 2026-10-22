@@ -1309,3 +1309,18 @@ Documentation only; Scarlet X app, Probe, main branch and version unchanged. Off
 **Reproduce:** `llvm-objdump -d --start-address=0x2af940 --stop-address=0x2af9b0 T1Twitter`; `llvm-objdump -d --start-address=0x1314c40 --stop-address=0x1314c50 T1Twitter`; `llvm-objdump -d --start-address=0x1345f40 --stop-address=0x1345f50 T1Twitter`; use `llvm-objdump --macho --dyld-info T1Twitter` to resolve rebases at `0x1AAD4D8` and `0x1AB9998`, and read source selector strings at `0x1636E9A` and `0x1676247`.
 
 **Next static step:** resolve `0x1370BE0` selector and receiver/container provenance, then associate index 24 with its view-adapter registration if native evidence permits. No SE, SCARLET-X app, Probe, main or version changes.
+
+
+## OX-148 — Resolve OX-147's viewModel and avatarFrame selector inputs for slot 24 (2026-10-22)
+
+**Primary evidence:** Original official X v12.25 user IPA, extracted `Payload/Twitter.app/Frameworks/T1Twitter.framework/T1Twitter`; direct native disassembly and original chained ObjC selector-reference pointers. No SE needed.
+
+- At **`0x2AF948`**, call stub **`0x1370BE0`** has `adrp x1,0x1AC4000; ldr x1,[x1,#0x4C0]` → selref **`0x1AC44C0`**. Original chained pointer targets native string **`0x16AED30`** = **`viewModel`**. x0 is the object loaded from **`[sp+0x68]`** into x20 immediately before the call. The returned model is retained in x23 after `0x12B0444`.
+- At **`0x2AF95C`**, another message to the same x20 object uses stub **`0x12D92C0`**, whose selref **`0x1A9E678`** → native string **`0x15E0157`** = **`avatarFrame`**. The subsequent code then invokes `layoutStateForViewModel:layoutMetrics:avatarFrame:containerHeight:tweetStormIndicatorMidY:` at **`0x2AF974`**, already identified in OX-147. This connects the object-sourced model and avatar frame to the slot-24 layout-state computation, without asserting what visual component owns slot 24.
+- At **`0x2AF9A0..0x2AF9A4`**, the computed layout-state x26 is sent as x2 to stub **`0x1345F40`** (`setObject:atIndexedSubscript:`) with **literal index x3=24**. The receiver x0 is restored x27 at `0x2AF988`. Its concrete type and whether this container is the exact later view-set storage read by OX-146 still need tracing.
+- Separately, nearby **`0x2AF908`** uses stub **`0x131EC80`**: selref **`0x1AAFCE8`** → **`objectAtIndexedSubscript:`**, with an index **86** and receiver x27. This is a **separate lookup**, not proof that slot 24 is identifier 86 or that either corresponds to avatar.
+- **Confirmed:** viewModel and avatarFrame calls on a common receiver precede slot-24 state creation and indexed storage. **Unresolved:** identity/owner of that receiver, specific viewIdentifier for slot 24, and actual child-frame application. No visual component label should be assigned to 24 without independent adapter construction evidence.
+
+**Reproduce:** `llvm-objdump -d --start-address=0x2af900 --stop-address=0x2af9b0 T1Twitter`; inspect ObjC stubs `0x1370be0`, `0x12d92c0`, `0x131ec80`, `0x1345f40`; chained selector slots `0x1AC44C0`, `0x1A9E678`, `0x1AAFCE8`, `0x1AB9998`, and original selector C strings.
+
+Documentation-only, static official v12.25. No SCARLET-X application, Probe, main or version changes.
