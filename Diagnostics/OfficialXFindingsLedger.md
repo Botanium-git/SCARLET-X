@@ -1030,3 +1030,18 @@ Documentation only, no SCARLET-X application, Probe, main branch or version chan
 **Reproduce:** `llvm-objdump -d --start-address=0x2ef97c --stop-address=0x2efa78 T1Twitter`; `llvm-objdump -d --start-address=0x2f099c --stop-address=0x2f09f4 T1Twitter`; ObjC stubs `0x135cb40`, `0x12ffe60` and raw selrefs `0x1abf498`, `0x1aa8160`. Next: find class/metaclass implementations of `statusViewClass` and distinguish possible subclasses.
 
 Static v12.25 evidence only; no runtime v12.35 class selection, child coordinates, app/Probe/main/version changes.
+
+
+## OX-129 — Resolve two statusViewClass implementations to standard vs focal view classes (2026-10-22)
+
+**Primary evidence:** Unmodified official X v12.25 original IPA, extracted `T1Twitter.framework/T1Twitter`. Independently checked supplied `scarlet_macho(1).sqlite` `objc_methods` and directly disassembled actual methods and class-ref rebases. No SE needed.
+
+- SQLite registers **two** `statusViewClass` methods in T1Twitter: `0xC008` (method list `0x1391510`) and `0x2EF7B8` (list `0x1392FC0`); both have type encoding `#16@0:8` (return a Class object).
+- At **`0xC008..0xC010`**, native ARM64 uses `adrp x8,0x1AD1000; ldr x0,[x8,#0x828]; b 0x12B03D8`. Classref slot **`0x1AD1828`** rebases to class object **`0x1AED2F0`**. Class object's data ref **`0x1AED310`** → `class_ro_t 0x198A478`; name ref `0x198A490` → original C-string at **`0x1425031`**, **`T1ConversationFocalStatusView`**.
+- At **`0x2EF7B8..0x2EF7C0`**, native ARM64 uses `adrp x8,0x1AD3000; ldr x0,[x8,#0xE30]; b 0x12B03D8`. Classref slot **`0x1AD3E30`** rebases to class object **`0x1AED840`**. Class object's data ref **`0x1AED860`** → `class_ro_t 0x198D7F0`; name ref `0x198D808` → C-string **`0x14254E8`**, **`T1StandardStatusView`**.
+- The two method bodies thus return **different concrete classes**, both selected via `statusViewClass`. OX-128 independently establishes `T1StatusCell -statusViewWithFrame:` obtains this class from the runtime cell class, allocates and initializes it. Whether a specific runtime home-timeline cell is the standard or focal subclass requires establishing the owning metaclass/inheritance and actual object class; do not infer from a selector alone.
+- Next static step: associate `statusViewClass` IMPs with metaclasses owning method lists `0x1391510` and `0x1392FC0`, then identify the concrete cell classes/constructors. Follow `T1StandardStatusView` layout-state handling after attribution. Avoid substituting v12.35 SE runtime assumptions.
+
+**Reproduce:** `SELECT selector,imp,list_address,types FROM objc_methods WHERE binary_id=1 AND selector='statusViewClass';`; `llvm-objdump -d --start-address=0xc008 --stop-address=0xc014 T1Twitter`; `llvm-objdump -d --start-address=0x2ef7b8 --stop-address=0x2ef7c4 T1Twitter`; `llvm-objdump --macho --dyld-info T1Twitter` for rebases at `0x1AD1828,0x1AD3E30,0x1AED310,0x1AED860,0x198A490,0x198D808`.
+
+Static reference only. No Scarlet X application, Probe, main, or version change.
