@@ -990,3 +990,17 @@ Documentation only, no SCARLET-X application, Probe, main branch or version chan
 - **Limits:** No runtime inset numerical values, child header/avatar/body coordinates, or validated v12.35 behavior. OX-120 and OX-121's original standalone entries remain uncommitted; OX-122–125 cite only independently grounded facts.
 
 **Reproduce:** `llvm-objdump -d --start-address=0x2f09f4 --stop-address=0x2f0b74 T1Twitter`; check objc stubs `0x135cba0`, `0x13431a0`, `0x131ff20`, `0x12d1780`, `0x1352060` and their rebased selrefs. Documentation only. No application, Probe, main or version changes.
+
+
+## OX-126 — setLayoutState: is multiply implemented; one implementation only replaces an ivar (2026-10-22)
+
+**Primary evidence:** User-provided official X v12.25 IPA, native `Payload/Twitter.app/Frameworks/T1Twitter.framework/T1Twitter` and `scarlet_macho(1).sqlite`, inspected without SE. Extends OX-125; avoid attributing a selector to the wrong receiver class.
+
+- Indexed native `objc_methods` contains **six separate `setLayoutState:` implementations** in T1Twitter: **`0x8AB24`**, **`0x2DF118`**, **`0x1408BFC`**, **`0x140A764`**, **`0x141AEBC`**, and **`0x141C808`**, in method lists `0x13A33B0`, `0x13E3830`, `0x1408BE0`, `0x140A6E8`, `0x141AEA0`, and `0x141C798`, respectively. A selector-to-IMP table alone does **not** establish which concrete receiver class implements the dispatch in OX-125.
+- Native disassembly of `0x2DF118..0x2DF154`: `mov x19,x2` stores incoming state; `0x2DF130..0x2DF138` loads the ivar offset via slot **`0x1ADD704`**; `0x2DF13C` retains incoming x2; `0x2DF140` loads the previous ivar value; **`0x2DF144`** stores x19 to that ivar; final tail call at `0x2DF154` releases old value. This **particular implementation** is an object-reference setter, containing no observed child frame or margin computation.
+- Rechecked OX-125 dispatch: `T1StatusCell -setCellLayout:` at `0x2F09F4` calls `statusViewLayoutState` on its incoming layout at `0x2F0A3C`; places the result in x21 at `0x2F0A48`; loads a child pointer through cell ivar offset slot `0x1ADD804` at `0x2F0A4C..0x2F0A54`; invokes **`setLayoutState:`** on that child at `0x2F0A5C`, with x2=x21. Thus the state handoff is confirmed, but this callsite does not directly encode the receiver's implementation address; dynamic ObjC dispatch must not be equated with arbitrary indexed `setLayoutState:` IMP.
+- **Next static target:** identify the cell child ivar name/class and its class hierarchy; then identify the concrete `setLayoutState:` implementation or inherited setter and follow downstream `layoutSubviews`/`_t1_updateLayoutStateWithLayoutMetrics:` paths. Leave actual inset/coordinate values for SE only if they cannot be recovered from code.
+
+**Limits:** The six indexed implementations may not be exhaustive for dynamic inheritance and XAppLibraries. Do not infer the particular child receiver is the 0x2DF118 owner. No proof yet of where `contentEdgeInsets` is applied. Documentation only, no app/Probe/main/version changes.
+
+**Reproduce:** `SELECT imp,list_address FROM objc_methods WHERE binary_id=1 AND selector='setLayoutState:';`; `llvm-objdump -d --start-address=0x2df118 --stop-address=0x2df158 T1Twitter`; `llvm-objdump -d --start-address=0x2f09f4 --stop-address=0x2f0a84 T1Twitter`.
