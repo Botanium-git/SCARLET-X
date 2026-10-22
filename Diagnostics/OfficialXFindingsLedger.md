@@ -1045,3 +1045,15 @@ Static v12.25 evidence only; no runtime v12.35 class selection, child coordinate
 **Reproduce:** `SELECT selector,imp,list_address,types FROM objc_methods WHERE binary_id=1 AND selector='statusViewClass';`; `llvm-objdump -d --start-address=0xc008 --stop-address=0xc014 T1Twitter`; `llvm-objdump -d --start-address=0x2ef7b8 --stop-address=0x2ef7c4 T1Twitter`; `llvm-objdump --macho --dyld-info T1Twitter` for rebases at `0x1AD1828,0x1AD3E30,0x1AED310,0x1AED860,0x198A490,0x198D808`.
 
 Static reference only. No Scarlet X application, Probe, main, or version change.
+
+
+## OX-130 — Attribute statusViewClass IMPs to concrete owning cell metaclasses (2026-10-22)
+
+**Primary evidence:** Unmodified user-provided official X v12.25 IPA, original `T1Twitter.framework/T1Twitter`; binary Mach-O class_ro_t metadata and dyld chained rebases verified directly, plus previously established OX-129 returned class references. No SE required.
+
+- `statusViewClass` IMP **`0xC008`** belongs to ObjC method list **`0x1391510`**. Dyld rebase at **`0x1939158`** identifies it as `class_ro_t` baseMethods for class-ro structure **`0x1939138`**; its name pointer at **`0x1939150`** rebases to `0x141DFB9`, original string **`T1ConversationFocalStatusViewTableViewCell`**. The class-ro flags are `0x81`, consistent with a metaclass method list. The method returns **`T1ConversationFocalStatusView`** (OX-129).
+- `statusViewClass` IMP **`0x2EF7B8`** belongs to list **`0x1392FC0`**. Dyld rebase at **`0x1996C90`** identifies it as `class_ro_t` baseMethods for class-ro structure **`0x1996C70`**; its name pointer at **`0x1996C88`** rebases to **`0x1426367`**, original string **`T1StatusCell`**. Flags `0x185` include metaclass flag. The method returns **`T1StandardStatusView`** (OX-129).
+- Together with OX-128, `T1StatusCell -statusViewWithFrame:` dynamically asks its actual class for `statusViewClass`; this establishes that the **`T1StatusCell` class implementation maps to `T1StandardStatusView`** while the focal cell class supplies the other class method. This is a class-level mapping, not a claim that every runtime home timeline row instantiates only these classes; subclasses might override selection.
+- **Next static step:** analyze `T1StandardStatusView`'s concrete layout-state setting/layoutSubviews or layout-state application, now that its relation to `T1StatusCell` is grounded. Locate any handling of header/avatar/body child frames and `contentEdgeInsets` without guessing numeric runtime values.
+
+**Reproduce:** Query `objc_methods` in supplied SQLite where `selector='statusViewClass'`; `llvm-objdump --macho --dyld-info T1Twitter` for rebase locations `0x1939150`, `0x1939158`, `0x1996C88`, `0x1996C90`; read strings at `0x141DFB9` and `0x1426367` directly from the unchanged binary. No production application, Probe, main or version changes.
