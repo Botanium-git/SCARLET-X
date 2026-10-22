@@ -539,3 +539,26 @@ No SCARLET-X production code, Probe, version or main branch changes.
 **Reproduction:** Decode class object `0x1AE8868` data pointer `+0x20` to `0x196D0F8`, ro method pointer `+0x20` to `0x13D6490`, and entry 12's signed offsets; `llvm-objdump -d --start-address=0x199118 --stop-address=0x199154 T1Twitter`, `llvm-objdump -d --start-address=0x2ae6ac --stop-address=0x2ae6dc T1Twitter`.
 
 No Scarlet X application or Probe modification; v12.35 runtime values and font/display-type relation remain unproven.
+
+
+## OX-087 — Home controller registers standard status row adapter (2026-10-22, delayed record)
+
+**Source:** Original user-provided X v12.25 IPA main `Twitter` Mach-O. In `-[THFHomeTimelineItemsViewController _registerAdaptersAndTransformersThatRequireStream:]` at `0x1000BECFC`, native classref `0x1002714B0` binds `T1Twitter::_OBJC_CLASS_$_T1StatusTableRowAdapter`; `0x1000BED90..0x1000BEDC4` allocates and initializes it with `initWithAccount:scribeImpressionCache:forAllInstancesInTableViewController:`. Around `0x1000BEDE8..0x1000BEDF0` the controller configures its `statusOptionsBlock`. At `0x1000BEE30..0x1000BEE38` the method calls `useDataViewAdapterForTweetPerspectives:` with that adapter. This is a concrete static home-controller registration path, **not proof that every post displayed at runtime uses it**. A distinct composition adapter is configured elsewhere in the same method. Originally investigated before OX-088; documentation was blocked at the time.
+
+## OX-090 — Row adapter forwards computed options to cell and layout (2026-10-22, delayed record)
+
+**Source:** Original X v12.25 `T1Twitter.framework/T1Twitter`. `T1StatusTableRowAdapter` implements `dataViewController:tableViewCellForItem:withOptions:atIndexPath:` at **`0x3AB20C`**, and `dataViewController:cellLayoutForItem:withOptions:previousLayout:atIndexPath:` at **`0x3AC078`**. Both call selector `tableViewController:statusOptionsForViewModel:withOptions:atIndexPath:` via stub `0x1361540`, with receiver obtained from `statusAdapter` (receiver distinction clarified in OX-091). Cell setup then sends `setViewModel:options:account:` around `0x3AB31C`; layout sends `cellLayoutForViewModel:options:account:layoutMetrics:withPreviousLayout:` around `0x3AC168`. Thus options are forwarded into both paths. **Does not establish particular flag meanings or v12.35 device behavior.** Originally investigated before OX-091; documentation was blocked at the time.
+
+## OX-099 — Combined-model initializer delegates to imported superclass using objc_msgSendSuper2 (2026-10-22)
+
+**Primary evidence:** Original X v12.25 `T1Twitter.framework/T1Twitter`, freshly extracted from user-supplied IPA. Native llvm-objdump disassembly at `0x199118..0x199150` and dyld rebases/binds checked directly.
+
+- In `-[T1StatusViewCombinedViewModel initWithStatusViewModel:options:account:scribeContext:]`, at `0x199124..0x19912C` a super-class reference is loaded from `0x1AD8810`, which rebases to this subclass's class object `0x1AE8868`; this is the objc_super current-class argument, not the superclass identity.
+- The selector reference `0x1AA8FF0` rebases to text `0x16209D6`: **`initWithStatusViewModel:options:account:scribeContext:cardAttachmentDecider:`** (additional argument).
+- At `0x199138..0x199144` a constant pointer `0x18776A0` is passed in x6, and the call at `0x199144` goes to stub `0x12B03CC`. The stub loads GOT pointer **`0x186DAE8`**, whose dyld bind resolves to **`libobjc::_objc_msgSendSuper2`**. This proves Objective-C superclass dispatch rather than a local function doing option processing.
+- The subclass's superclass pointer in its ObjC class data (`0x1AE8868 + 8 = 0x1AE8870`) binds **`XAppLibraries::_OBJC_CLASS_$_TTAStatusViewCombinedViewModel`**. Therefore the likely next implementation to inspect is the matching initializer on this imported superclass in XAppLibraries, while respecting category/override/dynamic dispatch conditions.
+- This wrapper does not itself test option bits. Meaning, retention and subsequent use of options require inspection of the superclass initializer and downstream accessors; the literal `0x18776A0` has not yet been assigned semantics.
+
+**Reproduce:** `llvm-objdump -d --start-address=0x199118 --stop-address=0x199154 T1Twitter`; `llvm-objdump -d --start-address=0x12b03cc --stop-address=0x12b03d8 T1Twitter`; `llvm-objdump --macho --dyld-info T1Twitter` for `0x186DAE8`, `0x1AA8FF0`, `0x1AD8810`, `0x1AE8870`.
+
+No application, Probe, main branch or version changes.
