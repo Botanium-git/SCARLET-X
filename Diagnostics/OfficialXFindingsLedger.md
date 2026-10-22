@@ -1171,3 +1171,17 @@ Documentation only. No Scarlet X app, Probe, main or version changes; SE-derived
 **Reproduction:** `llvm-objdump -d --start-address=0x3bb120 --stop-address=0x3bb2bc T1Twitter`; `llvm-objdump -d --start-address=0x12f8400 --stop-address=0x12f8410 T1Twitter`; `llvm-objdump -d --start-address=0x13354e0 --stop-address=0x13354f0 T1Twitter`; `llvm-objdump --macho --dyld-info T1Twitter` for rebases `0x1AA62C8` and `0x1AB5700`. Original selector strings at `0x160E076`, `0x16657DE`.
 
 Static research only; no Scarlet X app, Probe, main or version changes. SE runtime measurements deferred.
+
+
+## OX-139 — Resolve body adapter allocated layout-state class and superclass (2026-10-22)
+
+**Primary source:** Original user-provided official X v12.25 IPA, `Payload/Twitter.app/Frameworks/T1Twitter.framework/T1Twitter`; freshly checked native ARM64 instructions and Mach-O chained fixup/class metadata. SE not used.
+
+- The body adapter `T1StandardStatusBodyViewAdapter -layoutStateForViewModel:layoutMetrics:` (IMP `0x3BAE90`, OX-136/137) at **`0x3BB168`** loads a class pointer from **`__objc_classrefs 0x1AD5FD8`** at `0x3BB16C`, then allocates via `0x12B030C` at `0x3BB170`; the resulting object is saved in **x26** at `0x3BB174`.
+- Native chained rebase at `0x1AD5FD8` resolves to **ObjC class object `0x1AF2890`**. Its class-ro data slot `0x1AF28B0` rebases to **`class_ro_t 0x19AD300`**; name ref `0x19AD318` rebases to NUL-terminated original C-string `0x14280DA`: **`T1StandardStatusBodyViewLayoutState`**.
+- This class's superclass slot **`0x1AF2898`** is a dyld bind to **`XServiceLibraries:_OBJC_CLASS_$_TFNComposableViewLayoutState`**; thus the immediate superclass identity is directly established, not inferred from naming.
+- Direct native relative method list at **`0x13D17A8`** has **13 methods**. Native decoded names include `isTranslatable`, `setTranslatable:`, `isShowingAutoTranslated`, `setShowingAutoTranslated:`, `translationState`, `setTranslationState:`, `validForHashflagVersion`, `setValidForHashflagVersion:`, `validForFocalTweetIncompleteQuotedStatus`, `setValidForFocalTweetIncompleteQuotedStatus:`, `noteTweetInlineExpanded`, `setNoteTweetInlineExpanded:`, and `.cxx_destruct`. Neither `setSize:` nor `setAdditionalEdgeInsets:` is present among these 13 **direct** implementations.
+- At **`0x3BB294`** and **`0x3BB2AC`** the same x26 object receives `setSize:` and `setAdditionalEdgeInsets:` respectively (OX-138). Therefore these setters are not direct overrides on this concrete layout-state class; resolving them in its `TFNComposableViewLayoutState` superclass (or higher) is the next static step.
+- **Boundary:** Confirms allocated class and its immediate superclass plus direct method absence, **not yet** the precise inherited method implementation, underlying ivar offsets, or how negative additional insets affect final UIView frames. Runtime home-timeline class selection in official v12.35 remains unverified.
+
+**Reproduce:** `llvm-objdump -d --start-address=0x3bb168 --stop-address=0x3bb17c T1Twitter`; `llvm-objdump --macho --dyld-info T1Twitter` for `0x1AD5FD8`, `0x1AF2898`, `0x1AF28B0`, `0x19AD318`; original bytes at `0x14280DA`; relative method list at `0x13D17A8`. No Scarlet X application, Probe, main or version changes.
