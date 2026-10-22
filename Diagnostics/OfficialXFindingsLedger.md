@@ -624,3 +624,21 @@ Concrete sample at `0x2CBC680..0x2CBC750`:
 **Established:** This region reads saved options and repeatedly passes them into a common classifier/helper, then branches on its result. **Unresolved:** exact owner of the containing method, identity and behavior of helper `0x2CC6D80`, whether return values 1/4/3 correspond to any body displayType or a different enum, and whether these presentation calls are used by standard home posts. Do not identify numeric return values as text renderer modes without resolving the helper's actual inputs/output.
 
 **Reproduce:** `llvm-objdump -d --start-address=0x2cbc680 --stop-address=0x2cbc760 XAppLibraries`, followed by `llvm-objdump -d --start-address=0x2cc6d80 --stop-address=0x2cc6e70 XAppLibraries`. No production application/Probe/version or main-branch changes.
+
+
+## OX-105 — Decode options-driven classifier at 0x2CC6D80 (2026-10-22)
+
+**Primary source:** User-supplied official X v12.25 IPA, original `Payload/Twitter.app/Frameworks/XAppLibraries.framework/XAppLibraries`; extracted anew and disassembled directly using `llvm-objdump`. This continues OX-104, which identified calls to the same helper and comparisons against 1/4/3.
+
+- The function at **`0x2CC6D80`** saves input arguments `x0` into x22, `x1` into x19, `x2` into x20 and **`x3` (options) into x21** at `0x2CC6DA0..0x2CC6DAC`.
+- At **`0x2CC6DC0`**, `tbnz x21,#0x3b,0x2CC70A0` branches when **options bit 59** is set. At `0x2CC6DD4..0x2CC6DE4` it builds mask `0x2000400000000000` and tests `options & mask`; the nonzero branch differs from the zero branch. This is a direct options-sensitive decision.
+- At `0x2CC6E68..0x2CC6E74` the helper compares its **first argument x22** to values 4 and 2, gating a following path; these are *input* comparisons, not returned values.
+- At `0x2CC6F44` it can set **return candidate 1**; at `0x2CC7088` **3**; and at `0x2CC70B4..0x2CC70BC` it selects **4 or 0** depending on the Boolean result of sub-helper **`0x2CC72C8`**. It returns selected x21 via x0 at `0x2CC70D0`.
+- The sub-helper `0x2CC72C8` also receives x3 as options and begins examining bits **59 and 60**, plus a composite bitmask at `0x2CC7304..0x2CC732C`. Its exact semantics and all downstream branches remain to be decoded.
+- Disassembler labels in this broad region may refer to enclosing nearest symbols rather than the local function; the input-output description here follows actual instructions and boundaries instead of guessing a function name.
+
+**Confirmed:** the helper identified in OX-104 reads the incoming options, makes flag-dependent decisions, and yields classification codes that can include 0/1/3/4; this supports interpreting the nearby OX-104 comparisons as checks against a classifier. **Not proven:** the semantic enum name, correspondence to `TTAStatusBodyTextView` displayType, the official X v12.35 runtime option values, and a specific text-height effect.
+
+**Reproduce:** `llvm-objdump -d --start-address=0x2cc6d80 --stop-address=0x2cc7100 XAppLibraries` and `llvm-objdump -d --start-address=0x2cc72c8 --stop-address=0x2cc7360 XAppLibraries`.
+
+Documentation only, no app/Probe/main/version changes.
