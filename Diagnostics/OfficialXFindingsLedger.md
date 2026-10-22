@@ -433,3 +433,17 @@ The index also lists `statusOptionsBlock` getter `0x144D4` and setter `0x144E4` 
 **Next necessary check:** resolve the owner of method list `0x13C9D98` through native class_ro_t→class metadata and trace the concrete helper dispatch and block invocation. The getter/setter presence alone does not establish that the row adapter invokes its stored block or that the helper's receiver is the same object. This is static v12.25 evidence, not v12.35 runtime proof.
 
 No application/Probe code or versions modified.
+
+
+## OX-093 — Identify owner of alternate statusOptionsBlock method list (2026-10-22)
+
+**Primary evidence:** Original user-provided X v12.25 `T1Twitter.framework/T1Twitter` Mach-O, native `llvm-objdump --macho --dyld-info`, `--syms`, instruction disassembly, and SQLite `objc_methods` list membership.
+
+- Instance method list **`0x13C9D98`** is referenced by a rebased pointer at **`0x193A4A0`** in `__objc_const`. This is class-ro data at **`0x193A480 + 0x20`**.
+- The ObjC class data pointer at **`0x1AE1628`** targets `0x193A480`. Thus the class starts at **`0x1AE1608`**. The Mach-O symbol table identifies it as **`_OBJC_CLASS_$_T1QuotedStatusItemTableRowAdapter`**, *not* `T1StatusTableRowAdapter`.
+- Its list contains initializer **`initWithAccount:statusOptionsBlock:customEventHandler:` IMP `0x12948`**, `statusOptionsBlock` getter **`0x144D4`**, and setter **`0x144E4`**. Initializer disassembly at `0x12964..0x12A04` retains its arguments, copies the block argument through the same copy helper used for other block properties, and stores the copy through ivar offset at `0x1AD9FB8`. Getter/setter both load this same ivar offset.
+- **Scope correction to OX-092:** The alternate `statusOptionsBlock` property is specifically owned by the *quoted-status item* row adapter. It is not evidence that the normal `T1StatusTableRowAdapter` dispatches to this quoted-status initializer or property. Analyze the two classes separately until an actual call edge shows interaction.
+
+**Next:** Examine `T1StatusTableRowAdapter`'s own `statusAdapter` accessor and the owner/implementation of `tableViewController:statusOptionsForViewModel:withOptions:atIndexPath:`; separately trace the normal adapter's `setStatusOptionsBlock:` use. Do not conflate the quoted-status holder with ordinary home status-option forwarding.
+
+Research/documentation only; no production application, Probe or version changes.
