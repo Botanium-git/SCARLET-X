@@ -524,3 +524,18 @@ In the generator method with IMP **`0x2AE63C`** (indexed selector `layoutStateFo
 **Reproduce:** `llvm-objdump -d --start-address=0x2ae63c --stop-address=0x2ae710 T1Twitter`; `llvm-objdump -d --start-address=0x1303880 --stop-address=0x1303894 T1Twitter`; `llvm-objdump -d --start-address=0x13104e0 --stop-address=0x13104f4 T1Twitter`; `llvm-objdump --macho --dyld-info T1Twitter` checking selrefs `0x1AA8FE8`, `0x1AAC300`, classref `0x1AD3868`.
 
 No SCARLET-X production code, Probe, version or main branch changes.
+
+
+## OX-098 — Resolve combined view model initializer owner and dispatch thunk (2026-10-22)
+
+**Primary source:** User-supplied official X v12.25 IPA, extracted original `T1Twitter.framework/T1Twitter` (33,287,408 bytes). Parsed Mach-O `__objc_data`, `__objc_const`, `__objc_methlist` relative method records and chained selector pointers, independently checked against `llvm-objdump -d` and the existing SQLite index.
+
+- Class `_OBJC_CLASS_$_T1StatusViewCombinedViewModel` is defined at VM **`0x1AE8868`**. Its `class_ro_t` is at **`0x196D0F8`**, whose method-list pointer at `0x196D118` rebases to **`0x13D6490`**.
+- `0x13D6490` is a **14-entry relative instance method list** (header `0x8000000C`). The selector `initWithStatusViewModel:options:account:scribeContext:` is entry index **12**, its selector reference at **`0x1AA8FE8`** points to text `0x162099F`, and its signed-relative IMP resolves to **`0x199118`**. This is a direct native ownership resolution, *not* an inference from the earlier generator call.
+- Native IMP disassembly at `0x199118..0x199154`: the method constructs a small stack context including self and an ivar-offset pointer loaded from `0x1AD8810`, loads another selector-ref from `0x1AA8FF0`, loads a constant pointer `0x18776A0`, then calls helper **`0x12B03CC`** at `0x199144`. It immediately returns after helper completion. There is **no directly visible options-bit mask/test in this short initializer thunk**.
+- The earlier generator `0x2AE6D4` passes options as x3 into this initializer. The initializer then immediately invokes the helper, so **the actual processing of x3 and stored fields cannot be inferred from the short thunk alone**. Identify helper semantics (including whether super-init dispatch or forwarding), initializer superclass and any resulting ivar initialization before assigning specific meaning to options bits.
+- **SQLite indexing caveat:** This exact initializer selector was missing from `objc_methods` search results despite being present in the native class method list. Incomplete index coverage must not be mistaken for lack of a concrete Objective-C method implementation.
+
+**Reproduction:** Decode class object `0x1AE8868` data pointer `+0x20` to `0x196D0F8`, ro method pointer `+0x20` to `0x13D6490`, and entry 12's signed offsets; `llvm-objdump -d --start-address=0x199118 --stop-address=0x199154 T1Twitter`, `llvm-objdump -d --start-address=0x2ae6ac --stop-address=0x2ae6dc T1Twitter`.
+
+No Scarlet X application or Probe modification; v12.35 runtime values and font/display-type relation remain unproven.
