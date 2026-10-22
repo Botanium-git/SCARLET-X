@@ -926,3 +926,21 @@ Static research only. No app, Probe, main branch or version changes.
 - **Scope:** This is *cell-layout object* reuse, distinct from attributed text height caching analyzed in OX-110..118. Reuse of an object is not proof that all frames are immutable, nor that every runtime home-timeline post takes this method; v12.35 device-level behavior remains unverified.
 
 **Reproduce:** `llvm-objdump -d --start-address=0x2ef7c4 --stop-address=0x2ef97c T1Twitter`; `llvm-objdump -d --start-address=0x130a0e0 --stop-address=0x130a100 T1Twitter`; `llvm-objdump --macho --dyld-info T1Twitter` and original `0x1629780` selector bytes. No app/Probe/main/version changes.
+
+
+## OX-122 — Direct T1StatusCellLayout fields and accessor IMPs (2026-10-22)
+
+**Source:** Original official X v12.25 T1Twitter framework extracted from user IPA. The class-ref from OX-121 (slot `0x1AD57C8`) points to class `0x1AEF348`, class_ro_t `0x1996F28`. Native class metadata read directly in original Mach-O.
+
+The class's direct method list pointer is `0x13D3AA8`, using relative method entries; its five methods decode to:
+- `statusOptions` IMP `0x2F30CC`, encoding `Q16@0:8`;
+- `setStatusOptions:` IMP `0x2F30DC`, encoding `v24@0:8Q16`;
+- `statusViewLayoutState` IMP `0x2F30EC`;
+- `setStatusViewLayoutState:` IMP `0x2F30FC`;
+- `.cxx_destruct` IMP `0x2F313C`.
+
+The class's direct ivar list at `0x1996EB8` contains exactly two entries: `_statusOptions` (type `Q`, field offset pointer `0x1ADD81C`), and `_statusViewLayoutState` (type `@\"<TTACoreStatusViewLayoutState>\"`, offset pointer `0x1ADD820`). Property attributes in list `0x1996F00` confirm `statusOptions` = `TQ,N,V_statusOptions` and `statusViewLayoutState` = `T@\"<TTACoreStatusViewLayoutState>\",&,N,V_statusViewLayoutState`.
+
+Thus the newly created layout container in OX-120/121 explicitly owns the status flags and status-view layout-state reference. It has **no direct declared size/contentEdgeInsets ivars or accessors in this class method list**; those may come from its superclass or other inherited behavior and require separate superclass identification. This evidence does not itself specify avatar/header/body frames.
+
+**Reproduce:** For Mach-O with matching VM/file offsets read `class_ro_t` at `0x1996F28`, relative methods at `0x13D3AA8`, ivars at `0x1996EB8`, and property list at `0x1996F00`; dereference each relative method name through its `__objc_selrefs` slot. No app/Probe/main/version changes.
