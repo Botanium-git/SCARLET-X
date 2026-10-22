@@ -1125,3 +1125,18 @@ No Scarlet X production code, Probe, versions or main changes. Documentation onl
 **Reproduce:** `llvm-objdump --syms XServiceLibraries | grep '_OBJC_CLASS_$_TFNComposableViewAdapter'`; read `class_ro_t` at 0x41C98F8 and relative methods at 0x2FB4810; `llvm-objdump -d --start-address=0xcd7fa0 --stop-address=0xcd7fdc XServiceLibraries`.
 
 Research only; no changes to Scarlet X app, Probe, main or versions. No SE runtime claims.
+
+
+## OX-136 — Standard body adapter overrides model/layout computation but not setLayoutState:forView: (2026-10-22)
+
+**Primary source:** Unmodified original X v12.25 IPA `T1Twitter.framework/T1Twitter`; direct native `class_ro_t` and relative method list plus disassembly. Static analysis without SE.
+
+- ObjC class symbol **`_OBJC_CLASS_$_T1StandardStatusBodyViewAdapter` = `0x1AF28B8`**, whose class data rebases from `0x1AF28D8` to class_ro_t **`0x19AD578`**. Its direct relative method list is **`0x13D15F0`**, `entsizeAndFlags=0x8000000C`, **36 entries**. Method records decoded using 12-byte relative entries and original selector-ref strings.
+- The object's **superclass slot `0x1AF28C0`** is a dyld bind to **`XServiceLibraries:_OBJC_CLASS_$_TFNComposableViewAdapter`**, confirmed from the unmodified native image.
+- Among 36 *direct* methods are **`setViewModel:forView:` IMP 0x3BA890** (entry 8), **`layoutStateForViewModel:layoutMetrics:` IMP 0x3BAE90** (entry 12), **`isLayoutState:validForViewModel:layoutMetrics:` IMP 0x3BB4CC** (entry 13), **`initializeView` IMP 0x3BA7C0**, and **`view:willMoveToHostView:` IMP 0x3BA7F8**. There is **NO direct `setLayoutState:forView:` override** among these 36 entries.
+- OX-135 independently verified `TFNComposableViewAdapter -setLayoutState:forView:` at **`0xCD7FC0`** in XServiceLibraries consists solely of **`ret`**. Therefore, under the observed class/superclass relationship, an ordinary instance of `T1StandardStatusBodyViewAdapter` inherits a **no-op `setLayoutState:forView:`**, while implementing its own view-model setter and layout-state generation/validation. This is a sharper, source-grounded boundary on OX-134.
+- **Implication:** Do not infer that dispatching `setLayoutState:forView:` to this body adapter sets frames. Need inspect **`layoutStateForViewModel:layoutMetrics:`** and the composable host's separate frame application flow, as well as whether other adapters override the state setter. The existence of that subclass does not by itself establish runtime home-timeline selection or final child-view coordinates.
+
+**Reproduce:** `llvm-objdump --syms T1Twitter | grep _OBJC_CLASS_\$_T1StandardStatusBodyViewAdapter`; `llvm-objdump --macho --dyld-info T1Twitter | grep 0x1AF28C0`; decode class_ro_t `0x19AD578` and method list `0x13D15F0`; `llvm-objdump -d --start-address=0x3bae90 --stop-address=0x3baf20 T1Twitter`. For inherited no-op see `llvm-objdump -d --start-address=0xcd7fc0 --stop-address=0xcd7fc4 XServiceLibraries`.
+
+Documentation only. No Scarlet X app, Probe, main or version changes; SE-derived values deferred.
