@@ -44,7 +44,7 @@
 ## 4. 調査済みの一次情報と到達点【確認済み】
 
 - 原本: 公式X v12.25 IPA `com.atebits.Tweetie2_12.25_und3fined(1).ipa`、Mach-O索引 `scarlet_macho(1).sqlite`。
-- 解析台帳: `Diagnostics/OfficialXFindingsLedger.md`、技術補助 `Diagnostics/OfficialXTextSizingDisassembly.md`、状況整理 `Diagnostics/OfficialXAnalysisStatus.md`。
+- 解析台帳: `https://github.com/Botanium-git/Development-record/blob/main/SCARLET-X/OfficialXResearch/OfficialXFindingsLedger.md`、技術補助 `https://github.com/Botanium-git/Development-record/blob/main/SCARLET-X/OfficialXResearch/OfficialXTextSizingDisassembly.md`、状況整理 `https://github.com/Botanium-git/Development-record/blob/main/SCARLET-X/OfficialXResearch/OfficialXAnalysisStatus.md`。
 - OX-019以降: `TTAStatusBodyTextView` のdisplayType別計測分岐、モデル高さ・キャッシュ・切り上げ等を追跡。
 - OX-040等: 標準本文アダプタの一つの生成経路の `viewIdentifier=14`。
 - OX-108以降: 本文レイアウト・文字計測の一部を逆アセンブル済み。
