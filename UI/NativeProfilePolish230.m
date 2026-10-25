@@ -76,7 +76,18 @@
 
     // The profile name font is owned by NativeProfileViewController.buildUI.
     if([handleLabel isKindOfClass:UILabel.class]) handleLabel.font=[UIFont systemFontOfSize:14];
-    if([bioLabel isKindOfClass:UILabel.class]) bioLabel.font=[UIFont systemFontOfSize:14];
+    if([bioLabel isKindOfClass:UILabel.class]) {
+        // Official X 12.35 / original SE verified profile-bio sizes.
+        // Unknown categories retain the previous 14pt behavior.
+        NSString *category=UIApplication.sharedApplication.preferredContentSizeCategory;
+        CGFloat pointSize=14.0;
+        if([category isEqualToString:UIContentSizeCategoryExtraSmall]) pointSize=12.0;
+        else if([category isEqualToString:UIContentSizeCategorySmall]) pointSize=13.0;
+        else if([category isEqualToString:UIContentSizeCategoryMedium] ||
+                [category isEqualToString:UIContentSizeCategoryLarge]) pointSize=14.0;
+        UIFontWeight weight=UIAccessibilityIsBoldTextEnabled()?UIFontWeightSemibold:UIFontWeightRegular;
+        bioLabel.font=[UIFont systemFontOfSize:pointSize weight:weight];
+    }
     if([countsLabel isKindOfClass:UILabel.class]) countsLabel.font=[UIFont systemFontOfSize:11];
     if([joinedLabel isKindOfClass:UILabel.class]) joinedLabel.font=[UIFont systemFontOfSize:11];
     if([joinedContainer isKindOfClass:UIView.class]) joinedContainer.hidden=(joinedLabel.text.length==0);
