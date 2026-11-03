@@ -77,12 +77,17 @@
     // The profile name font is owned by NativeProfileViewController.buildUI.
     if([handleLabel isKindOfClass:UILabel.class]) handleLabel.font=[UIFont systemFontOfSize:14];
     if([bioLabel isKindOfClass:UILabel.class]) {
-        // Official X 12.35 original-SE profile bio: XS=12, S=13, M/L=14pt.
-        // Keep 14pt for unmeasured larger accessibility categories.
+        // Official X 12.38, original iPhone SE: XS=12, M/L=14,
+        // XL=15, XXL=17, XXXL=20pt (observed with SXP).
+        // S=13 retains its earlier X 12.35 observation; accessibility
+        // categories above XXXL retain 14pt pending X 12.38 measurements.
         NSString *category=UIApplication.sharedApplication.preferredContentSizeCategory;
         CGFloat pointSize=14.0;
         if([category isEqualToString:UIContentSizeCategoryExtraSmall]) pointSize=12.0;
         else if([category isEqualToString:UIContentSizeCategorySmall]) pointSize=13.0;
+        else if([category isEqualToString:UIContentSizeCategoryExtraLarge]) pointSize=15.0;
+        else if([category isEqualToString:UIContentSizeCategoryExtraExtraLarge]) pointSize=17.0;
+        else if([category isEqualToString:UIContentSizeCategoryExtraExtraExtraLarge]) pointSize=20.0;
         UIFontWeight weight=UIAccessibilityIsBoldTextEnabled()?UIFontWeightSemibold:UIFontWeightRegular;
         bioLabel.font=[UIFont systemFontOfSize:pointSize weight:weight];
     }
