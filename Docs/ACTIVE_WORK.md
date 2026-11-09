@@ -14,7 +14,7 @@
 - `Browser/BrowserViewController+Navigation.m`には`goHome`、`loadURL:reason:`が存在し、ホームURLは`https://x.com/home`。
 - `Scripts/DisplayScripts.m`にWeb版の表示オプション。
 - DMのネイティブ取得・送信API、独立ネイティブタイムラインは現行コードに実装済みと確認できていない。まずWeb版経由の仮機能を作る。
-- `Resources/Info.plist`の確認済み既存版は **v1.4.170 / build 352**（作業後に再検証する）。
+- `Resources/Info.plist`の確認済み既存版は **v1.4.171 / build 353**（2026-11-09実装で更新。実機未検証）。
 - **最終実機成功バージョン:** 現時点の記録だけでは確定できない。ActionsのSuccessを実機成功と呼ばない。
 
 ## 今回の計画・進捗
@@ -29,3 +29,9 @@
 - 最初の仮実装はWeb版の機能を利用。独自のネイティブGraphQL取得・操作を完了したとは言わない。
 - フォントの再現は未完成。`v1.4.170` Bioサイズは固定カテゴリ対応で、本家`xds_body`式の移植ではない。
 - SXP/原作Xの解析は[Probe ANALYSIS_RECORD](https://github.com/Botanium-git/SCARLET-X-Probe/blob/develop/ANALYSIS_RECORD.md)に継続記録。SXの日常利用の開発と混ぜない。
+
+## 2026-11-09 実装引き継ぎ補足
+- v1.4.171アプリコードは`57680ad75`、版更新は`23cde07d9`。READMEに`START_HERE`入口追加は`7c189e725`。
+- Web画面は1つのWKWebViewで、Home/DM間の切替時にURLを新規ロードする。**画面ごとのスクロール位置・独立したWebView状態保持はまだ未実装**。仮UIでありX Web側の下部ナビと重なる/二重導線になる可能性を実機で確認する。
+- `WKWebsiteDataStore.defaultDataStore`維持。DMの内容や認証トークンをネイティブで取得/保存する実装は追加していない。いいね・リポストをネイティブ操作したと誤認しない。
+- 新しいバージョンは実機未検証。再読み込み後のいいね・リポストの状態維持とDM送信の確認を優先。
