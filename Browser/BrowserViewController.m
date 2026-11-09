@@ -19,6 +19,9 @@ static NSString * const SXNativeUIKey = @"ScarletXNativeUI";
 @property(nonatomic,assign) BOOL requestPending;
 @property(nonatomic,copy) NSString *navigationReason;
 @property(nonatomic,strong) NativeDrawerViewController *nativeDrawer;
+// Temporary Home/DM shell. Both destinations use the existing authenticated WKWebView.
+@property(nonatomic,strong) UIButton *sxHomeQuickButton;
+@property(nonatomic,strong) UIButton *sxDMQuickButton;
 @end
 
 @interface BrowserViewController (QuickLogExportInternal)
@@ -58,9 +61,75 @@ static NSString * const SXNativeUIKey = @"ScarletXNativeUI";
     self.webView.allowsBackForwardNavigationGestures=YES;
     self.webView.translatesAutoresizingMaskIntoConstraints=NO;
     [self.view addSubview:self.webView];
-    [NSLayoutConstraint activateConstraints:@[[self.webView.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor],[self.webView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],[self.webView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],[self.webView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor]]];
+    // Initial practical navigation: use X Web's authenticated Home/DM pages.
+    // Keep this bar separate from the WebView so SPA DOM changes cannot remove it.
+    UIView *quickBar=[UIView new];
+    quickBar.translatesAutoresizingMaskIntoConstraints=NO;
+    quickBar.backgroundColor=UIColor.systemBackgroundColor;
+    quickBar.accessibilityIdentifier=@"sx.quick-navigation";
+    [self.view addSubview:quickBar];
+    UIView *quickSeparator=[UIView new];
+    quickSeparator.translatesAutoresizingMaskIntoConstraints=NO;
+    quickSeparator.backgroundColor=UIColor.separatorColor;
+    [quickBar addSubview:quickSeparator];
+    UIStackView *quickRow=[[UIStackView alloc] initWithFrame:CGRectZero];
+    quickRow.translatesAutoresizingMaskIntoConstraints=NO;
+    quickRow.axis=UILayoutConstraintAxisHorizontal;
+    quickRow.distribution=UIStackViewDistributionFillEqually;
+    [quickBar addSubview:quickRow];
+    for(NSString *title in @[@"ホーム",@"DM"]) {
+        UIButton *button=[UIButton buttonWithType:UIButtonTypeSystem];
+        NSString *symbol=[title isEqualToString:@"ホーム"]?@"house":@"envelope";
+        [button setImage:[UIImage systemImageNamed:symbol] forState:UIControlStateNormal];
+        [button setTitle:[NSString stringWithFormat:@"  %@",title] forState:UIControlStateNormal];
+        button.titleLabel.font=[UIFont systemFontOfSize:14 weight:UIFontWeightSemibold];
+        button.accessibilityLabel=title;
+        button.accessibilityIdentifier=[title isEqualToString:@"ホーム"]?@"sx.quick.home":@"sx.quick.dm";
+        [button addTarget:self action:@selector(sxQuickDestinationTapped:) forControlEvents:UIControlEventTouchUpInside];
+        [quickRow addArrangedSubview:button];
+        if([title isEqualToString:@"ホーム"])self.sxHomeQuickButton=button;
+        else self.sxDMQuickButton=button;
+    }
+    [NSLayoutConstraint activateConstraints:@[
+        [self.webView.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor],
+        [self.webView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
+        [self.webView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
+        [self.webView.bottomAnchor constraintEqualToAnchor:quickBar.topAnchor],
+        [quickBar.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
+        [quickBar.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
+        [quickBar.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor],
+        [quickBar.heightAnchor constraintEqualToConstant:48],
+        [quickSeparator.topAnchor constraintEqualToAnchor:quickBar.topAnchor],
+        [quickSeparator.leadingAnchor constraintEqualToAnchor:quickBar.leadingAnchor],
+        [quickSeparator.trailingAnchor constraintEqualToAnchor:quickBar.trailingAnchor],
+        [quickSeparator.heightAnchor constraintEqualToConstant:0.5],
+        [quickRow.topAnchor constraintEqualToAnchor:quickBar.topAnchor],
+        [quickRow.leadingAnchor constraintEqualToAnchor:quickBar.leadingAnchor],
+        [quickRow.trailingAnchor constraintEqualToAnchor:quickBar.trailingAnchor],
+        [quickRow.bottomAnchor constraintEqualToAnchor:quickBar.bottomAnchor]
+    ]];
+    [self sxUpdateQuickDestinationForURL:[NSURL URLWithString:@"https://x.com/home"]];
     [self sx_installQuickLogButton];
     if(self.pendingURL){NSURL*u=self.pendingURL;self.pendingURL=nil;[self loadURL:u reason:@"pending"];}else[self goHome];
+}
+
+- (void)sxUpdateQuickDestinationForURL:(NSURL *)url {
+    NSString *path=url.path?:@"";
+    BOOL messages=[path isEqualToString:@"/messages"]||[path hasPrefix:@"/messages/"];
+    BOOL home=[path isEqualToString:@"/home"]||[path isEqualToString:@"/home/"];
+    UIColor *selected=UIColor.labelColor;
+    UIColor *unselected=UIColor.secondaryLabelColor;
+    self.sxHomeQuickButton.tintColor=home?selected:unselected;
+    self.sxDMQuickButton.tintColor=messages?selected:unselected;
+    self.sxHomeQuickButton.accessibilityTraits=UIAccessibilityTraitButton|(home?UIAccessibilityTraitSelected:0);
+    self.sxDMQuickButton.accessibilityTraits=UIAccessibilityTraitButton|(messages?UIAccessibilityTraitSelected:0);
+}
+- (void)sxQuickDestinationTapped:(UIButton *)sender {
+    BOOL isDM=(sender==self.sxDMQuickButton);
+    NSURL *destination=[NSURL URLWithString:isDM?@"https://x.com/messages":@"https://x.com/home"];
+    if(!destination)return;
+    [self sxUpdateQuickDestinationForURL:destination];
+    [self loadURL:destination reason:isDM?@"Quick DM":@"Quick Home"];
 }
 
 - (void)openExternalURL:(NSURL*)url source:(NSString*)source { if(!url)return; NSURL*target=[self unwrapScarletURL:url]; dispatch_async(dispatch_get_main_queue(),^{if(!self.isViewLoaded)self.pendingURL=target;else[self loadURL:target reason:source];}); }
@@ -123,7 +192,7 @@ static NSString * const SXNativeUIKey = @"ScarletXNativeUI";
 - (void)nativeDrawerDidSelectScarletSettings:(NativeDrawerViewController*)drawer{[self openSettings];}
 - (void)openSettings { UINavigationController*nav=[[UINavigationController alloc] initWithRootViewController:[SettingsViewController new]]; nav.modalPresentationStyle=UIModalPresentationPageSheet; [self presentViewController:nav animated:YES completion:nil]; }
 - (void)webView:(WKWebView*)w didStartProvisionalNavigation:(WKNavigation*)n {self.navigationStartTime=CACurrentMediaTime();self.navigationSession++;self.requestPending=NO;}
-- (void)webView:(WKWebView*)w didFinishNavigation:(WKNavigation*)n {}
+- (void)webView:(WKWebView*)w didFinishNavigation:(WKNavigation*)n { [self sxUpdateQuickDestinationForURL:w.URL]; }
 - (void)webView:(WKWebView*)w didFailProvisionalNavigation:(WKNavigation*)n withError:(NSError*)e {[[DiagnosticsStore shared] addError:@"Provisional navigation failed" error:e url:w.URL];}
 - (void)webView:(WKWebView*)w didFailNavigation:(WKNavigation*)n withError:(NSError*)e {if([e.domain isEqual:NSURLErrorDomain]&&e.code==NSURLErrorCancelled)return;[[DiagnosticsStore shared] addError:@"Navigation failed" error:e url:w.URL];}
 - (void)webViewWebContentProcessDidTerminate:(WKWebView*)w {[[DiagnosticsStore shared] addEvent:@"Web content process terminated" detail:@"" url:w.URL];}
