@@ -1,4 +1,4 @@
-# ScarletX v0.1.0
+> **開発・引き継ぎの入口:** [START_HERE.md](START_HERE.md) → [Docs/ACTIVE_WORK.md](Docs/ACTIVE_WORK.md)。このREADMEの初期v0.1.0手順は履歴であり現行仕様ではありません。最新コード・版数・Actionsを必ず確認してください。\n\n# ScarletX v0.1.0
 
 Minimal WKWebView-based X client intended to run as a LiveContainer guest.
 
